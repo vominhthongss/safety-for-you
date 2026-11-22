@@ -8,6 +8,7 @@ export const LANGUAGE_NAMES = {
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
 const en = {
+  waveHuge:"Huge (qualitative forecast)", waveHigh:"High (qualitative forecast)",
   status: "Status at issue time",
   forecastHeight: "Forecast wave height",
   estimatedArrival: "Estimated first wave",
@@ -56,6 +57,7 @@ const en = {
   tsunamiMove: "Tsunami risk? Move to high ground immediately. Do not wait for this app.",
 };
 const ja = {
+  waveHuge:"巨大", waveHigh:"高い",
   status: "発表時の区分",
   forecastHeight: "予想津波高",
   estimatedArrival: "到達予想時刻",
@@ -99,6 +101,7 @@ const ja = {
   tsunamiMove:"津波の危険があるときは、アプリを待たずに高台へ避難してください。"
 };
 const vi = {
+  waveHuge:"Rất lớn (dự báo định tính)", waveHigh:"Cao (dự báo định tính)",
   status: "Mức cảnh báo lúc phát tin",
   forecastHeight: "Độ cao sóng thần dự báo",
   estimatedArrival: "Dự báo đợt sóng đầu",

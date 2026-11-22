@@ -14,7 +14,11 @@ function formatNumber(value) {
 }
 function heightText(height, t) {
   if (!height) return null;
-  if (height.type === "description") return height.description;
+  if (height.type === "description") {
+    const localized = { "巨大":"waveHuge", "高い":"waveHigh" };
+    return localized[height.description] && t ?
+      t(localized[height.description]) : height.description;
+  }
   if (height.type === "under") return "< " + height.meters + " m";
   if (height.type === "over") return "> " + height.meters + " m";
   if (height.type === "meters" && numeric(height.meters))
@@ -38,7 +42,7 @@ function reportMetrics(report, t) {
     if (report.tsunamiStatus) result.push({
       key:"tsunamiStatus",label:t("status"),value:t(report.tsunamiStatus)
     });
-    const first = report.tsunamiAreas?.[0];
+    const first = report.tsunamiAreas?.find((area) => heightText(area.forecastHeight));
     if (first && !report.cancelled) {
       const height = heightText(first.forecastHeight, t);
       if (height) result.push({key:"forecastHeight",label:t("forecastHeight"),
