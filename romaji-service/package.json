@@ -1,0 +1,12 @@
+{
+  "name": "safety-for-you-romaji",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Optional self-hosted romanization for Japanese names and notices",
+  "scripts": { "start": "node server.cjs" },
+  "dependencies": {
+    "kuroshiro": "1.2.1",
+    "kuroshiro-analyzer-kuromoji": "1.1.0"
+  },
+  "engines": { "node": ">=22" }
+}
