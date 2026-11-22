@@ -1,34 +1,33 @@
-# Architecture & safety design notes
+# Architecture: Safety For You
 
-## Data lifecycle
-1. Expo UI starts without waiting for network or GPS. Native splash ends immediately; `EXPO_PUBLIC_SPLASH_MIN_MS` is clamped to 600 ms.
-2. Foreground location requested by OS. No background GPS permission, no account or telemetry.
-3. P2PQuake WebSocket `wss://api.p2pquake.net/v2/ws` distributes direct foreground reports 551/552/556; `/v2/history` pulls recent records on a configurable interval.
-4. Optional Cloudflare Worker polls official JMA Atom long feeds with cache (not an alert-state engine). The client checks every configurable interval; JMA original title remains untranslated.
-5. The maps indicate user and verified point positions. Regional reports have no point, explicitly tell user not to expect a precise marker.
-6. GSI GeoJSON `skhbXX` disaster-specific tile data at zoom 10 is queried for current 3×3 tile neighborhood and facility flags are used for rendering. No fabricated data.
+## Frontend
 
-## Hard safety boundaries
-- No user-facing conclusion of **all clear**.
-- No background or guaranteed emergency notification claims.
-- No app navigation should direct users to a shelter solely based on its listing: its operating status cannot be confirmed.
-- An alert without coordinates is **not** placed at a guessed prefecture centroid.
-- False certainty is worse than a visible data failure; show unconfigured/error states.
-- Users should follow J-Alert, mobile emergency alert, broadcast and municipality directions.
+- Expo SDK 58 + React Native 0.88, **JavaScript**.
+- `src/SafetyMap.js`: `react-native-webview` with a local, npm-packaged Leaflet engine. No native map SDK or custom Expo config plugin.
+- `scripts/bundle-leaflet.cjs` runs during `npm install`, reads Leaflet 1.9.4 CSS/JS from `node_modules`, and generates `src/generated/leafletAssets.js` (intentionally gitignored).
+- WebView runs a self-contained map HTML. Raster tiles come only from `https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png`. The GSI source link and attribution appear in the React Native overlay.
+- Native-to-WebView messages pass serialized JSON into a **restricted update function**, not executable API data. Label popups use `textContent`, not `innerHTML`.
+- `src/mapViewport.cjs` computes verified user + selected-event bounds. Leaflet `fitBounds` updates the zoom when a report is selected. A regional warning without coordinates gets no marker.
+- `src/theme.js` provides semantic iOS and explicit Android Light/Dark colors. The preference uses AsyncStorage and React Native Appearance.
 
-## Next production milestones
-- JMA XML parse and prefecture/municipality geocoding with verified gazetteer, typhoon tracks, area alerts, cancellation handling and freshness.
-- Push relay with monitored 24/7 SLO/uptime, resilience, geo-fencing and service agreement.
-- Real device testing, manual review of translations by native speakers, screen-reader testing and child-accessibility assessment.
-- Local government active shelter feed, reliable offline maps and cached local shelter index.
-- External legal review, provider attribution/licensing audit, privacy page and data handling assessment.
+## Data
 
-## Map renderer and appearance
+- `src/data.js` normalizes P2PQuake 551/552/556 events and queries GSI hazard-specific GeoJSON evacuation points.
+- `src/hazardFacts.cjs` and `src/hazardView.cjs` maintain source-backed earthquake magnitude, Shindo, tsunami region/height/grade and optional weather measurements. JMA Atom headlines are **not** real-time active alert state.
+- `server/worker.js` is an optional Cloudflare Worker that categorizes *recent* JMA Atom bulletins. It does not provide structured warning severity, geometry, or numerical weather measurement.
+- `src/romanization.js` uses WanaKana on-device for Kana. An optional Node Kuroshiro/Kuromoji service handles Kanji. Readings for rare place names need review.
 
-`@maplibre/maplibre-react-native` v11 replaces react-native-maps on both platforms. GSI raster tiles supply the map background, with attribution. Expo Go is unsupported; custom native builds must include the plugin. A saved Light/Dark override uses Appearance and AsyncStorage. iOS semantic and Android explicit palette tokens style application surfaces. Official GSI map tiles are not recolored.
+## Boundaries / risks
 
-## Report details and camera fit
+- **Expo Go supported**, but requires an Expo Go build matching SDK 58. WebView is included natively in that build.
+- The Leaflet engine is bundled locally; GSI raster and P2PQuake/JMA data require Internet, so no offline emergency guarantee.
+- GSI map tiles are generally appropriate for Japan and surroundings; using the map from elsewhere may show areas without tile coverage.
+- GSI evacuation facility listings are not live opening-status information.
+- No emergency alert latency guarantee; use J-Alert, JMA, official municipality announcements and broadcasts.
+- Validate Expo Go on real iOS and Android devices, user GPS denied, dark mode, connectivity failures, screen readers and small screens before release.
 
-P2PQuake v2 codes 551/556 carry earthquake magnitude, hypocenter depth and Shindo scale codes: 10-70 are **not** decimal magnitudes. Code 552 provides multiple named tsunami forecasting regions, each with `maxHeight.description/value`, grade and optional first-arrival estimate, or an explicit cancellation. Keep the region-specific forecast intact and never collapse it into a countrywide wave height. JMA Atom headline items currently have no trusted numeric weather fields; the UI renders optional typed metrics only when provided by a verified backend extension.
+## References
 
-On report selection, `selectedReportId` keeps the chosen item; MapLibre `Camera.setStop({bounds,padding})` fits both verified report coordinates and current GPS. Only one marker if GPS or event coordinates missing; regional alerts have no invented point. Pure helper `src/mapViewport.cjs` and normalizers are covered by Node tests.
+- https://docs.expo.dev/versions/v58.0.0/sdk/webview/
+- https://leafletjs.com/reference.html
+- https://maps.gsi.go.jp/development/ichiran.html

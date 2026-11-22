@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "check": "expo install --check",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "postinstall": "node scripts/bundle-leaflet.cjs",
+    "bundle:maps": "node scripts/bundle-leaflet.cjs"
   },
   "dependencies": {
     "expo": "~58.0.0",
@@ -22,9 +24,10 @@
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.11.1",
     "expo-symbols": "~58.0.5",
-    "@maplibre/maplibre-react-native": "11.5.1",
     "wanakana": "5.3.1",
-    "expo-system-ui": "~58.0.7"
+    "expo-system-ui": "~58.0.7",
+    "react-native-webview": "14.0.1",
+    "leaflet": "1.9.4"
   },
   "devDependencies": {
     "babel-preset-expo": "^58.0.0"

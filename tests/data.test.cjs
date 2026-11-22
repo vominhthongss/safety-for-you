@@ -63,16 +63,28 @@ test("Live Romaji conversion uses WanaKana and never displays placeholder", () =
   assert.ok(src.includes("if (!reading || reading === value) return value;"));
   assert.ok(!src.includes("Romaji: unavailable"));
 });
-test("Native MapLibre GSI map replaces Google Maps", () => {
+test("Expo Go supports WebView Leaflet GSI without MapLibre", () => {
   const pkg = JSON.parse(read("package.json"));
   const config = read("app.config.js");
   const map = read("src/SafetyMap.js");
-  assert.ok(pkg.dependencies["@maplibre/maplibre-react-native"]);
+  const bundler = read("scripts/bundle-leaflet.cjs");
+  assert.equal(pkg.dependencies["react-native-webview"], "14.0.1");
+  assert.equal(pkg.dependencies.leaflet, "1.9.4");
+  assert.ok(!pkg.dependencies["@maplibre/maplibre-react-native"]);
   assert.ok(!pkg.dependencies["react-native-maps"]);
-  assert.ok(config.includes('"@maplibre/maplibre-react-native"'));
+  assert.ok(!config.includes("@maplibre/maplibre-react-native"));
   assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
-  assert.ok(map.includes('from "@maplibre/maplibre-react-native"'));
+  assert.ok(map.includes('from "react-native-webview"'));
+  assert.ok(map.includes("LEAFLET_JS"));
   assert.ok(map.includes("© GSI"));
+  assert.ok(bundler.includes("leaflet/dist") || bundler.includes('"dist", "leaflet.js"'));
+  assert.equal(pkg.scripts.postinstall, "node scripts/bundle-leaflet.cjs");
+});
+test("Packaged Leaflet is available after npm install", () => {
+  const fs = require("node:fs");
+  const file = "src/generated/leafletAssets.js";
+  assert.ok(fs.existsSync(file), "Run npm install to generate local Leaflet assets");
+  assert.ok(fs.statSync(file).size > 50000, "Leaflet vendor JS must be embedded");
 });
 test("Light Dark mode button next to language persists override", () => {
   const app = read("App.js");
@@ -138,9 +150,11 @@ test("Selecting a report focuses its verified coordinates and fits GPS + event",
   assert.ok(app.includes("setSelectedReportId(report.id)"));
   assert.ok(app.includes("setSelectedPoint(report.coordinate || null)"));
   assert.ok(app.includes("onPress={()=>selectReport(report)}"));
-  assert.ok(map.includes("boundsForPoints([location,selectedPoint])"));
-  assert.ok(map.includes("setStop({ bounds:focusBounds"));
-  assert.ok(map.includes("onDidFinishLoadingMap"));
+  assert.ok(map.includes("boundsForPoints([user,event])"));
+  assert.ok(map.includes("map.fitBounds(bounds"));
+  assert.ok(map.includes("window.SFY_MAP_UPDATE"));
+  assert.ok(map.includes("injectJavaScript"));
+  assert.ok(!map.includes("MLRNCameraModule"));
   assert.ok(app.includes("reportMetrics(report,t)"));
   assert.ok(app.includes("tsunamiAreas"));
 });
