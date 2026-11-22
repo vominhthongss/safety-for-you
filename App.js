@@ -209,7 +209,7 @@ function AppContent() {
         <TextLabel style={{ ...SMALL_TEXT,fontSize:12,flexShrink:1,textAlign:"right" }}>{formatDate(report.time,locale)}</TextLabel>
       </View>
       <TextLabel style={{ fontWeight:"600" }}>{displayDynamic(report.title)}</TextLabel>
-      {!!report.description && report.description !== report.title && <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>
+      {!!report.description && report.description !== report.title && <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
       <TextLabel style={{ ...SMALL_TEXT,fontSize:12,marginTop:3 }}>{t("sources")}: {report.source}</TextLabel>
       {actionable && <TextLabel style={{ color:COLORS.alert,fontWeight:"800",fontSize:13 }}>{t("active")}</TextLabel>}
       {!inHome && <View style={styles.rowButtons}>
