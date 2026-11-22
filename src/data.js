@@ -1,4 +1,6 @@
 import { CONFIG, SHELTER_LAYERS } from "./config";
+const { earthquakeDetails, normalizeTsunamiAreas, tsunamiStatus, tsunamiSummary, weatherDetails } =
+  require("./hazardFacts.cjs");
 
 const finite = (value) => value !== null && value !== "" && Number.isFinite(Number(value));
 const coords = (lat, lon) => {
@@ -18,23 +20,36 @@ export function mergeReports(previous = [], incoming = []) {
 }
 export function normalizeQuake(raw) {
   if (![551, 552, 556].includes(raw?.code)) return null;
+  const tsunami = raw.code === 552;
   const eq = raw.earthquake || {};
   const hypo = eq.hypocenter || {};
-  const area = Array.isArray(raw.areas) ? raw.areas.map((p) => p.name).filter(Boolean).slice(0, 8).join(" · ") : "";
-  const isTsunami = raw.code === 552;
+  const tsunamiAreas = tsunamiSummary(normalizeTsunamiAreas(raw.areas));
+  const area = tsunamiAreas.slice(0, 5).map((a) => a.name).join(" · ");
+  const detail = tsunami ? null : earthquakeDetails(raw);
+  const cancelled = tsunami ? raw.cancelled === true : detail.cancelled;
   return {
     id: "p2p-" + (raw.id || raw.code + "-" + raw.time),
-    category: isTsunami ? "tsunami" : "earthquake",
-    title: isTsunami ? (area || "津波情報") : (hypo.name || raw.earthquake?.hypocenter?.name || "地震情報"),
-    description: isTsunami ? (area || "津波に関する情報") : (raw.code === 556 ? "緊急地震速報（警報）" : "気象庁 地震情報"),
+    category: tsunami ? "tsunami" : "earthquake",
+    title: tsunami ? (cancelled ? "津波警報・注意報解除" : (area || "津波情報")) :
+      (hypo.name || "地震情報"),
+    description: tsunami ? (cancelled ? "津波予報の解除情報" : "津波の予想と対象地域") :
+      (raw.code === 556 ? "緊急地震速報（警報）" : "気象庁 地震情報"),
     source: "P2PQuake / JMA",
-    time: raw.earthquake?.time || raw.time,
+    time: tsunami ? raw.issue?.time || raw.time : (eq.time || eq.originTime || raw.issue?.time || raw.time),
+    issuedAt: raw.issue?.time || raw.time,
     receivedAt: raw.time,
-    coordinate: coords(hypo.latitude, hypo.longitude),
-    magnitude: finite(hypo.magnitude) ? hypo.magnitude : null,
-    scale: finite(eq.maxScale) ? eq.maxScale : null,
-    urgent: raw.code === 556,
-    url: "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map",
+    coordinate: tsunami ? null : coords(hypo.latitude, hypo.longitude),
+    magnitude: detail?.magnitude ?? null,
+    shindo: detail?.shindo ?? null,
+    predicted: detail?.predicted ?? false,
+    depthKm: detail?.depthKm ?? null,
+    tsunamiRisk: detail?.domesticTsunami ?? null,
+    tsunamiAreas,
+    tsunamiStatus: tsunamiStatus(tsunamiAreas, cancelled),
+    cancelled,
+    urgent: raw.code === 556 && !cancelled,
+    url: tsunami ? "https://www.jma.go.jp/bosai/map.html#contents=tsunami" :
+      "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map",
     rawCode: raw.code
   };
 }
@@ -61,7 +76,8 @@ export async function getWeatherReports() {
     .map((r) => ({
       id: r.id, category: r.category, title: r.title, description: r.description || "",
       coordinate: coords(r.coordinate?.latitude, r.coordinate?.longitude),
-      time: r.time, source: "JMA", url: r.url, urgent: false
+      time: r.time, issuedAt:r.time, source: "JMA", url: r.url, urgent: false,
+      bulletinKind: "recent", weatherMetric: weatherDetails(r.category, r.metrics)
     }));
 }
 function lonToX(lon, z) { return Math.floor((lon + 180) / 360 * (2 ** z)); }
