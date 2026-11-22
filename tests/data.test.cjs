@@ -10,7 +10,7 @@ test("Expo 58, React Native 0.88 and JS entry point", () => {
 });
 test("All safety data sources are traceable", () => {
   const data = readFileSync("src/data.js","utf8");
-  assert.match(data, /api\.p2pquake\.net/);
+  assert.match(data, /CONFIG\\.p2pApi/);\n  assert.match(readFileSync("src/config.js","utf8"), /api\\.p2pquake\\.net/);
   assert.match(data, /GSI_UNAVAILABLE/);
   assert.match(data, /Unexpected JMA response/);
 });
