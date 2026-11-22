@@ -160,7 +160,7 @@ function AppContent() {
   }, [position?.latitude,position?.longitude,screen,shelterHazard]);
 
   const reports = useMemo(() =>
-    [...quake,...weather].sort((a,b)=>new Date(b.time)-new Date(a.time)), [quake,weather]);
+    [...quake,...weather].sort((a,b)=>Date.parse(String(b.time).replace(/\\//g,"-"))-Date.parse(String(a.time).replace(/\\//g,"-"))), [quake,weather]);
   const latest = reports.slice(0,4);
   const category = CATEGORIES.find((c)=>c.id===screen);
   const detailReports = reports.filter((r)=>r.category===screen);
