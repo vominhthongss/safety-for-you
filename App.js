@@ -9,6 +9,7 @@ import * as Localization from "expo-localization";
 import * as SplashScreen from "expo-splash-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import SafetyMap from "./src/SafetyMap";
+import { loadHazardZones } from "./src/hazardGeo";
 import { getColors } from "./src/theme";
 import { SymbolView } from "expo-symbols";
 import { showJapaneseWithRomaji, useJapaneseReadings } from "./src/romanization";
@@ -75,6 +76,8 @@ function AppContent() {
   const [shelterState,setShelterState] = useState("idle");
   const [selectedPoint,setSelectedPoint] = useState(null);
   const [selectedReportId,setSelectedReportId] = useState(null);
+  const [hazardZones,setHazardZones] = useState([]);
+  const [hazardZoneState,setHazardZoneState] = useState("idle");
   const reportsScroll = useRef(null);
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
@@ -197,7 +200,9 @@ function AppContent() {
   const latest = reports.slice(0,4);
   const dynamicJapanese = useMemo(() => [
     place,
-    ...reports.flatMap((item) => [item.title, item.description]),
+    ...reports.flatMap((item) => [item.title, item.description,
+      ...(item.tsunamiAreas || []).map((area)=>area.name),
+      ...(item.shakingAreas || []).map((area)=>area.name)]),
     ...shelters.flatMap((item) => [item.name, item.address, item.remarks])
   ].filter(Boolean), [place, reports, shelters]);
   const readings = useJapaneseReadings(dynamicJapanese);
@@ -206,6 +211,29 @@ function AppContent() {
   const detailReports = reports.filter((r)=>r.category===screen);
   const selectedReport = selectedReportId ?
     detailReports.find((report) => report.id === selectedReportId) : null;
+
+  useEffect(() => {
+    let active=true;
+    setHazardZones([]);
+    if (!selectedReport) {
+      setHazardZoneState("idle");
+      return () => {active=false;};
+    }
+    if (!["earthquake","tsunami"].includes(selectedReport.category) ||
+      selectedReport.cancelled) {
+      setHazardZoneState("unavailable");
+      return () => {active=false;};
+    }
+    setHazardZoneState("loading");
+    loadHazardZones(selectedReport,displayDynamic,t).then((features)=>{
+      if (!active) return;
+      setHazardZones(features);
+      setHazardZoneState(features.length ? "ready" : "unavailable");
+    }).catch(()=>{
+      if (active) setHazardZoneState("error");
+    });
+    return () => {active=false;};
+  }, [selectedReportId, selectedReport?.time, readings,screen]);
   const isQuakeCategory = ["earthquake","tsunami"].includes(screen);
   const currentState = isQuakeCategory ? quakeState : weatherState;
   const chooseLanguage = (lang) => {
@@ -419,7 +447,17 @@ function AppContent() {
             <SafetyMap t={t} location={position}
               points={(selectedReport ? [selectedReport] : detailReports).map((item)=>({...item,title:displayDynamic(item.title)}))}
               selectedPoint={selectedReport ? selectedReport.coordinate : null}
-              height={320} dark={effectiveScheme==="dark"}/>
+              zones={hazardZones} kind={screen}
+              height={340} dark={effectiveScheme==="dark"}/>
+            {selectedReport && isQuakeCategory && hazardZoneState==="loading" &&
+              <TextLabel style={SMALL_TEXT}>{t("zoneLoading")}</TextLabel>}
+            {selectedReport && isQuakeCategory && hazardZoneState==="error" &&
+              <Message warning text={t("zoneError")}/>}
+            {selectedReport && isQuakeCategory && hazardZoneState==="unavailable" &&
+              <Message text={t("zoneNoData")}/>}
+            {!!hazardZones.length && <TextLabel style={{...SMALL_TEXT,marginTop:8}}>
+              {t("zoneNote")}
+            </TextLabel>
             {selectedReport && !selectedReport.coordinate && <Message text={t("unknownPoint")}/>}
             <View style={[styles.sectionTop,{marginTop:18}]}>
               <Heading>{t("list")}</Heading>

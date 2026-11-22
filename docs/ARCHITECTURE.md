@@ -31,3 +31,10 @@
 - https://docs.expo.dev/versions/v58.0.0/sdk/webview/
 - https://leafletjs.com/reference.html
 - https://maps.gsi.go.jp/development/ichiran.html
+
+## Official JMA hazard map boundaries
+
+- Earthquake: P2PQuake `points[].isArea === true` Shindo reading can be matched to the corresponding official JMA `earthquake.json` area boundary. **Individual station readings have no coordinates** in P2PQuake's payload and therefore are not plotted or used to assign intensities to entire municipalities.
+- Tsunami: `areas[].name/code/grade` from P2PQuake code 552 is matched to official JMA `tsunami.json` coastal geometry. This highlights an issued coastal *warning area*, not the actual wave propagation or predicted flood depth.
+- `src/hazardZones.cjs` contains deterministic matching and scale/grade colors; `src/hazardGeo.js` retrieves official JMA GeoJSON (24h cache) when a report is selected, not every frame. `src/SafetyMap.js` paints Leaflet geographic features and fits map bounds to official regions plus GPS/epicenter.
+- The base layer switches from GSI standard tiles to OSM Japan `maptiler-basic-en` raster labels, under OpenStreetMap attribution and tile service usage restrictions. Nearby evacuation shelters still use the separate GSI designated-place GeoJSON service.

@@ -9,6 +9,7 @@ export const CONFIG = {
   p2pWs: "wss://api.p2pquake.net/v2/ws",
   gsiTiles: "https://cyberjapandata.gsi.go.jp/xyz",
   gsiBasemap: "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
+  osmJapanBasemap: "https://tile.openstreetmap.jp/styles/maptiler-basic-en/{z}/{x}/{y}.png",
 };
 export const CATEGORY_SYMBOLS = {
   earthquake: { ios:"waveform.path.ecg", android:"monitor_heart", web:"monitor_heart" },

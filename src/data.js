@@ -1,5 +1,5 @@
 import { CONFIG, SHELTER_LAYERS } from "./config";
-const { earthquakeDetails, normalizeTsunamiAreas, tsunamiStatus, tsunamiSummary, weatherDetails } =
+const { earthquakeDetails, normalizeTsunamiAreas, tsunamiStatus, tsunamiSummary, weatherDetails, scaleLabel } =
   require("./hazardFacts.cjs");
 
 const finite = (value) => value !== null && value !== "" && Number.isFinite(Number(value));
@@ -24,6 +24,13 @@ export function normalizeQuake(raw) {
   const eq = raw.earthquake || {};
   const hypo = eq.hypocenter || {};
   const tsunamiAreas = tsunamiSummary(normalizeTsunamiAreas(raw.areas));
+  // P2PQuake observation points supply intensity; only isArea=true can
+  // match official JMA intensity-zone boundaries without geocoding guesses.
+  const shakingAreas = raw.code === 551 && Array.isArray(raw.points) ?
+    raw.points.filter((p)=>p?.isArea === true && p.addr && Number.isFinite(Number(p.scale)))
+      .map((p)=>({name:String(p.addr),code:p.code || null,
+        scale:Number(p.scale),scaleLabel:scaleLabel(p.scale),isArea:true})) : [];
+
   const area = tsunamiAreas.slice(0, 5).map((a) => a.name).join(" · ");
   const detail = tsunami ? null : earthquakeDetails(raw);
   const cancelled = tsunami ? raw.cancelled === true : detail.cancelled;
@@ -45,6 +52,7 @@ export function normalizeQuake(raw) {
     depthKm: detail?.depthKm ?? null,
     tsunamiRisk: detail?.domesticTsunami ?? null,
     tsunamiAreas,
+    shakingAreas,
     tsunamiStatus: tsunamiStatus(tsunamiAreas, cancelled),
     cancelled,
     urgent: raw.code === 556 && !cancelled,

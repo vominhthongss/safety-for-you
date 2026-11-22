@@ -23,10 +23,11 @@ const MAP_RUNTIME = String.raw`
       zoomSnap:0.25, minZoom:2, maxZoom:18,
       scrollWheelZoom:false, doubleClickZoom:true
     }).setView([36.2048, 138.2529], 5);
-    const tiles = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png", {
-      tileSize:256, minZoom:2, minNativeZoom:5,
-      maxZoom:18, maxNativeZoom:18, detectRetina:false,
-      attribution:"© GSI / 国土地理院"
+    // OSM Japan's English-label style keeps Kanji off the raster basemap.
+    // Native place names in hazard markers are shown alongside Romaji.
+    const tiles = L.tileLayer("https://tile.openstreetmap.jp/styles/maptiler-basic-en/{z}/{x}/{y}.png", {
+      tileSize:256, minZoom:2, maxZoom:18, maxNativeZoom:18,
+      detectRetina:false, attribution:"© OpenStreetMap contributors"
     }).addTo(map);
     let tileErrors = 0;
     tiles.on("tileload", () => { tileErrors = 0; });
@@ -35,6 +36,7 @@ const MAP_RUNTIME = String.raw`
       if (tileErrors >= 10) send("tiles-error");
     });
     const pinLayer = L.layerGroup().addTo(map);
+    const zoneLayer = L.featureGroup().addTo(map);
     const valid = (p) => p && typeof p.latitude === "number" &&
       typeof p.longitude === "number" &&
       Number.isFinite(p.latitude) && Number.isFinite(p.longitude) &&
@@ -52,6 +54,7 @@ const MAP_RUNTIME = String.raw`
     };
     function update(payload) {
       pinLayer.clearLayers();
+      zoneLayer.clearLayers();
       const user = valid(payload.location) ? payload.location : null;
       const event = valid(payload.selectedPoint) ? payload.selectedPoint : null;
       if (user) addPin(user, payload.youLabel, "#007AFF");
@@ -64,10 +67,46 @@ const MAP_RUNTIME = String.raw`
           p.coordinate.longitude===event.longitude)) {
         addPin(event,payload.eventLabel,"#D84032");
       }
-      // Fit both confirmed positions. Never fabricate a location for regional alerts.
+      // Render only officially-defined JMA regions matched to this report.
+      const zones = Array.isArray(payload.zones) ? payload.zones.slice(0,60) : [];
+      zones.forEach((feature) => {
+        try {
+          const p = feature.properties || {};
+          const shape = L.geoJSON(feature,{
+            style:{
+              color:typeof p.color==="string" ? p.color : "#D84032",
+              weight:p.kind==="forecastCoast" ? 8 : 1.8,
+              opacity:0.94,
+              fill:!!p.fill,
+              fillOpacity:p.fill ? 0.35 : 0
+            }
+          }).addTo(zoneLayer);
+          const label=document.createElement("div");
+          const heading=document.createElement("strong");
+          heading.textContent=String(p.label || "");
+          const line=document.createElement("p");
+          line.textContent=String(p.value || "");
+          line.style.margin="4px 0 0";
+          label.appendChild(heading);
+          label.appendChild(line);
+          shape.bindPopup(label);
+        } catch (_) { /* invalid upstream geometry is omitted */ }
+      });
+      // Fit verified event + GPS AND any published region boundaries.
       const bounds = payload.bounds;
-      if (Array.isArray(bounds) && bounds.length===2) {
-        map.fitBounds(bounds,{padding:[36,46],maxZoom:12,animate:true,duration:0.4});
+      let fit=null;
+      if (Array.isArray(bounds) && bounds.length===2) fit=L.latLngBounds(bounds);
+      if (zoneLayer.getLayers().length) {
+        const zoneBounds=zoneLayer.getBounds();
+        if (zoneBounds.isValid()) {
+          if (!fit) fit=zoneBounds;
+          else fit.extend(zoneBounds);
+        }
+      }
+      if (fit && fit.isValid()) {
+        if (user) fit.extend(coords(user));
+        if (event) fit.extend(coords(event));
+        map.fitBounds(fit,{padding:[36,46],maxZoom:12,animate:true,duration:0.4});
       } else if (event) {
         map.setView(coords(event),11,{animate:true});
       } else if (user) {
@@ -93,7 +132,7 @@ const MAP_HTML = [
   "<style>", LEAFLET_CSS.replace(/<\/style/gi,"<\\/style"),
   "html,body,#map{width:100%;height:100%;margin:0;padding:0;overflow:hidden;}",
   ".leaflet-container{background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}",
-  ".leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;}",
+  ".leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;}.leaflet-popup-content{white-space:pre-line;line-height:1.45;}",
   "</style></head><body><div id='map'></div>",
   "<script>", LEAFLET_JS.replace(/<\/script/gi,"<\\/script"), "</script>",
   "<script>", MAP_RUNTIME, "</script></body></html>"
@@ -102,7 +141,7 @@ const MAP_HTML = [
 const sanitize = (point) => valid(point) ?
   {latitude:Number(point.latitude),longitude:Number(point.longitude)} : null;
 
-function buildPayload({location,points,selectedPoint,kind,dark,t}) {
+function buildPayload({location,points,selectedPoint,kind,dark,t,zones}) {
   const user = sanitize(location);
   const event = sanitize(selectedPoint);
   const extent = boundsForPoints([user,event]); // [west,south,east,north]
@@ -115,25 +154,27 @@ function buildPayload({location,points,selectedPoint,kind,dark,t}) {
       title:String(p.title || p.name || "").slice(0,240)
     })),
     kind, dark,
+    zones:Array.isArray(zones) ? zones : [],
     youLabel:t("you"),
     eventLabel:t("map")
   };
 }
 
-/** WebView + offline-bundled Leaflet engine with online GSI map tiles. */
+/** WebView + bundled Leaflet with OSM Japan English-label raster tiles. */
 export default function SafetyMap({
-  location, points = [], selectedPoint, t, height = 270, kind = "hazard", dark = false
+  location, points = [], selectedPoint, t, height = 270, kind = "hazard",
+  zones = [], dark = false
 }) {
   const ref = useRef(null);
   const [ready,setReady] = useState(false);
   const [mapFailed,setMapFailed] = useState(false);
   const colors = useMemo(() => getColors(dark),[dark]);
   // Stable content avoids remounting the WebView whenever a report is selected.
-  const source = useMemo(() => ({html:MAP_HTML,baseUrl:"https://maps.gsi.go.jp/"}),[]);
+  const source = useMemo(() => ({html:MAP_HTML,baseUrl:"https://tile.openstreetmap.jp/"}),[]);
   const payload = useMemo(() =>
-    buildPayload({location,points,selectedPoint,kind,dark,t}),
+    buildPayload({location,points,selectedPoint,kind,dark,t,zones}),
     [location?.latitude,location?.longitude,selectedPoint?.latitude,
-      selectedPoint?.longitude,points,kind,dark,t]
+      selectedPoint?.longitude,points,kind,dark,t,zones]
   );
   useEffect(() => {
     if (!ready) return;
@@ -166,10 +207,27 @@ export default function SafetyMap({
       {!valid(location) && <View style={[styles.gps,{backgroundColor:colors.white}]} pointerEvents="none">
         <Text style={[styles.note,{color:colors.ink}]}>{t("noLocationPin")}</Text>
       </View>}
-      <Pressable accessibilityRole="link" accessibilityLabel="GSI map attribution"
+      {!!zones.length && kind !== "shelter" && <View style={[styles.legend,{backgroundColor:colors.white}]}>
+        <Text style={[styles.legendText,{color:colors.ink}]}>
+          {kind === "tsunami" ? t("tsunamiZoneLegend") : t("quakeZoneLegend")}
+        </Text>
+        <View style={styles.legendSwatches}>
+          {Array.from(new Map(zones.filter((z)=>z.properties?.color)
+            .map((z)=>[String(z.properties.color)+"-"+String(z.properties.value),z.properties])).values())
+            .slice(0,7).map((item,i)=>(
+              <View key={i} style={styles.legendItem}>
+                <View style={[styles.swatch,{backgroundColor:item.color}]}/>
+                <Text style={[styles.legendItemText,{color:colors.ink}]}>{item.value}</Text>
+              </View>
+            ))}
+        </View>
+      </View>}
+      <Pressable accessibilityRole="link" accessibilityLabel="OpenStreetMap attribution"
         style={[styles.credit,{backgroundColor:colors.white}]}
-        onPress={()=>Linking.openURL("https://maps.gsi.go.jp/development/ichiran.html").catch(()=>{})}>
-        <Text style={[styles.creditText,{color:colors.ink}]}>© GSI · Leaflet</Text>
+        onPress={()=>Linking.openURL("https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver").catch(()=>{})}>
+        <Text style={[styles.creditText,{color:colors.ink}]}>
+          © OpenStreetMap contributors · OSM Japan
+        </Text>
       </Pressable>
     </View>
   );
@@ -182,5 +240,11 @@ const styles = StyleSheet.create({
   note:{fontSize:13,fontWeight:"600"},
   credit:{position:"absolute",right:6,bottom:6,minHeight:36,
     paddingHorizontal:10,justifyContent:"center",borderRadius:8},
-  creditText:{fontSize:11}
+  creditText:{fontSize:10},
+  legend:{position:"absolute",left:8,bottom:8,maxWidth:"54%",padding:9,borderRadius:10,gap:6},
+  legendText:{fontSize:11,fontWeight:"700"},
+  legendSwatches:{flexDirection:"row",gap:6,flexWrap:"wrap"},
+  legendItem:{flexDirection:"row",alignItems:"center",gap:3},
+  legendItemText:{fontSize:10,fontWeight:"700"},
+  swatch:{width:14,height:10,borderRadius:3}
 });

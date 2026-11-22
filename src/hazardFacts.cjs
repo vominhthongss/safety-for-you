@@ -45,6 +45,7 @@ function normalizeTsunamiAreas(areas) {
   if (!Array.isArray(areas)) return [];
   return areas.map((area) => ({
     name: maybeText(area.name),
+    code: area.code == null ? null : String(area.code),
     grade: TSUNAMI_GRADES[area.grade] || "unspecified",
     forecastHeight: tsunamiHeight(area.maxHeight),
     arrivalTime: maybeText(area.firstHeight?.arrivalTime),

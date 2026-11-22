@@ -25,3 +25,12 @@ Safety For You uses restrained grouped surfaces, native SF Symbols on iOS, local
 - [ ] Select a tsunami/weather regional bulletin; map must not invent a point.
 - [ ] GPS denied and low connectivity; map fallback and official bulletin remain accessible.
 - [ ] GSI attribution visible; major labels readable with VoiceOver and large system font.
+
+## Map visual design — OpenStreetMap Japan
+
+- Replaces basic GSI standard raster tiles with a cleaner MapTiler Basic **English-label raster** from nonprofit OSM Japan's tile service.
+- Retains Expo Go compatibility through WebView + Leaflet. iOS and Android each show the same visual style and accessibility-friendly GSI/OSM source link (now updated to OSM Japan).
+- Source-confirmed quake Shindo region polygons are filled with readable colors. Source-confirmed tsunami forecast-coast lines have graded red, purple and amber strokes. A small legend clearly distinguishes an **issued coast warning** from a simulated moving tsunami.
+- Popup titles are passed through the existing Japanese/Romaji formatter, with untrusted text inserted through `textContent`.
+- User and event markers remain present, and the camera includes the boundaries when they exist. No fabricated radius or predicted shaking field.
+- Missing zone data is explicitly reported; the app never suggests that a lack of colored regions means the coast is safe.

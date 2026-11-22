@@ -8,6 +8,12 @@ export const LANGUAGE_NAMES = {
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
 const en = {
+  quakeZoneLegend:"Observed shaking areas · Shindo",
+  tsunamiZoneLegend:"Coastal tsunami warning areas",
+  zoneLoading:"Loading verified JMA regions…",
+  zoneError:"Cannot load JMA map regions right now.",
+  zoneNoData:"No verifiable map coverage for this bulletin.",
+  zoneNote:"Colored regions show JMA bulletin areas, not a simulation of earthquake waves, tsunami travel, or inland flooding.",
   waveHuge:"Huge (qualitative forecast)", waveHigh:"High (qualitative forecast)",
   status: "Status at issue time",
   forecastHeight: "Forecast wave height",
@@ -57,6 +63,12 @@ const en = {
   tsunamiMove: "Tsunami risk? Move to high ground immediately. Do not wait for this app.",
 };
 const ja = {
+  quakeZoneLegend:"観測震度の地域",
+  tsunamiZoneLegend:"津波警報の沿岸区域",
+  zoneLoading:"気象庁の区域データを取得中…",
+  zoneError:"気象庁の区域データを取得できません。",
+  zoneNoData:"この情報の確認可能な区域データはありません。",
+  zoneNote:"色付きの地域は気象庁の発表区域です。揺れや津波の伝播・浸水を予測した図ではありません。",
   waveHuge:"巨大", waveHigh:"高い",
   status: "発表時の区分",
   forecastHeight: "予想津波高",
@@ -101,6 +113,12 @@ const ja = {
   tsunamiMove:"津波の危険があるときは、アプリを待たずに高台へ避難してください。"
 };
 const vi = {
+  quakeZoneLegend:"Vùng ghi nhận rung lắc · Shindo",
+  tsunamiZoneLegend:"Vùng bờ biển có cảnh báo sóng thần",
+  zoneLoading:"Đang tải vùng cảnh báo JMA…",
+  zoneError:"Chưa tải được bản đồ vùng JMA.",
+  zoneNoData:"Tin này chưa có dữ liệu vùng xác thực để vẽ.",
+  zoneNote:"Vùng màu là khu vực JMA công bố, KHÔNG phải mô phỏng động đất lan truyền, sóng thần di chuyển hay ngập lụt.",
   waveHuge:"Rất lớn (dự báo định tính)", waveHigh:"Cao (dự báo định tính)",
   status: "Mức cảnh báo lúc phát tin",
   forecastHeight: "Độ cao sóng thần dự báo",
