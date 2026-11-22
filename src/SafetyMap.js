@@ -3,6 +3,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Camera, Map, Marker } from "@maplibre/maplibre-react-native";
 import { CONFIG } from "./config";
 import { getColors } from "./theme";
+const {valid, boundsForPoints} = require("./mapViewport.cjs");
 
 // MapLibre raster tiles from the Geospatial Information Authority of Japan.
 // No Google Maps SDK, API key, billing project, Mapbox token or third-party demo style.
@@ -24,12 +25,7 @@ const GSI_STYLE = {
 };
 
 const asLngLat = (point) => [Number(point.longitude), Number(point.latitude)];
-const valid = (point) =>
-  point && Number.isFinite(Number(point.latitude)) &&
-  Number.isFinite(Number(point.longitude)) &&
-  Number(point.latitude) >= -90 && Number(point.latitude) <= 90 &&
-  Number(point.longitude) >= -180 && Number(point.longitude) <= 180;
-
+const VIEW_PADDING = { top:44, right:36, bottom:56, left:36 };
 function Pin({ shelter = false, mine = false }) {
   const color = mine ? "#007AFF" : shelter ? "#238353" : "#D84032";
   return (
@@ -47,21 +43,35 @@ export default function SafetyMap({
   const camera = useRef(null);
   const colors = useMemo(() => getColors(dark), [dark]);
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const [chosen, setChosen] = useState("");
+  const focusBounds = useMemo(() => boundsForPoints([location,selectedPoint]), [
+    location?.latitude, location?.longitude,
+    selectedPoint?.latitude, selectedPoint?.longitude
+  ]);
   const initial = useMemo(() => {
+    if (focusBounds) return { bounds:focusBounds, padding:VIEW_PADDING };
     const start = valid(selectedPoint) ? selectedPoint : valid(location) ? location : null;
     return { center: start ? asLngLat(start) : JAPAN_CENTER, zoom: start ? 10 : 4.5 };
-  }, []); // Native map camera initial state is only used on mount.
+  }, []); // Initial state only; changes are applied when the native map is ready.
 
   useEffect(() => {
+    if (!mapReady) return;
+    if (focusBounds) {
+      // Zoom OUT as far as needed to show both the event and current GPS.
+      // setStop uses the v11 MapLibre camera bounds API.
+      camera.current?.setStop({ bounds:focusBounds, padding:VIEW_PADDING, duration:650 });
+      return;
+    }
     const target = valid(selectedPoint) ? selectedPoint : valid(location) ? location : null;
     if (!target) return;
     camera.current?.easeTo({
       center: asLngLat(target),
-      zoom: valid(selectedPoint) ? 13 : 10,
-      duration: 350
+      zoom: valid(selectedPoint) ? 11 : 10,
+      duration:350
     });
-  }, [selectedPoint?.latitude, selectedPoint?.longitude, location?.latitude, location?.longitude]);
+  }, [mapReady, focusBounds, selectedPoint?.latitude, selectedPoint?.longitude,
+      location?.latitude, location?.longitude]);
 
   const markers = useMemo(() => points.filter((item) => valid(item.coordinate)).slice(0, 100), [points]);
   return (
@@ -71,6 +81,7 @@ export default function SafetyMap({
         mapStyle={GSI_STYLE}
         logo={false}
         attribution
+        onDidFinishLoadingMap={() => { setMapReady(true); setMapFailed(false); }}
         onDidFailLoadingMap={() => setMapFailed(true)}
         compass
         touchRotate={false}
@@ -120,6 +131,7 @@ const styles = StyleSheet.create({
   pin:{ width:24,height:24,borderRadius:12,borderColor:"#FFFFFF",borderWidth:3,
     justifyContent:"center",alignItems:"center",elevation:3 },
   pinCore:{ width:7,height:7,borderRadius:4,backgroundColor:"#FFFFFF" },
+  mapError:{ position:"absolute",top:8,left:8,right:8,borderRadius:9,padding:10 },
   noGps:{ position:"absolute",top:10,left:10,backgroundColor:"#FFFFFFE8",borderRadius:9,padding:8 },
   selection:{ position:"absolute",left:10,right:10,bottom:48,backgroundColor:"#FFFFFFF5",
     borderRadius:9,padding:10 },

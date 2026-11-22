@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView,
   StatusBar, StyleSheet, Text, View, useWindowDimensions, useColorScheme, Appearance
@@ -18,6 +18,7 @@ import {
   getQuakeReports, getWeatherReports, getShelters,
   mergeReports, normalizeQuake, isVeryRecentUrgent
 } from "./src/data";
+const {reportMetrics,heightText} = require("./src/hazardView.cjs");
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -73,6 +74,8 @@ function AppContent() {
   const [shelters,setShelters] = useState([]);
   const [shelterState,setShelterState] = useState("idle");
   const [selectedPoint,setSelectedPoint] = useState(null);
+  const [selectedReportId,setSelectedReportId] = useState(null);
+  const reportsScroll = useRef(null);
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
   const { width, fontScale } = useWindowDimensions();
@@ -201,6 +204,8 @@ function AppContent() {
   const displayDynamic = (value) => showJapaneseWithRomaji(value, readings);
   const category = CATEGORIES.find((c)=>c.id===screen);
   const detailReports = reports.filter((r)=>r.category===screen);
+  const selectedReport = selectedReportId ?
+    detailReports.find((report) => report.id === selectedReportId) : null;
   const isQuakeCategory = ["earthquake","tsunami"].includes(screen);
   const currentState = isQuakeCategory ? quakeState : weatherState;
   const chooseLanguage = (lang) => {
@@ -214,7 +219,19 @@ function AppContent() {
     Appearance.setColorScheme(next);
     AsyncStorage.setItem("sfy_color_scheme",next).catch(()=>{});
   };
-  const navigate = (id) => { setSelectedPoint(null);setScreen(id); };
+  const navigate = (id) => {
+    setSelectedPoint(null);
+    setSelectedReportId(null);
+    setScreen(id);
+  };
+  const selectReport = (report) => {
+    setSelectedReportId(report.id);
+    setSelectedPoint(report.coordinate || null);
+    setScreen(report.category);
+    if (screen === report.category) {
+      reportsScroll.current?.scrollTo({y:0,animated:true});
+    }
+  };
   const openUrl = async (url) => {
     if (!/^https:\/\//.test(url || "")) return;
     try { await Linking.openURL(url); } catch { /* offline */ }
@@ -222,24 +239,80 @@ function AppContent() {
 
   const renderCard = (report, inHome=false) => {
     const actionable = isVeryRecentUrgent(report);
-    return <Pressable key={report.id} onPress={()=>navigate(report.category)}
-      style={[styles.report,actionable && { borderColor:COLORS.alert }]}>
-      <View style={styles.reportTop}>
-        <View style={{ flexDirection:"row",alignItems:"center",flex:1,gap:8 }}>
-          <AppSymbol id={report.category} size={19}/>
-          <TextLabel style={{ fontWeight:"600", fontSize:14, flexShrink:1 }}>{t(report.category)}</TextLabel>
+    const metrics = reportMetrics(report,t);
+    const expanded = selectedReportId === report.id;
+    const tsunamiAreas = (report.tsunamiAreas || []).slice(0,
+      inHome ? 1 : expanded ? 30 : 3);
+    const remaining = Math.max(0,(report.tsunamiAreas?.length || 0)-tsunamiAreas.length);
+    return (
+      <Pressable key={report.id} onPress={()=>selectReport(report)}
+        accessibilityRole="button"
+        accessibilityLabel={t(report.category)+": "+report.title}
+        style={[styles.report,expanded && {borderColor:COLORS.teal},
+          actionable && {borderColor:COLORS.alert}]}>
+        <View style={styles.reportTop}>
+          <View style={{flexDirection:"row",alignItems:"center",flex:1,gap:8}}>
+            <AppSymbol id={report.category} size={19}/>
+            <TextLabel style={{fontWeight:"600",fontSize:14,flexShrink:1}}>
+              {t(report.category)}
+            </TextLabel>
+          </View>
+          <TextLabel style={{...SMALL_TEXT,fontSize:12,flexShrink:1,textAlign:"right"}}>
+            {formatDate(report.time,locale)}
+          </TextLabel>
         </View>
-        <TextLabel style={{ ...SMALL_TEXT,fontSize:12,flexShrink:1,textAlign:"right" }}>{formatDate(report.time,locale)}</TextLabel>
-      </View>
-      <TextLabel style={{ fontWeight:"600" }}>{displayDynamic(report.title)}</TextLabel>
-      {!!report.description && report.description !== report.title && <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
-      <TextLabel style={{ ...SMALL_TEXT,fontSize:12,marginTop:3 }}>{t("sources")}: {report.source}</TextLabel>
-      {actionable && <TextLabel style={{ color:COLORS.alert,fontWeight:"800",fontSize:13 }}>{t("active")}</TextLabel>}
-      {!inHome && <View style={styles.rowButtons}>
-        {report.coordinate && <Action label={t("openMap")} subtle onPress={()=>setSelectedPoint(report.coordinate)}/>}
-        {report.url && <Action label={t("openOfficial")} subtle onPress={()=>openUrl(report.url)}/>}
-      </View>}
-    </Pressable>;
+        <TextLabel style={{fontWeight:"600"}}>{displayDynamic(report.title)}</TextLabel>
+        {!!report.description && report.description !== report.title &&
+          <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
+        {metrics.length > 0 && <View style={styles.metricRow}>
+          {metrics.map((metric)=>(
+            <View key={metric.key} style={styles.metricCell}>
+              <TextLabel style={{...SMALL_TEXT,fontSize:12}}>{metric.label}</TextLabel>
+              <TextLabel style={styles.metricValue}>{metric.value}</TextLabel>
+              {!!metric.area && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
+                {displayDynamic(metric.area)}
+              </TextLabel>}
+            </View>
+          ))}
+        </View>}
+        {report.category === "tsunami" && tsunamiAreas.map((area,index)=>(
+          <View key={area.name+"-"+index} style={styles.tsunamiArea}>
+            <TextLabel style={{fontSize:14,fontWeight:"600"}}>
+              {displayDynamic(area.name)}
+            </TextLabel>
+            <TextLabel style={SMALL_TEXT}>{t("status")}: {t(area.grade)}</TextLabel>
+            {!report.cancelled && <TextLabel style={SMALL_TEXT}>
+              {t("forecastHeight")}: {heightText(area.forecastHeight,t) || t("notPublished")}
+            </TextLabel>}
+            {!inHome && !!area.arrivalTime && <TextLabel style={SMALL_TEXT}>
+              {t("estimatedArrival")}: {formatDate(area.arrivalTime,locale)}
+            </TextLabel>}
+            {!inHome && !!area.arrivalCondition && <TextLabel style={SMALL_TEXT}>
+              {displayDynamic(area.arrivalCondition)}
+            </TextLabel>}
+          </View>
+        ))}
+        {remaining > 0 && <TextLabel style={SMALL_TEXT}>
+          {t("moreRegions")}: {remaining}
+        </TextLabel>}
+        {!inHome && report.category !== "earthquake" &&
+          report.category !== "tsunami" && metrics.length === 0 &&
+          <TextLabel style={SMALL_TEXT}>{t("notPublished")}</TextLabel>}
+        <TextLabel style={{...SMALL_TEXT,fontSize:12,marginTop:3}}>
+          {t("sources")}: {report.source} · {t("issuedAt")}: {formatDate(report.issuedAt || report.time,locale)}
+        </TextLabel>
+        {report.category === "tsunami" && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
+          {t("asIssued")}
+        </TextLabel>}
+        {actionable && <TextLabel style={{color:COLORS.alert,fontWeight:"700",fontSize:13}}>
+          {t("active")}
+        </TextLabel>}
+        {!inHome && <View style={styles.rowButtons}>
+          {report.coordinate && <Action label={t("openMap")} subtle onPress={()=>selectReport(report)}/>}
+          {report.url && <Action label={t("openOfficial")} subtle onPress={()=>openUrl(report.url)}/>}
+        </View>}
+      </Pressable>
+    );
   };
 
   return (
@@ -272,7 +345,7 @@ function AppContent() {
             </Pressable>
           </View>
         </View>
-        <ScrollView key={screen} style={{ flex:1 }} contentContainerStyle={styles.body}>
+        <ScrollView key={screen} ref={reportsScroll} style={{ flex:1 }} contentContainerStyle={styles.body}>
           {screen === "home" ? <>
             <View style={styles.intro}>
               <TextLabel style={styles.date} accessibilityRole="header">
@@ -322,7 +395,7 @@ function AppContent() {
                 </Pressable>)}
             </ScrollView>
             {!position && <Message text={t("permission")} warning/>}
-            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"}/>
+            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"} kind="shelter"/>
             <Message text={"🎒 " + t("notes")}/>
             <Message text={t("notOpen")} warning/>
             {shelterState==="loading" && <ActivityIndicator color={COLORS.teal} style={{ margin:20 }}/>}
@@ -343,8 +416,11 @@ function AppContent() {
               </View>
             </View>
             {screen==="tsunami" && <Message text={t("tsunamiMove")} warning/>}
-            <SafetyMap t={t} location={position} points={detailReports.map((item)=>({...item,title:displayDynamic(item.title)}))} selectedPoint={selectedPoint} height={320} dark={effectiveScheme==="dark"}/>
-            {!detailReports.some((r)=>r.coordinate) && <Message text={t("unknownPoint")}/>}
+            <SafetyMap t={t} location={position}
+              points={(selectedReport ? [selectedReport] : detailReports).map((item)=>({...item,title:displayDynamic(item.title)}))}
+              selectedPoint={selectedReport ? selectedReport.coordinate : null}
+              height={320} dark={effectiveScheme==="dark"}/>
+            {selectedReport && !selectedReport.coordinate && <Message text={t("unknownPoint")}/>}
             <View style={[styles.sectionTop,{marginTop:18}]}>
               <Heading>{t("list")}</Heading>
               <Pressable onPress={refreshAll} accessibilityRole="button" accessibilityLabel={t("refresh")} style={styles.refresh}>
@@ -414,6 +490,12 @@ const createStyles = (COLORS) => StyleSheet.create({
   categoryLabel:{ fontSize:11.5,lineHeight:15,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
   sectionTop:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
   refresh:{ minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5 },
+  metricRow:{ flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:7 },
+  metricCell:{ backgroundColor:COLORS.bg,borderRadius:10,paddingVertical:8,paddingHorizontal:11,
+    minWidth:95,flexGrow:1,maxWidth:"100%" },
+  metricValue:{ fontSize:18,fontWeight:"700",color:COLORS.ink },
+  tsunamiArea:{ borderTopWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,
+    marginTop:5,paddingTop:9,gap:2 },
   report:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginBottom:9,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:6 },
   reportTop:{ flexDirection:"row",alignItems:"center",gap:8,justifyContent:"space-between",marginBottom:3 },

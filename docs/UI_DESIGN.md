@@ -48,3 +48,10 @@ Last reviewed: 2026-11-22. Guidelines are principles, not an Apple design certif
 - iOS semantic system colors and Android dark/light tokens style text, backgrounds, separators, controls and map overlays.
 - MapLibre renders official GSI raster tiles without Google Maps, and retains original GSI map colors for geographic readability.
 - WanaKana reads Kana locally. Kanji readings require Kuroshiro+Kuromoji when configured. Missing readings show original Japanese without a placeholder.
+
+## Report-specific map framing and metric presentation
+
+- Selecting any report shows that exact report first. If it has coordinates, the map camera fits verified event and GPS points using geographic bounds and padding; location permission denied = show event only. Coastal tsunami advisories and weather bulletins without verified event coordinates never acquire a made-up pin.
+- The earthquake card clearly distinguishes **M (magnitude)** from **Shindo (Japan intensity)** and labels early-warning Shindo as a prediction.
+- Tsunami grade, height and estimated arrival time appear per coastal area. Height labels preserve the published meaning: absolute meters, “over/below” or qualitative high/huge.
+- Weather tiles display numbers only when provided in structured official feed fields. The current XML headline adapter cannot supply numeric measures, so it shows a clear absence notice instead of estimates.
