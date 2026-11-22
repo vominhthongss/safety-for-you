@@ -63,7 +63,7 @@ test("Live Romaji conversion uses WanaKana and never displays placeholder", () =
   assert.ok(src.includes("if (!reading || reading === value) return value;"));
   assert.ok(!src.includes("Romaji: unavailable"));
 });
-test("Expo Go supports WebView Leaflet GSI without MapLibre", () => {
+test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   const pkg = JSON.parse(read("package.json"));
   const config = read("app.config.js");
   const map = read("src/SafetyMap.js");
@@ -76,7 +76,7 @@ test("Expo Go supports WebView Leaflet GSI without MapLibre", () => {
   assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
   assert.ok(map.includes('from "react-native-webview"'));
   assert.ok(map.includes("LEAFLET_JS"));
-  assert.ok(map.includes("© GSI"));
+  assert.ok(map.includes("© OpenStreetMap contributors"));
   assert.ok(bundler.includes("leaflet/dist") || bundler.includes('"dist", "leaflet.js"'));
   assert.equal(pkg.scripts.postinstall, "node scripts/bundle-leaflet.cjs");
 });
