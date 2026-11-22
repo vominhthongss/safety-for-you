@@ -18,7 +18,6 @@ module.exports = {
       userInterfaceStyle: "automatic"
     },
     plugins: [
-      "@maplibre/maplibre-react-native",
       ["expo-location", {
         locationWhenInUsePermission: "Show your location on hazard maps and find nearby evacuation places.",
         isAndroidBackgroundLocationEnabled: false,
