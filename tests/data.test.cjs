@@ -1,21 +1,31 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
-const pkg = JSON.parse(readFileSync("package.json","utf8"));
-test("Expo 58, React Native 0.88 and JS entry point", () => {
-  assert.match(pkg.dependencies.expo, /58/);
-  assert.match(pkg.dependencies["react-native"], /^0\.88\./);
+const read = (path) => readFileSync(path, "utf8");
+const pkg = JSON.parse(read("package.json"));
+
+test("Expo 58, JavaScript entry point and compatible React Native", () => {
+  assert.ok(pkg.dependencies.expo.startsWith("~58."));
+  assert.ok(pkg.dependencies["react-native"].startsWith("0.88."));
   assert.equal(pkg.main, "node_modules/expo/AppEntry.js");
-  assert.ok(!("typescript" in pkg.devDependencies));
+  assert.ok(!("typescript" in (pkg.devDependencies || {})));
 });
-test("All safety data sources are traceable", () => {
-  const data = readFileSync("src/data.js","utf8");
-  assert.match(data, /CONFIG\\.p2pApi/);\n  assert.match(readFileSync("src/config.js","utf8"), /api\\.p2pquake\\.net/);
-  assert.match(data, /GSI_UNAVAILABLE/);
-  assert.match(data, /Unexpected JMA response/);
+test("P2PQuake, JMA and GSI providers are configured", () => {
+  const config = read("src/config.js");
+  const data = read("src/data.js");
+  assert.ok(config.includes("api.p2pquake.net"));
+  assert.ok(config.includes("cyberjapandata.gsi.go.jp"));
+  assert.ok(data.includes("getWeatherReports"));
+  assert.ok(data.includes("GSI_UNAVAILABLE"));
 });
-test("JMA headlines must not be marked as active alerts", () => {
-  const worker = readFileSync("server/worker.js","utf8");
-  assert.match(worker, /NOT_ACTIVE_WARNINGS/);
-  assert.match(worker, /cacheTtl: 180/);
+test("JMA recent headlines must not be mislabelled active alerts", () => {
+  const worker = read("server/worker.js");
+  assert.ok(worker.includes("RECENT_JMA_BULLETINS_NOT_ACTIVE_WARNINGS"));
+  assert.ok(worker.includes("cacheTtl: 180"));
+});
+test("Shelter layers only claim the officially matched hazard", () => {
+  const config = read("src/config.js");
+  assert.ok(config.includes('earthquake: { tile: "skhb04"'));
+  assert.ok(config.includes('tsunami: { tile: "skhb05"'));
+  assert.ok(!config.includes('typhoon: { tile: "skhb03"'));
 });
