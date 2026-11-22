@@ -457,7 +457,7 @@ function AppContent() {
               <Message text={t("zoneNoData")}/>}
             {!!hazardZones.length && <TextLabel style={{...SMALL_TEXT,marginTop:8}}>
               {t("zoneNote")}
-            </TextLabel>
+            </TextLabel>}
             {selectedReport && !selectedReport.coordinate && <Message text={t("unknownPoint")}/>}
             <View style={[styles.sectionTop,{marginTop:18}]}>
               <Heading>{t("list")}</Heading>
