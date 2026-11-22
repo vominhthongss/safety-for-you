@@ -13,7 +13,7 @@ const timeValue = (time) => {
 };
 export function mergeReports(previous = [], incoming = []) {
   const indexed = new Map();
-  for (const item of [...incoming, ...previous]) if (item?.id) indexed.set(item.id, item);
+  for (const item of [...previous, ...incoming]) if (item?.id) indexed.set(item.id, item);
   return [...indexed.values()].sort((a,b) => timeValue(b.time) - timeValue(a.time)).slice(0, 100);
 }
 export function normalizeQuake(raw) {
