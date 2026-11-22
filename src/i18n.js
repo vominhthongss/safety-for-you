@@ -1,0 +1,110 @@
+// Human-edited basic navigation/care phrases. JMA bulletins remain in Japanese until reviewed translations exist.
+// Country of residence does not imply a language; users can change it at any time.
+export const LANGUAGE_NAMES = {
+  ja: "日本語", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
+  "zh-TW": "繁體中文", ko: "한국어", tl: "Filipino", ne: "नेपाली",
+  id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
+};
+const en = {
+  home: "Home", today: "Today", location: "Your location", allowLocation: "Allow location",
+  locationDenied: "Location unavailable", categories: "Explore hazards", latest: "Latest updates",
+  map: "Map", list: "Reports", refresh: "Refresh", loading: "Getting updates…",
+  unavailable: "Could not load updates", empty: "No reports in the selected feed",
+  noGuarantee: "No reports does not mean there is no danger. Follow official instructions.",
+  sources: "Source", updated: "Updated", recent: "Recent reports, not necessarily active warnings",
+  active: "Recent urgent report — check official instructions", shelter: "Evacuation places",
+  shelterType: "Safe for", chooseHazard: "Choose a hazard", you: "You are here",
+  permission: "Allow location to find places near you", retry: "Try again",
+  original: "Original Japanese notice", unknownPoint: "This notice covers a region. No verified event coordinates are provided.",
+  noPlace: "No matching places loaded. Ask your city hall for an official shelter.",
+  notes: "Carry important documents, medicine and water. If you are a foreign resident, take your passport and residence card if within reach. Pack light. Your life comes first.",
+  notOpen: "Listed places may be closed or outdated. Check local government directions before going.",
+  online: "Live updates need internet. This app does not replace Japan's emergency alerts.",
+  emergency: "If danger is near, move somewhere safe now. Follow local officials.",
+  notConfigured: "Weather feed is not configured yet. See setup guide.",
+  openOfficial: "Open official notice", noLocationPin: "Location not shared",
+  earthquake: "Earthquake", tsunami: "Tsunami", typhoon: "Typhoon", rain: "Heavy rain",
+  flood: "Flood", landslide: "Landslide", volcano: "Volcano", snow: "Heavy snow", heat: "Extreme heat",
+  language: "Language", about: "Public safety information only · Free, nonprofit",
+  time: "Time", details: "Details", intensity: "Intensity", magnitude: "Magnitude",
+  hazards: "Hazards", live: "Connected live", reconnecting: "Reconnecting…",
+  openMap: "View on map", viewSite: "Show on map", jmaNote: "Bulletin names are in Japanese to avoid unsafe auto-translation.",
+  noCoordinates: "No verified location for this report", refreshTime: "Check issue time, not just arrival time",
+  allSources: "P2PQuake · JMA · GSI", permissionInfo: "Location is used on your device to show nearby hazards and shelters.",
+  tsunamiMove: "Tsunami risk? Move to high ground immediately. Do not wait for this app.",
+};
+const ja = {
+  home:"ホーム",today:"今日",location:"現在地",allowLocation:"位置情報を許可",locationDenied:"位置情報がありません",
+  categories:"災害の種類",latest:"最新情報",map:"地図",list:"情報一覧",refresh:"更新",loading:"読み込み中…",
+  unavailable:"情報を取得できません",empty:"情報がありません",noGuarantee:"情報がないことは安全を意味しません。自治体の指示に従ってください。",
+  sources:"情報元",updated:"更新",recent:"最近の情報（現在の警報とは限りません）",
+  active:"直近の緊急情報。公式情報を確認してください",shelter:"避難場所",shelterType:"対応する災害",
+  chooseHazard:"災害を選択",you:"現在地",permission:"近くの避難場所を探すには位置情報を許可してください",
+  retry:"再試行",original:"日本語の原文",unknownPoint:"地域を対象とする情報です。正確な発生地点はありません。",
+  noPlace:"該当する避難場所が見つかりません。自治体に確認してください。",
+  notes:"大事な書類、薬、水を持ちましょう。外国籍の方は可能ならパスポートと在留カードも。荷物は軽く、命を最優先に。",
+  notOpen:"施設が閉まっている場合や情報が古い場合があります。自治体の指示をご確認ください。",
+  online:"最新情報にはインターネットが必要です。緊急速報の代わりにはなりません。",
+  emergency:"危険を感じたら、すぐ安全な場所へ。自治体の指示に従ってください。",
+  notConfigured:"気象庁の情報配信が未設定です。設定ガイドを確認してください。",
+  openOfficial:"公式情報を開く",noLocationPin:"位置情報なし",earthquake:"地震",tsunami:"津波",
+  typhoon:"台風",rain:"大雨",flood:"洪水",landslide:"土砂災害",volcano:"火山",snow:"大雪",heat:"猛暑",
+  language:"言語",about:"無料・非営利の防災情報",time:"発表時刻",details:"詳細",intensity:"震度",
+  magnitude:"マグニチュード",hazards:"災害",live:"リアルタイム接続中",reconnecting:"再接続中…",
+  openMap:"地図で見る",viewSite:"地図で見る",jmaNote:"誤訳を避けるため、気象庁の原文を表示しています。",
+  noCoordinates:"正確な位置情報なし",refreshTime:"受信時刻ではなく発表時刻を確認してください。",
+  permissionInfo:"位置情報は周辺の災害や避難場所の表示に使用します。",
+  tsunamiMove:"津波の危険があるときは、アプリを待たずに高台へ避難してください。"
+};
+const vi = {
+  home:"Trang chủ",today:"Hôm nay",location:"Vị trí của bạn",allowLocation:"Cho phép vị trí",
+  locationDenied:"Chưa có vị trí",categories:"Các loại thiên tai",latest:"Tin mới nhất",
+  map:"Bản đồ",list:"Danh sách",refresh:"Làm mới",loading:"Đang lấy thông tin…",
+  unavailable:"Chưa lấy được thông tin",empty:"Chưa có tin trong nguồn này",
+  noGuarantee:"Không có tin mới không có nghĩa là an toàn. Hãy nghe hướng dẫn chính thức.",
+  sources:"Nguồn",updated:"Cập nhật",recent:"Tin gần đây, chưa chắc cảnh báo còn hiệu lực",
+  active:"Tin khẩn mới xuất hiện — hãy kiểm tra thông báo chính thức",
+  shelter:"Nơi sơ tán",shelterType:"Tránh được",chooseHazard:"Chọn thiên tai",
+  you:"Bạn ở đây",permission:"Cho phép vị trí để tìm nơi sơ tán gần bạn",
+  retry:"Thử lại",original:"Thông báo gốc tiếng Nhật",
+  unknownPoint:"Đây là cảnh báo theo khu vực, chưa có tọa độ sự kiện chính xác.",
+  noPlace:"Chưa tìm được nơi phù hợp. Hãy hỏi chính quyền địa phương.",
+  notes:"Mang giấy tờ quan trọng, thuốc và nước. Người nước ngoài nên mang hộ chiếu, thẻ cư trú nếu lấy được. Đem đồ gọn nhẹ. Mạng sống quan trọng nhất.",
+  notOpen:"Nơi được liệt kê có thể chưa mở hoặc dữ liệu cũ. Kiểm tra hướng dẫn địa phương.",
+  online:"Cần Internet để nhận tin mới. App không thay cảnh báo khẩn cấp của Nhật.",
+  emergency:"Nếu đang nguy hiểm, tới nơi an toàn ngay. Làm theo hướng dẫn địa phương.",
+  notConfigured:"Chưa cấu hình nguồn thời tiết JMA. Xem hướng dẫn cài đặt.",
+  openOfficial:"Mở thông báo gốc",noLocationPin:"Chưa chia sẻ vị trí",
+  earthquake:"Động đất",tsunami:"Sóng thần",typhoon:"Bão",rain:"Mưa lớn",
+  flood:"Lũ lụt",landslide:"Sạt lở",volcano:"Núi lửa",snow:"Tuyết lớn",heat:"Nắng nóng",
+  language:"Ngôn ngữ",about:"Thông tin an toàn · Miễn phí, phi lợi nhuận",
+  time:"Thời gian",details:"Chi tiết",intensity:"Cường độ",magnitude:"Độ lớn",
+  hazards:"Thiên tai",live:"Đang kết nối trực tiếp",reconnecting:"Đang kết nối lại…",
+  openMap:"Xem trên bản đồ",viewSite:"Chỉ trên bản đồ",
+  jmaNote:"Giữ nguyên tiếng Nhật để tránh dịch sai thông tin khẩn cấp.",
+  noCoordinates:"Chưa có tọa độ được xác thực",refreshTime:"Xem thời điểm phát tin, không chỉ lúc nhận.",
+  permissionInfo:"Vị trí chỉ dùng để hiển thị thông tin và nơi sơ tán quanh bạn.",
+  tsunamiMove:"Có nguy cơ sóng thần? Lên nơi cao ngay, đừng chờ ứng dụng."
+};
+const other = {
+  "zh-CN": {earthquake:"地震",tsunami:"海啸",typhoon:"台风",rain:"暴雨",flood:"洪水",landslide:"山体滑坡",volcano:"火山",snow:"暴雪",heat:"高温",shelter:"避难场所",location:"您的位置",latest:"最新消息",allowLocation:"允许定位",language:"语言",map:"地图",refresh:"刷新",notes:"带上重要证件、药物和水。外国居民尽可能带护照及在留卡。轻装出行，生命最重要。",noGuarantee:"没有新消息不代表安全。请遵守官方指示。"},
+  "zh-TW": {earthquake:"地震",tsunami:"海嘯",typhoon:"颱風",rain:"豪雨",flood:"洪水",landslide:"土石流",volcano:"火山",snow:"大雪",heat:"酷熱",shelter:"避難場所",location:"您的位置",latest:"最新消息",allowLocation:"允許定位",language:"語言",map:"地圖",refresh:"重新整理",notes:"攜帶重要證件、藥品及飲水。外國居民可攜帶護照和在留卡。輕裝避難，生命最重要。",noGuarantee:"沒有新消息不代表安全。請遵守官方指示。"},
+  ko: {earthquake:"지진",tsunami:"쓰나미",typhoon:"태풍",rain:"호우",flood:"홍수",landslide:"산사태",volcano:"화산",snow:"폭설",heat:"폭염",shelter:"대피 장소",location:"내 위치",latest:"최신 정보",allowLocation:"위치 허용",language:"언어",map:"지도",refresh:"새로고침",notes:"중요 서류, 약, 물을 챙기세요. 외국인은 가능하면 여권과 재류카드도 챙기세요. 짐은 가볍게, 생명이 최우선입니다.",noGuarantee:"새 정보가 없다고 안전한 것은 아닙니다. 공식 안내를 따르세요."},
+  tl: {earthquake:"Lindol",tsunami:"Tsunami",typhoon:"Bagyo",rain:"Malakas na ulan",flood:"Baha",landslide:"Pagguho ng lupa",volcano:"Bulkan",snow:"Malakas na niyebe",heat:"Matinding init",shelter:"Evacuation",location:"Iyong lokasyon",latest:"Bagong balita",allowLocation:"Payagan ang lokasyon",language:"Wika",map:"Mapa",refresh:"I-refresh",notes:"Dalhin ang mahahalagang dokumento, gamot at tubig. Kung dayuhan, dalhin ang pasaporte at residence card kung kaya. Magaan lang ang dala. Buhay ang una.",noGuarantee:"Hindi ibig sabihin na ligtas kapag walang bagong ulat. Sundin ang awtoridad."},
+  ne: {earthquake:"भूकम्प",tsunami:"सुनामी",typhoon:"आँधी",rain:"भारी वर्षा",flood:"बाढी",landslide:"पहिरो",volcano:"ज्वालामुखी",snow:"हिमपात",heat:"अत्यधिक गर्मी",shelter:"आश्रय स्थल",location:"तपाईंको स्थान",latest:"ताजा सूचना",allowLocation:"स्थान अनुमति",language:"भाषा",map:"नक्सा",refresh:"फेरि हेर्नुहोस्",notes:"महत्त्वपूर्ण कागजात, औषधि र पानी लैजानुहोस्। विदेशी हुनुहुन्छ भने सम्भव भए पासपोर्ट र निवास कार्ड पनि लिनुहोस्। हलुका सामान बोक्नुहोस्। जीवन पहिले।",noGuarantee:"नयाँ सूचना नहुनु सुरक्षित हुनु होइन। आधिकारिक निर्देशन पालना गर्नुहोस्।"},
+  id: {earthquake:"Gempa bumi",tsunami:"Tsunami",typhoon:"Topan",rain:"Hujan lebat",flood:"Banjir",landslide:"Longsor",volcano:"Gunung berapi",snow:"Salju lebat",heat:"Panas ekstrem",shelter:"Tempat evakuasi",location:"Lokasi Anda",latest:"Info terbaru",allowLocation:"Izinkan lokasi",language:"Bahasa",map:"Peta",refresh:"Muat ulang",notes:"Bawa dokumen penting, obat, dan air. Warga asing sebaiknya membawa paspor dan kartu izin tinggal jika mudah dijangkau. Bawa barang ringan. Nyawa paling utama.",noGuarantee:"Tidak ada laporan baru bukan berarti aman. Ikuti petunjuk resmi."},
+  pt: {earthquake:"Terremoto",tsunami:"Tsunami",typhoon:"Tufão",rain:"Chuva forte",flood:"Inundação",landslide:"Deslizamento",volcano:"Vulcão",snow:"Neve forte",heat:"Calor extremo",shelter:"Locais de evacuação",location:"Sua localização",latest:"Últimas notícias",allowLocation:"Permitir localização",language:"Idioma",map:"Mapa",refresh:"Atualizar",notes:"Leve documentos importantes, remédios e água. Se for estrangeiro, leve passaporte e cartão de residência se possível. Leve pouca bagagem. A vida vem primeiro.",noGuarantee:"Sem novos avisos não significa segurança. Siga orientações oficiais."},
+  my: {earthquake:"ငလျင်",tsunami:"ဆူနာမီ",typhoon:"မုန်တိုင်း",rain:"မိုးသည်းထန်",flood:"ရေကြီး",landslide:"မြေပြို",volcano:"မီးတောင်",snow:"နှင်းထူ",heat:"အပူလွန်",shelter:"ဘေးလွတ်ရာနေရာ",location:"သင့်တည်နေရာ",latest:"နောက်ဆုံးသတင်း",allowLocation:"တည်နေရာခွင့်ပြုရန်",language:"ဘာသာစကား",map:"မြေပုံ",refresh:"ပြန်ဖွင့်",notes:"အရေးကြီးစာရွက်စာတမ်း၊ ဆေးနှင့် ရေယူပါ။ နိုင်ငံခြားသားဖြစ်ပါက ဖြစ်နိုင်လျှင် နိုင်ငံကူးလက်မှတ်နှင့် နေထိုင်ခွင့်ကတ်ယူပါ။ ပစ္စည်းနည်းနည်းသာယူပါ။ အသက်က အရေးကြီးဆုံးပါ။",noGuarantee:"သတင်းအသစ်မရှိခြင်းသည် လုံခြုံသည်ဟု မဆိုလိုပါ။ တရားဝင်ညွှန်ကြားချက်များလိုက်နာပါ။"},
+  th: {earthquake:"แผ่นดินไหว",tsunami:"สึนามิ",typhoon:"พายุไต้ฝุ่น",rain:"ฝนตกหนัก",flood:"น้ำท่วม",landslide:"ดินถล่ม",volcano:"ภูเขาไฟ",snow:"หิมะตกหนัก",heat:"อากาศร้อนจัด",shelter:"จุดอพยพ",location:"ตำแหน่งของคุณ",latest:"ข่าวล่าสุด",allowLocation:"อนุญาตตำแหน่ง",language:"ภาษา",map:"แผนที่",refresh:"รีเฟรช",notes:"นำเอกสารสำคัญ ยา และน้ำไปด้วย ชาวต่างชาติควรนำหนังสือเดินทางและบัตรพำนักหากหยิบได้ง่าย นำของให้น้อย ชีวิตสำคัญที่สุด",noGuarantee:"ไม่มีรายงานใหม่ไม่ได้หมายความว่าปลอดภัย โปรดทำตามประกาศทางการ"},
+  hi: {earthquake:"भूकंप",tsunami:"सुनामी",typhoon:"तूफ़ान",rain:"भारी बारिश",flood:"बाढ़",landslide:"भूस्खलन",volcano:"ज्वालामुखी",snow:"भारी बर्फ़",heat:"भीषण गर्मी",shelter:"निकासी स्थल",location:"आपका स्थान",latest:"ताज़ा जानकारी",allowLocation:"स्थान की अनुमति दें",language:"भाषा",map:"नक्शा",refresh:"रीफ़्रेश",notes:"ज़रूरी दस्तावेज़, दवाएँ और पानी साथ लें। विदेशी निवासी हों तो संभव हो तो पासपोर्ट और निवास कार्ड लें। कम सामान लें। जीवन सबसे ज़रूरी है।",noGuarantee:"नई सूचना न होना सुरक्षित होने का प्रमाण नहीं है। आधिकारिक निर्देश मानें।"}
+};
+export const strings = { en, ja, vi, ...other };
+export function deviceLanguage(code = "en") {
+  if (strings[code]) return code;
+  const lower = code.toLowerCase();
+  if (lower.startsWith("zh")) return /tw|hk|hant/.test(lower) ? "zh-TW" : "zh-CN";
+  if (lower.startsWith("fil")) return "tl";
+  const simple = code.split("-")[0].toLowerCase();
+  return strings[simple] ? simple : "en";
+}
+export const translate = (locale) => (key) => strings[locale]?.[key] || en[key] || key;
