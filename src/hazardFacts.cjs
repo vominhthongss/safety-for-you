@@ -2,7 +2,7 @@
 // exercise the exact same pure normalization used in the Expo app.
 const SCALE_LABELS = {
   0:"0", 10:"1", 20:"2", 30:"3", 40:"4",
-  45:"5-", 46:"5-+", 50:"5+", 55:"6-", 60:"6+", 70:"7"
+  45:"5-", 46:"≥5- (estimated)", 50:"5+", 55:"6-", 60:"6+", 70:"7"
 };
 const TSUNAMI_GRADES = {
   MajorWarning:"majorWarning", Warning:"warning", Watch:"advisory",
@@ -74,6 +74,7 @@ function earthquakeDetails(raw) {
     magnitude: scalar(hypo.magnitude) !== null && Number(hypo.magnitude) >= 0 && Number(hypo.magnitude) <= 10 ?
       Number(hypo.magnitude) : null,
     shindo: scaleLabel(scale),
+    shindoCode: scale !== null && Number.isFinite(Number(scale)) ? Number(scale) : null,
     predicted: forecast,
     depthKm: scalar(hypo.depth) !== null && Number(hypo.depth) >= 0 ? Number(hypo.depth) : null,
     domesticTsunami: maybeText(eq.domesticTsunami),

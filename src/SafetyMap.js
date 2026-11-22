@@ -60,12 +60,14 @@ const MAP_RUNTIME = String.raw`
       if (user) addPin(user, payload.youLabel, "#007AFF");
       const items = Array.isArray(payload.points) ? payload.points.slice(0,100) : [];
       items.forEach((p) => {
-        if (valid(p.coordinate)) addPin(p.coordinate,p.title,payload.kind==="shelter"?"#238353":"#D84032");
+        if (!valid(p.coordinate)) return;
+        const severityColor = /^#[0-9A-Fa-f]{6}$/.test(p.color || "") ? p.color : "#82909A";
+        addPin(p.coordinate,p.title,payload.kind==="shelter"?"#238353":severityColor);
       });
       if (event && !items.some((p) => valid(p.coordinate) &&
           p.coordinate.latitude===event.latitude &&
           p.coordinate.longitude===event.longitude)) {
-        addPin(event,payload.eventLabel,"#D84032");
+        addPin(event,payload.eventLabel,payload.selectedColor || "#82909A");
       }
       // Render only officially-defined JMA regions matched to this report.
       const zones = Array.isArray(payload.zones) ? payload.zones.slice(0,60) : [];
@@ -141,17 +143,21 @@ const MAP_HTML = [
 const sanitize = (point) => valid(point) ?
   {latitude:Number(point.latitude),longitude:Number(point.longitude)} : null;
 
-function buildPayload({location,points,selectedPoint,kind,dark,t,zones}) {
+function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}) {
   const user = sanitize(location);
   const event = sanitize(selectedPoint);
   const extent = boundsForPoints([user,event]); // [west,south,east,north]
   return {
     location:user,
     selectedPoint:event,
+    selectedColor:typeof selectedColor==="string" && /^#[0-9A-Fa-f]{6}$/.test(selectedColor) ?
+      selectedColor : "#82909A",
     bounds:extent ? [[extent[1],extent[0]],[extent[3],extent[2]]] : null,
     points:points.filter((p)=>valid(p.coordinate)).slice(0,100).map((p)=>({
       coordinate:sanitize(p.coordinate),
-      title:String(p.title || p.name || "").slice(0,240)
+      title:String(p.title || p.name || "").slice(0,300),
+      color:typeof p.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(p.color) ?
+        p.color : "#82909A"
     })),
     kind, dark,
     zones:Array.isArray(zones) ? zones : [],
@@ -163,7 +169,7 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones}) {
 /** WebView + bundled Leaflet with OSM Japan English-label raster tiles. */
 export default function SafetyMap({
   location, points = [], selectedPoint, t, height = 270, kind = "hazard",
-  zones = [], dark = false
+  zones = [], dark = false, selectedColor = "#82909A"
 }) {
   const ref = useRef(null);
   const [ready,setReady] = useState(false);
@@ -172,9 +178,9 @@ export default function SafetyMap({
   // Stable content avoids remounting the WebView whenever a report is selected.
   const source = useMemo(() => ({html:MAP_HTML,baseUrl:"https://tile.openstreetmap.jp/"}),[]);
   const payload = useMemo(() =>
-    buildPayload({location,points,selectedPoint,kind,dark,t,zones}),
+    buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}),
     [location?.latitude,location?.longitude,selectedPoint?.latitude,
-      selectedPoint?.longitude,points,kind,dark,t,zones]
+      selectedPoint?.longitude,points,kind,dark,t,zones,selectedColor]
   );
   useEffect(() => {
     if (!ready) return;

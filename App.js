@@ -20,6 +20,7 @@ import {
   mergeReports, normalizeQuake, isVeryRecentUrgent
 } from "./src/data";
 const {reportMetrics,heightText} = require("./src/hazardView.cjs");
+const {getReportSeverity,getAreaSeverity} = require("./src/hazardSeverity.cjs");
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -267,6 +268,13 @@ function AppContent() {
 
   const renderCard = (report, inHome=false) => {
     const actionable = isVeryRecentUrgent(report);
+    const severity = getReportSeverity(report);
+    const severityLabel = severity.source === "observedShindo" ?
+      t("intensity") + ": " + severity.label :
+      severity.source === "predictedShindo" ?
+        t("predictedIntensity") + ": " + severity.label :
+      severity.source === "issuedTsunami" || severity.source === "verifiedJmaGrade" ? t(severity.label) :
+      severity.source === "cancelled" ? t("cancelled") : null;
     const metrics = reportMetrics(report,t);
     const expanded = selectedReportId === report.id;
     const tsunamiAreas = (report.tsunamiAreas || []).slice(0,
@@ -276,8 +284,9 @@ function AppContent() {
       <Pressable key={report.id} onPress={()=>selectReport(report)}
         accessibilityRole="button"
         accessibilityLabel={t(report.category)+": "+report.title}
-        style={[styles.report,expanded && {borderColor:COLORS.teal},
-          actionable && {borderColor:COLORS.alert}]}>
+        style={[styles.report,
+          {borderLeftColor:severity.color,borderLeftWidth:4},
+          expanded && {borderColor:COLORS.teal,borderLeftColor:severity.color}]}>
         <View style={styles.reportTop}>
           <View style={{flexDirection:"row",alignItems:"center",flex:1,gap:8}}>
             <AppSymbol id={report.category} size={19}/>
@@ -289,6 +298,12 @@ function AppContent() {
             {formatDate(report.time,locale)}
           </TextLabel>
         </View>
+        {!!severityLabel && <View style={styles.severityRow}>
+          <View style={[styles.severityDot,{backgroundColor:severity.color}]}/>
+          <TextLabel style={{fontWeight:"700",fontSize:14,color:COLORS.ink}}>
+            {severityLabel}
+          </TextLabel>
+        </View>}
         <TextLabel style={{fontWeight:"600"}}>{displayDynamic(report.title)}</TextLabel>
         {!!report.description && report.description !== report.title &&
           <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
@@ -304,7 +319,9 @@ function AppContent() {
           ))}
         </View>}
         {report.category === "tsunami" && tsunamiAreas.map((area,index)=>(
-          <View key={area.name+"-"+index} style={styles.tsunamiArea}>
+          <View key={area.name+"-"+index}
+            style={[styles.tsunamiArea,{borderLeftColor:getAreaSeverity("tsunami",area).color,
+              borderLeftWidth:4,paddingLeft:10}]}>
             <TextLabel style={{fontSize:14,fontWeight:"600"}}>
               {displayDynamic(area.name)}
             </TextLabel>
@@ -445,9 +462,19 @@ function AppContent() {
             </View>
             {screen==="tsunami" && <Message text={t("tsunamiMove")} warning/>}
             <SafetyMap t={t} location={position}
-              points={(selectedReport ? [selectedReport] : detailReports).map((item)=>({...item,title:displayDynamic(item.title)}))}
+              points={(selectedReport ? [selectedReport] : detailReports).map((item)=>{
+                const severity=getReportSeverity(item);
+                const severityText=severity.source==="observedShindo" ?
+                  t("intensity")+": "+severity.label : severity.source==="predictedShindo" ?
+                  t("predictedIntensity")+": "+severity.label : severity.source==="issuedTsunami" ?
+                  t(severity.label) : null;
+                return {...item,
+                  title:[displayDynamic(item.title),severityText].filter(Boolean).join("\n"),
+                  color:severity.color};
+              })}
               selectedPoint={selectedReport ? selectedReport.coordinate : null}
               zones={hazardZones} kind={screen}
+              selectedColor={getReportSeverity(selectedReport).color}
               height={340} dark={effectiveScheme==="dark"}/>
             {selectedReport && isQuakeCategory && hazardZoneState==="loading" &&
               <TextLabel style={SMALL_TEXT}>{t("zoneLoading")}</TextLabel>}
@@ -528,6 +555,8 @@ const createStyles = (COLORS) => StyleSheet.create({
   categoryLabel:{ fontSize:11.5,lineHeight:15,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
   sectionTop:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
   refresh:{ minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5 },
+  severityRow:{flexDirection:"row",alignItems:"center",gap:8,marginVertical:3,flexWrap:"wrap"},
+  severityDot:{width:13,height:13,borderRadius:4,borderWidth:1,borderColor:"#00000020"},
   metricRow:{ flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:7 },
   metricCell:{ backgroundColor:COLORS.bg,borderRadius:10,paddingVertical:8,paddingHorizontal:11,
     minWidth:95,flexGrow:1,maxWidth:"100%" },

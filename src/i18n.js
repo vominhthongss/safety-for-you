@@ -8,6 +8,7 @@ export const LANGUAGE_NAMES = {
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
 const en = {
+  emergencyWarning: "Emergency warning (at issue time)",
   quakeZoneLegend:"Observed shaking areas · Shindo",
   tsunamiZoneLegend:"Coastal tsunami warning areas",
   zoneLoading:"Loading verified JMA regions…",
@@ -63,6 +64,7 @@ const en = {
   tsunamiMove: "Tsunami risk? Move to high ground immediately. Do not wait for this app.",
 };
 const ja = {
+  emergencyWarning: "特別警報（発表時点）",
   quakeZoneLegend:"観測震度の地域",
   tsunamiZoneLegend:"津波警報の沿岸区域",
   zoneLoading:"気象庁の区域データを取得中…",
@@ -113,6 +115,7 @@ const ja = {
   tsunamiMove:"津波の危険があるときは、アプリを待たずに高台へ避難してください。"
 };
 const vi = {
+  emergencyWarning: "Cảnh báo đặc biệt (lúc phát tin)",
   quakeZoneLegend:"Vùng ghi nhận rung lắc · Shindo",
   tsunamiZoneLegend:"Vùng bờ biển có cảnh báo sóng thần",
   zoneLoading:"Đang tải vùng cảnh báo JMA…",

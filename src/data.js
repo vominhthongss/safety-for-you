@@ -48,6 +48,7 @@ export function normalizeQuake(raw) {
     coordinate: tsunami ? null : coords(hypo.latitude, hypo.longitude),
     magnitude: detail?.magnitude ?? null,
     shindo: detail?.shindo ?? null,
+    shindoCode: detail?.shindoCode ?? null,
     predicted: detail?.predicted ?? false,
     depthKm: detail?.depthKm ?? null,
     tsunamiRisk: detail?.domesticTsunami ?? null,
@@ -85,7 +86,12 @@ export async function getWeatherReports() {
       id: r.id, category: r.category, title: r.title, description: r.description || "",
       coordinate: coords(r.coordinate?.latitude, r.coordinate?.longitude),
       time: r.time, issuedAt:r.time, source: "JMA", url: r.url, urgent: false,
-      bulletinKind: "recent", weatherMetric: weatherDetails(r.category, r.metrics)
+      bulletinKind: "recent", weatherMetric: weatherDetails(r.category, r.metrics),
+      // Only explicitly verified grade fields from a structured official adapter.
+      // Current JMA Atom headline Worker does not supply this metadata.
+      severityVerified: r.severity?.verified === true,
+      warningGrade: ["advisory","warning","emergency"].includes(r.severity?.grade)
+        ? r.severity.grade : null
     }));
 }
 function lonToX(lon, z) { return Math.floor((lon + 180) / 360 * (2 ** z)); }
