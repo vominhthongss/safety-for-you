@@ -7,6 +7,7 @@ const JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/;
 const KANJI = /[\u3400-\u9fff]/;
 const MAX_ITEMS = 400;
 const MAX_TEXT = 160;
+const {composeReadings}=require("./romajiComposition.cjs");
 
 export const hasJapanese = (value) => JAPANESE.test(String(value || ""));
 const isKanji = (value) => KANJI.test(String(value || ""));
@@ -22,11 +23,22 @@ export function toLocalRomaji(text) {
   return toRomaji(value).trim();
 }
 
+// Transliterate all members of a multi-region title only when every component
+// has a reliable reading. Place/service dictionaries take precedence over
+// simple Kana conversion. Unknown Kanji names remain in the official script.
+export function getReliableReading(value, readings = {}) {
+  const text = String(value || "").trim();
+  if (!hasJapanese(text)) return "";
+  const exact = readings[text] || lookupPlaceReading(text) || toLocalRomaji(text);
+  if (exact && !KANJI.test(exact)) return exact;
+  return composeReadings(text, (piece) =>
+    readings[piece] || lookupPlaceReading(piece) || toLocalRomaji(piece));
+}
 /** No "Romaji:" prefix or missing-reading placeholder. Keep Japanese original. */
 export function showJapaneseWithRomaji(text, readings = {}) {
   const value = String(text || "");
   if (!hasJapanese(value)) return value;
-  const reading = readings[value] || lookupPlaceReading(value) || toLocalRomaji(value);
+  const reading = getReliableReading(value, readings);
   if (!reading || reading === value) return value;
   return value + "\n" + reading;
 }

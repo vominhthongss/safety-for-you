@@ -68,8 +68,87 @@ const NAMES={
   "伊勢・三河湾": "Ise–Mikawa-wan",
   "有明・八代海": "Ariake–Yatsushiro-kai"
 };
+const ADDITIONAL_NAMES = {
+  "三陸沖": "Sanriku-oki",
+  "三陸地方": "Sanriku chihō",
+  "能登半島": "Noto-hantō",
+  "房総半島": "Bōsō-hantō",
+  "伊豆半島": "Izu-hantō",
+  "紀伊半島": "Kii-hantō",
+  "伊豆諸島": "Izu-shotō",
+  "小笠原諸島": "Ogasawara-shotō",
+  "トカラ列島": "Tokara-rettō",
+  "奄美大島": "Amami-Ōshima",
+  "奄美群島": "Amami-guntō",
+  "宮古島": "Miyako-jima",
+  "石垣島": "Ishigaki-jima",
+  "与那国島": "Yonaguni-jima",
+  "沖縄本島": "Okinawa-hontō",
+  "先島諸島": "Sakishima-shotō",
+  "八丈島": "Hachijō-jima",
+  "鳥島": "Torishima",
+  "種子島": "Tanegashima",
+  "屋久島": "Yakushima",
+  "佐渡": "Sado",
+  "佐渡島": "Sado-ga-shima",
+  "釧路地方": "Kushiro chihō",
+  "根室地方": "Nemuro chihō",
+  "宗谷地方": "Sōya chihō",
+  "胆振地方": "Iburi chihō",
+  "日高地方": "Hidaka chihō",
+  "十勝地方": "Tokachi chihō",
+  "空知地方": "Sorachi chihō",
+  "上川地方": "Kamikawa chihō",
+  "石狩地方": "Ishikari chihō",
+  "渡島地方": "Oshima chihō",
+  "後志地方": "Shiribeshi chihō",
+  "留萌地方": "Rumoi chihō",
+  "オホーツク地方": "Ohōtsuku chihō",
+  "富士五湖": "Fuji-goko",
+  "日向灘": "Hyūga-nada",
+  "豊後水道": "Bungo-suidō",
+  "周防灘": "Suō-nada",
+  "伊予灘": "Iyo-nada",
+  "紀伊水道": "Kii-suidō",
+  "遠州灘": "Enshū-nada",
+  "駿河湾": "Suruga-wan",
+  "相模湾": "Sagami-wan",
+  "東京湾": "Tōkyō-wan",
+  "伊勢湾": "Ise-wan",
+  "三河湾": "Mikawa-wan",
+  "若狭湾": "Wakasa-wan",
+  "熊野灘": "Kumano-nada",
+  "土佐湾": "Tosa-wan",
+  "秋田県内陸": "Akita-ken nairiku",
+  "福島県会津": "Fukushima-ken Aizu",
+  "福島県中通り": "Fukushima-ken Nakadōri",
+  "福島県浜通り": "Fukushima-ken Hamadōri",
+  "岩手県沿岸": "Iwate-ken engan",
+  "宮城県沖": "Miyagi-ken oki",
+  "宮城県北部": "Miyagi-ken hokubu",
+  "宮城県南部": "Miyagi-ken nanbu",
+  "岩手県沖": "Iwate-ken oki",
+  "福島県沖": "Fukushima-ken oki"
+};
+const PHRASE_READINGS = {
+  "地震情報": "Jishin jōhō",
+  "津波情報": "Tsunami jōhō",
+  "津波予報": "Tsunami yohō",
+  "気象庁 地震情報": "Kishōchō jishin jōhō",
+  "緊急地震速報（警報）": "Kinkyū jishin sokuhō (keihō)",
+  "津波警報・注意報解除": "Tsunami keihō/chūihō kaijo",
+  "津波予報の解除情報": "Tsunami yohō no kaijo jōhō",
+  "津波の予想と対象地域": "Tsunami no yosō to taishō chiiki",
+  "指定緊急避難場所": "Shitei kinkyū hinan basho",
+  "観測震度": "Kansoku shindo",
+  "気象庁": "Kishōchō",
+  "巨大": "Kyodai",
+  "高い": "Takai"
+};
+Object.assign(NAMES,ADDITIONAL_NAMES);
 const SUFFIXES={
   "沖":"oki","近海":"kinkai","東方沖":"tōhō oki","西方沖":"seihō oki",
+  "南方沖":"nanpō oki","北方沖":"hoppō oki","地方":"chihō","沿岸北部":"engan hokubu","沿岸南部":"engan nanbu","沿岸中部":"engan chūbu",
   "北部":"hokubu","南部":"nanbu","東部":"tōbu","西部":"seibu",
   "中部":"chūbu","太平洋沿岸東部":"Taiheiyō engan tōbu",
   "太平洋沿岸中部":"Taiheiyō engan chūbu",
@@ -81,9 +160,10 @@ const SUFFIXES={
 function lookupPlaceReading(name) {
   const text=String(name||"").trim();
   if (NAMES[text]) return NAMES[text];
-  const prefix=Object.keys(NAMES).filter((n)=>/[県府都道]$/.test(n)||n==="北海道")
+  if (PHRASE_READINGS[text]) return PHRASE_READINGS[text];
+  const prefix=Object.keys(NAMES)
     .sort((a,b)=>b.length-a.length)
     .find((n)=>text.startsWith(n)&&SUFFIXES[text.slice(n.length)]);
   return prefix ? NAMES[prefix] + " " + SUFFIXES[text.slice(prefix.length)] : "";
 }
-module.exports={lookupPlaceReading};
+module.exports={lookupPlaceReading,PHRASE_READINGS,NAMES};

@@ -3,12 +3,13 @@
 // physical earthquake propagation simulation or a tsunami inundation model.
 const EARTHQUAKE_GEOJSON = "https://www.jma.go.jp/bosai/common/const/geojson/earthquake.json";
 const TSUNAMI_GEOJSON = "https://www.jma.go.jp/bosai/common/const/geojson/tsunami.json";
-const INTENSITY_COLORS = {
-  10:"#6AB4E6", 20:"#2C96C8", 30:"#4FBF8B", 40:"#F0CA47",
-  45:"#F59D38", 46:"#E97D2E", 50:"#E75B33", 55:"#D63B4A",
-  60:"#AB3170", 70:"#713EA2"
-};
-const GRADE_COLORS = {majorWarning:"#9F276E",warning:"#E23D3D",advisory:"#F2B335"};
+const {INTENSITY,TSUNAMI,getAreaSeverity} = require("./hazardSeverity.cjs");
+const INTENSITY_COLORS = Object.fromEntries(
+  Object.entries(INTENSITY).map(([code,item])=>[code,item.color])
+);
+const GRADE_COLORS = Object.fromEntries(
+  Object.entries(TSUNAMI).map(([grade,item])=>[grade,item.color])
+);
 function norm(value) {
   return String(value == null ? "" : value).normalize("NFKC").replace(/\s+/g,"").trim();
 }
@@ -20,7 +21,7 @@ function regionReports(report) {
     return raw.filter((a) => a.isArea && a.name && INTENSITY_COLORS[a.scale])
       .map((a) => ({
         name:a.name, code:a.code == null ? null : String(a.code),
-        value:a.scaleLabel || String(a.scale), color:INTENSITY_COLORS[a.scale],
+        value:a.scaleLabel || String(a.scale), color:getAreaSeverity("earthquake",a).color,
         fill:true,kind:"observedIntensity"
       }));
   }
@@ -29,7 +30,7 @@ function regionReports(report) {
       .filter((a)=>a.name && GRADE_COLORS[a.grade])
       .map((a)=>({
         name:a.name, code:a.code == null ? null : String(a.code),
-        value:a.grade, color:GRADE_COLORS[a.grade], fill:false,kind:"forecastCoast"
+        value:a.grade, color:getAreaSeverity("tsunami",a).color, fill:false,kind:"forecastCoast"
       }));
   }
   return [];

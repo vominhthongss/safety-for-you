@@ -174,3 +174,62 @@ test("Official JMA GeoJSON URLs are used for earthquake and tsunami published re
   assert.ok(z.TSUNAMI_GEOJSON.endsWith("/tsunami.json"));
   assert.ok(!read("src/SafetyMap.js").includes("L.circle("));
 });
+
+test("Severity palette distinguishes Japan Shindo 1 vs 3 independent of magnitude", () => {
+  const {getReportSeverity, getAreaSeverity, INTENSITY, TSUNAMI, NEUTRAL} =
+    require("../src/hazardSeverity.cjs");
+  const one = getReportSeverity({category:"earthquake", magnitude:7.2, shindoCode:10});
+  const three = getReportSeverity({category:"earthquake", magnitude:2.8, shindoCode:30});
+  assert.equal(one.label,"1");
+  assert.equal(three.label,"3");
+  assert.notEqual(one.color, three.color);
+  assert.equal(three.color, getAreaSeverity("earthquake",{scale:30}).color);
+  assert.equal(getReportSeverity({category:"earthquake", magnitude:8}).color, NEUTRAL.color);
+  assert.equal(getReportSeverity({category:"earthquake",shindoCode:46}).label,"≥5- (estimated)");
+  assert.equal(getReportSeverity({category:"earthquake",shindoCode:55}).label,"6-");
+  assert.equal(getReportSeverity({category:"earthquake",shindoCode:60}).label,"6+");
+  assert.equal(getReportSeverity({category:"earthquake",shindoCode:70}).color,INTENSITY[70].color);
+  const a=getReportSeverity({category:"tsunami",tsunamiStatus:"advisory"});
+  const w=getReportSeverity({category:"tsunami",tsunamiStatus:"warning"});
+  const m=getReportSeverity({category:"tsunami",tsunamiStatus:"majorWarning"});
+  assert.equal(a.color, TSUNAMI.advisory.color);
+  assert.notEqual(a.color,w.color);
+  assert.notEqual(w.color,m.color);
+  assert.equal(getReportSeverity({category:"tsunami",tsunamiStatus:"majorWarning",cancelled:true}).color,NEUTRAL.color);
+});
+test("Weather stays neutral without verified official severity metadata", () => {
+  const {getReportSeverity,NEUTRAL,METEO_GRADES}=require("../src/hazardSeverity.cjs");
+  assert.equal(getReportSeverity({category:"rain",source:"JMA",title:"大雨警報"}).color,NEUTRAL.color);
+  assert.equal(getReportSeverity({category:"typhoon",source:"JMA",
+    warningGrade:"warning",severityVerified:false}).color,NEUTRAL.color);
+  assert.equal(getReportSeverity({category:"rain",source:"JMA",
+    warningGrade:"emergency",severityVerified:true}).color,METEO_GRADES.emergency.color);
+});
+test("Multi-prefecture Romaji and common JMA phrases work without remote server", () => {
+  const {composeReadings}=require("../src/romajiComposition.cjs");
+  const {lookupPlaceReading}=require("../src/placeReadings.cjs");
+  assert.equal(lookupPlaceReading("宮古島近海"),"Miyako-jima kinkai");
+  assert.equal(lookupPlaceReading("福島県浜通り"),"Fukushima-ken Hamadōri");
+  assert.equal(lookupPlaceReading("津波情報"),"Tsunami jōhō");
+  assert.equal(composeReadings("宮城県 · 岩手県",lookupPlaceReading),
+    "Miyagi-ken · Iwate-ken");
+  assert.equal(composeReadings("愛知県, 名古屋市",lookupPlaceReading),
+    "Aichi-ken, Nagoya-shi");
+  assert.equal(composeReadings("宮城県 · 未知の地名",lookupPlaceReading),"");
+  const roman=read("src/romanization.js");
+  assert.ok(roman.includes("composeReadings(text"));
+  assert.ok(roman.includes("lookupPlaceReading(text)"));
+  assert.ok(!roman.includes("Romaji: unavailable"));
+});
+test("Cards, map pins and shaded JMA zones use data-backed severity colors", () => {
+  const app=read("App.js");
+  const map=read("src/SafetyMap.js");
+  const zones=read("src/hazardZones.cjs");
+  assert.ok(app.includes("getReportSeverity(report)"));
+  assert.ok(app.includes("styles.severityRow"));
+  assert.ok(app.includes("getAreaSeverity(\"tsunami\",area)"));
+  assert.ok(app.includes("selectedColor={getReportSeverity(selectedReport).color}"));
+  assert.ok(map.includes("severityColor"));
+  assert.ok(map.includes("selectedColor"));
+  assert.ok(zones.includes("hazardSeverity.cjs"));
+});

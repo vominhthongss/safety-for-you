@@ -77,3 +77,13 @@ Sources: [Expo WebView v58](https://docs.expo.dev/versions/v58.0.0/sdk/webview/)
 ### Romaji fallback for place names
 
 The app bundles a reviewed dictionary of prefectures and common Japanese coastal-region names in `src/placeReadings.cjs`, so map names such as **宮城県 / Miyagi-ken** work offline. Kana-only text is converted by WanaKana locally. For uncommon Kanji proper names, the existing optional Kuroshiro/Kuromoji service produces contextual Romaji; no made-up reading is shown when unavailable. The basemap itself uses **English/Latin-script place labels** for better accessibility.
+
+## Source-backed severity colors and more Romaji
+
+- **JMA Shindo (震度)** severity has an explicit, progressive palette: 1 light blue, 2 blue, 3 green, 4 yellow, 5- orange, 5+ deeper orange, 6- red, 6+ magenta, 7 dark purple. The color is based on **maximum published Shindo**, NOT earthquake magnitude (M); a strong M earthquake can have only Shindo 1 in an observed area.
+- Cards have a colored left bar + a text label ("Shindo 1", "Shindo 3" etc.) so severity isn't communicated only by color. Map event pins and published observation-area polygons share the exact same color definitions in `src/hazardSeverity.cjs`.
+- For tsunami **advisory**, **warning**, and **major warning**, colors are yellow, red, and purple. The coastal segments use the corresponding color for their own issued grade. Canceled bulletins use neutral gray, never a green all-clear.
+- Weather reports must carry a validated JMA warning grade from structured data before they gain a severity color. This repository's headline-only JMA Worker has no verified warning grade, so its weather items remain neutral. **Do not infer current alert levels from a headline or numeric wind/rainfall measurement.**
+- Improved Japanese/Romaji handling recognizes additional geographic names, JMA information phrases and combined names such as `宮城県 · 岩手県` → `Miyagi-ken · Iwate-ken`. Known names are converted locally without an extra network call; rare Kanji place names still require the optional Kuroshiro/Kuromoji service (set `EXPO_PUBLIC_ROMAJI_API_URL`). Never guess an unverified name reading.
+
+The colors are an accessible **application visualization**, not a claim of official JMA color certification. Always show the text severity and official issued timestamp. The geography overlays remain observed areas or issued coastal warning zones, **not** dynamic wave propagation forecasts.

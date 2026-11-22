@@ -38,3 +38,9 @@
 - Tsunami: `areas[].name/code/grade` from P2PQuake code 552 is matched to official JMA `tsunami.json` coastal geometry. This highlights an issued coastal *warning area*, not the actual wave propagation or predicted flood depth.
 - `src/hazardZones.cjs` contains deterministic matching and scale/grade colors; `src/hazardGeo.js` retrieves official JMA GeoJSON (24h cache) when a report is selected, not every frame. `src/SafetyMap.js` paints Leaflet geographic features and fits map bounds to official regions plus GPS/epicenter.
 - The base layer switches from GSI standard tiles to OSM Japan `maptiler-basic-en` raster labels, under OpenStreetMap attribution and tile service usage restrictions. Nearby evacuation shelters still use the separate GSI designated-place GeoJSON service.
+
+## Severity and Romanization coverage
+
+`src/hazardSeverity.cjs` maps **P2PQuake/JMA Shindo codes** independently of magnitude to colors, labels and ranks for cards, pins and observation polygons. `src/hazardZones.cjs` uses these same colors. Tsunami color is based on published warning grade per affected coast, not estimated wave height or geographic proximity. No realtime active level is derived from historic JMA Atom headlines. A future structured adapter must explicitly mark `severityVerified: true` and a supported `warningGrade` to color meteorological reports.
+
+`src/placeReadings.cjs` includes reviewed names for 47 prefectures and frequent epicenter/coastal regions and common JMA fixed phrases; `src/romajiComposition.cjs` joins reliable readings in multi-prefecture headlines without guessing unknown Kanji. `src/romanization.js` prefers exact online Kuroshiro readings when the optional service is configured and uses local reviewed/Kana fallback when absent. Arbitrary Kanji names cannot safely be transliterated by WanaKana alone.

@@ -34,3 +34,10 @@ Safety For You uses restrained grouped surfaces, native SF Symbols on iOS, local
 - Popup titles are passed through the existing Japanese/Romaji formatter, with untrusted text inserted through `textContent`.
 - User and event markers remain present, and the camera includes the boundaries when they exist. No fabricated radius or predicted shaking field.
 - Missing zone data is explicitly reported; the app never suggests that a lack of colored regions means the coast is safe.
+
+## Unified severity palette and accessible map markers
+
+- Shindo scale 1 and 3 have visibly different colors in both **report cards and map markers**, even when no official area geometry is available. A visible text label accompanies every known intensity.
+- Shared mapping in `src/hazardSeverity.cjs` controls event card and pin colors; `src/hazardZones.cjs` uses the same mapping for official observed shaking-region polygons and tsunami forecast coastlines.
+- Tsunami grades are yellow (advisory), red (warning), and purple (major warning). Cancellations and unavailable measurements are neutral gray. No generic weather bulletin receives arbitrary red/green severity coloring.
+- Common Japanese geographic names, source phrases and joined region titles receive Romaji without depending on optional backend configuration. For unknown Kanji, avoid incorrect pronunciation; no invented Romaji is displayed.
