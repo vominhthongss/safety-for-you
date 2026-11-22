@@ -29,7 +29,7 @@ export const SHELTER_LAYERS = {
   tsunami: { tile: "skhb05", property: "disaster5" },
   flood: { tile: "skhb01", property: "disaster1" },
   landslide: { tile: "skhb02", property: "disaster2" },
-  volcano: { tile: "skhb08", property: "disaster8" },
+  volcano: { tile: "skhb08", property: "disaster8" }
   rain: { tile: "skhb07", property: "disaster7" },
   typhoon: { tile: "skhb03", property: "disaster3" }
 };
