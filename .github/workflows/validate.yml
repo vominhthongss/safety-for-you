@@ -12,4 +12,4 @@ jobs:
         with: { node-version: '22' }
       - run: npm install
       - run: npm test
-      - run: npx expo install --check
+      - run: npx expo install --check\n      - run: npx expo export --platform android --output-dir dist
