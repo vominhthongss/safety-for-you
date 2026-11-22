@@ -166,7 +166,7 @@ test("Common JMA Japanese place names have offline Romaji; unknown Kanji is not 
   assert.equal(lookupPlaceReading("北海道太平洋沿岸東部"),"Hokkaidō Taiheiyō engan tōbu");
   assert.equal(lookupPlaceReading("未知の地名"),"");
   const roman=read("src/romanization.js");
-  assert.ok(roman.includes("lookupPlaceReading(value)"));
+  assert.ok(roman.includes("lookupPlaceReading(text)"));
 });
 test("Official JMA GeoJSON URLs are used for earthquake and tsunami published regions", () => {
   const z=require("../src/hazardZones.cjs");
