@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toRomaji } from "wanakana";
 import { CONFIG } from "./config";
+const {lookupPlaceReading}=require("./placeReadings.cjs");
 
 const JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/;
 const KANJI = /[\u3400-\u9fff]/;
@@ -25,7 +26,7 @@ export function toLocalRomaji(text) {
 export function showJapaneseWithRomaji(text, readings = {}) {
   const value = String(text || "");
   if (!hasJapanese(value)) return value;
-  const reading = readings[value] || toLocalRomaji(value);
+  const reading = readings[value] || lookupPlaceReading(value) || toLocalRomaji(value);
   if (!reading || reading === value) return value;
   return value + "\n" + reading;
 }

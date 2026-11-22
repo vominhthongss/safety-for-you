@@ -63,7 +63,7 @@ test("Live Romaji conversion uses WanaKana and never displays placeholder", () =
   assert.ok(src.includes("if (!reading || reading === value) return value;"));
   assert.ok(!src.includes("Romaji: unavailable"));
 });
-test("Expo Go supports WebView Leaflet GSI without MapLibre", () => {
+test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   const pkg = JSON.parse(read("package.json"));
   const config = read("app.config.js");
   const map = read("src/SafetyMap.js");
@@ -76,7 +76,7 @@ test("Expo Go supports WebView Leaflet GSI without MapLibre", () => {
   assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
   assert.ok(map.includes('from "react-native-webview"'));
   assert.ok(map.includes("LEAFLET_JS"));
-  assert.ok(map.includes("© GSI"));
+  assert.ok(map.includes("© OpenStreetMap contributors"));
   assert.ok(bundler.includes("leaflet/dist") || bundler.includes('"dist", "leaflet.js"'));
   assert.equal(pkg.scripts.postinstall, "node scripts/bundle-leaflet.cjs");
 });
@@ -151,10 +151,26 @@ test("Selecting a report focuses its verified coordinates and fits GPS + event",
   assert.ok(app.includes("setSelectedPoint(report.coordinate || null)"));
   assert.ok(app.includes("onPress={()=>selectReport(report)}"));
   assert.ok(map.includes("boundsForPoints([user,event])"));
-  assert.ok(map.includes("map.fitBounds(bounds"));
+  assert.ok(map.includes("map.fitBounds(fit"));
   assert.ok(map.includes("window.SFY_MAP_UPDATE"));
   assert.ok(map.includes("injectJavaScript"));
   assert.ok(!map.includes("MLRNCameraModule"));
   assert.ok(app.includes("reportMetrics(report,t)"));
   assert.ok(app.includes("tsunamiAreas"));
+});
+
+test("Common JMA Japanese place names have offline Romaji; unknown Kanji is not guessed", () => {
+  const {lookupPlaceReading}=require("../src/placeReadings.cjs");
+  assert.equal(lookupPlaceReading("愛知県"),"Aichi-ken");
+  assert.equal(lookupPlaceReading("宮城県"),"Miyagi-ken");
+  assert.equal(lookupPlaceReading("北海道太平洋沿岸東部"),"Hokkaidō Taiheiyō engan tōbu");
+  assert.equal(lookupPlaceReading("未知の地名"),"");
+  const roman=read("src/romanization.js");
+  assert.ok(roman.includes("lookupPlaceReading(value)"));
+});
+test("Official JMA GeoJSON URLs are used for earthquake and tsunami published regions", () => {
+  const z=require("../src/hazardZones.cjs");
+  assert.ok(z.EARTHQUAKE_GEOJSON.endsWith("/earthquake.json"));
+  assert.ok(z.TSUNAMI_GEOJSON.endsWith("/tsunami.json"));
+  assert.ok(!read("src/SafetyMap.js").includes("L.circle("));
 });
