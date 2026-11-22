@@ -45,6 +45,8 @@ export const JA_ROMAJI = {
   "snow": "Ōyuki",
   "heat": "Mōsho",
   "language": "Gengo",
+  "switchLight": "Raito mōdo ni kirikaeru",
+  "switchDark": "Dāku mōdo ni kirikaeru",
   "about": "Muryō · hieiri no bōsai jōhō",
   "time": "Happyō jikoku",
   "details": "Shōsai",

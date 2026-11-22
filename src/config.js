@@ -1,4 +1,4 @@
-import { Platform, PlatformColor } from "react-native";
+export { COLORS,getColors } from "./theme";
 
 export const CONFIG = {
   splashMinMs: Math.min(600, Math.max(0, Number(process.env.EXPO_PUBLIC_SPLASH_MIN_MS) || 0)),
@@ -8,20 +8,7 @@ export const CONFIG = {
   p2pApi: "https://api.p2pquake.net/v2",
   p2pWs: "wss://api.p2pquake.net/v2/ws",
   gsiTiles: "https://cyberjapandata.gsi.go.jp/xyz",
-};
-// Semantic iOS colors adapt to Dark Mode and accessibility contrast automatically.
-const apple = (name, fallback) => Platform.OS === "ios" ? PlatformColor(name) : fallback;
-export const COLORS = {
-  ink: apple("label", "#1C1C1E"),
-  muted: apple("secondaryLabel", "#636366"),
-  bg: apple("systemGroupedBackground", "#F2F2F7"),
-  white: apple("secondarySystemGroupedBackground", "#FFFFFF"),
-  border: apple("separator", "#D1D1D6"),
-  teal: apple("systemBlue", "#007AFF"),
-  tealLight: apple("tertiarySystemFill", "#E7F2FA"),
-  alert: apple("systemRed", "#D92D20"),
-  alertBg: apple("secondarySystemGroupedBackground", "#FFF2EF"),
-  yellow: "#FDECC9"
+  gsiBasemap: "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
 };
 export const CATEGORY_SYMBOLS = {
   earthquake: { ios:"waveform.path.ecg", android:"monitor_heart", web:"monitor_heart" },
@@ -37,7 +24,9 @@ export const CATEGORY_SYMBOLS = {
   back: { ios:"chevron.left", android:"arrow_back_ios_new", web:"arrow_back_ios_new" },
   language: { ios:"globe", android:"language", web:"language" },
   refresh: { ios:"arrow.clockwise", android:"refresh", web:"refresh" },
-  pin: { ios:"location.fill", android:"location_on", web:"location_on" }
+  pin: { ios:"location.fill", android:"location_on", web:"location_on" },
+  moon: { ios:"moon.fill", android:"dark_mode", web:"dark_mode" },
+  sun: { ios:"sun.max.fill", android:"light_mode", web:"light_mode" }
 };
 export const CATEGORIES = [
   { id: "earthquake", icon: "🌎", color: "#F9DFCC" },

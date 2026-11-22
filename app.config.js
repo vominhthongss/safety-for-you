@@ -1,4 +1,3 @@
-const mapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY || "";
 module.exports = {
   expo: {
     name: "Safety For You",
@@ -16,9 +15,10 @@ module.exports = {
       package: process.env.ANDROID_PACKAGE || "com.vominhthongss.safetyforyou",
       adaptiveIcon: { backgroundColor: "#E8F5F4" },
       permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
-      ...(mapsKey ? { config: { googleMaps: { apiKey: mapsKey } } } : {})
+      userInterfaceStyle: "automatic"
     },
     plugins: [
+      "@maplibre/maplibre-react-native",
       ["expo-location", {
         locationWhenInUsePermission: "Show your location on hazard maps and find nearby evacuation places.",
         isAndroidBackgroundLocationEnabled: false,

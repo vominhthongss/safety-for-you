@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView,
-  StatusBar, StyleSheet, Text, View, useWindowDimensions, useColorScheme
+  StatusBar, StyleSheet, Text, View, useWindowDimensions, useColorScheme, Appearance
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
@@ -9,6 +9,7 @@ import * as Localization from "expo-localization";
 import * as SplashScreen from "expo-splash-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import SafetyMap from "./src/SafetyMap";
+import { getColors } from "./src/theme";
 import { SymbolView } from "expo-symbols";
 import { showJapaneseWithRomaji, useJapaneseReadings } from "./src/romanization";
 import { CATEGORIES, COLORS, CONFIG, SHELTER_LAYERS, CATEGORY_SYMBOLS } from "./src/config";
@@ -20,25 +21,30 @@ import {
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const SMALL_TEXT = { color: COLORS.muted, fontSize: 14, lineHeight: 20 };
+const ThemeContext = React.createContext(null);
+const SMALL_TEXT = { fontSize:14, lineHeight:20 };
 function TextLabel({ children, style, ...rest }) {
-  return <Text {...rest} style={[{ fontSize: 17, lineHeight: 24, color: COLORS.ink }, style]}>{children}</Text>;
+  const { colors } = React.useContext(ThemeContext);
+  return <Text {...rest} style={[{ fontSize:17,lineHeight:24,color:colors.ink },style]}>{children}</Text>;
 }
 function Heading({ children }) {
   return <TextLabel accessibilityRole="header" style={{ fontWeight:"700", fontSize:21, lineHeight:27, marginBottom:10 }}>{children}</TextLabel>;
 }
-function AppSymbol({ id, size = 24, color = COLORS.teal }) {
+function AppSymbol({ id, size = 24, color }) {
+  const { colors } = React.useContext(ThemeContext);
   return <SymbolView name={CATEGORY_SYMBOLS[id] || CATEGORY_SYMBOLS.shelter} size={size}
-    tintColor={color} type="hierarchical"
+    tintColor={color || colors.teal} type="hierarchical"
     fallback={<TextLabel style={{ fontSize:size*0.85 }}>{CATEGORIES.find((item)=>item.id===id)?.icon || "●"}</TextLabel>} />;
 }
 function Action({ label, onPress, subtle, disabled }) {
+  const { colors: COLORS,styles } = React.useContext(ThemeContext);
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
     onPress={onPress} style={[styles.action, subtle && styles.subtle, disabled && { opacity:.5 }]}>
     <TextLabel style={{ color:subtle ? COLORS.teal : COLORS.white, fontSize:15, fontWeight:"600" }}>{label}</TextLabel>
   </Pressable>;
 }
 function Message({ text, warning=false }) {
+  const { styles } = React.useContext(ThemeContext);
   return <View style={[styles.message, warning && styles.warning]}><TextLabel style={{ fontSize:15, lineHeight:22 }}>{text}</TextLabel></View>;
 }
 function formatDate(time, locale) {
@@ -70,7 +76,13 @@ function AppContent() {
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
   const { width, fontScale } = useWindowDimensions();
-  const colorScheme = useColorScheme();
+  const systemScheme = useColorScheme();
+  const [themeOverride,setThemeOverride] = useState(null);
+  const effectiveScheme = themeOverride || systemScheme || "light";
+  const COLORS = useMemo(() => getColors(effectiveScheme === "dark"), [effectiveScheme]);
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const SMALL_TEXT = useMemo(() => ({ color:COLORS.muted,fontSize:14,lineHeight:20 }), [COLORS]);
+  const themeContext = useMemo(() => ({ colors:COLORS, styles }), [COLORS,styles]);
   const gridWidth = Math.min(Math.max(240, width - 36), 550);
   const columns = fontScale > 1.35 ? 3 : gridWidth >= 330 ? 5 : 4;
   const categoryWidth = (gridWidth - (columns - 1) * 8) / columns;
@@ -80,6 +92,11 @@ function AppContent() {
     let live = true;
     AsyncStorage.getItem("sfy_language").then((saved) => {
       if (live && saved && LANGUAGE_NAMES[saved]) setLocale(saved);
+    }).catch(() => {});
+    AsyncStorage.getItem("sfy_color_scheme").then((saved) => {
+      if (!live || (saved !== "light" && saved !== "dark")) return;
+      setThemeOverride(saved);
+      Appearance.setColorScheme(saved);
     }).catch(() => {});
     // Never hold native splash waiting for permissions, geocoding, network or map tiles.
     SplashScreen.hideAsync().catch(() => {});
@@ -191,6 +208,12 @@ function AppContent() {
     setLanguageOpen(false);
     AsyncStorage.setItem("sfy_language",lang).catch(()=>{});
   };
+  const toggleTheme = () => {
+    const next = effectiveScheme === "dark" ? "light" : "dark";
+    setThemeOverride(next);
+    Appearance.setColorScheme(next);
+    AsyncStorage.setItem("sfy_color_scheme",next).catch(()=>{});
+  };
   const navigate = (id) => { setSelectedPoint(null);setScreen(id); };
   const openUrl = async (url) => {
     if (!/^https:\/\//.test(url || "")) return;
@@ -220,8 +243,9 @@ function AppContent() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={["top","bottom"]}>
-      <StatusBar barStyle={colorScheme==="dark" ? "light-content" : "dark-content"} backgroundColor={COLORS.bg}/>
+    <ThemeContext.Provider value={themeContext}>
+      <SafeAreaView style={styles.root} edges={["top","bottom"]}>
+      <StatusBar barStyle={effectiveScheme==="dark" ? "light-content" : "dark-content"} backgroundColor={COLORS.bg}/>
       {friendlySplash ? <View style={styles.boot}>
         <TextLabel style={{ fontSize:58 }}>🛟</TextLabel>
         <TextLabel style={{ fontSize:28,fontWeight:"900" }}>Safety For You</TextLabel>
@@ -235,11 +259,18 @@ function AppContent() {
               <AppSymbol id="back" size={18}/>
               <TextLabel style={{ color:COLORS.teal,fontSize:16 }}>{t("home")}</TextLabel>
             </Pressable>}
-          <Pressable onPress={()=>setLanguageOpen(true)} style={styles.langButton}
-            accessibilityRole="button" accessibilityLabel={t("language")}>
-            <AppSymbol id="language" size={18}/>
-            <TextLabel style={{ color:COLORS.teal,fontWeight:"600",fontSize:13,flexShrink:1 }}>{LANGUAGE_NAMES[locale]}</TextLabel>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={toggleTheme} style={styles.themeButton}
+              accessibilityRole="button" accessibilityLabel={t(effectiveScheme==="dark" ? "switchLight" : "switchDark")}
+              accessibilityHint={t(effectiveScheme==="dark" ? "switchLight" : "switchDark")}>
+              <AppSymbol id={effectiveScheme==="dark" ? "sun" : "moon"} size={21}/>
+            </Pressable>
+            <Pressable onPress={()=>setLanguageOpen(true)} style={styles.langButton}
+              accessibilityRole="button" accessibilityLabel={t("language")}>
+              <AppSymbol id="language" size={18}/>
+              <TextLabel style={{ color:COLORS.teal,fontWeight:"600",fontSize:13,flexShrink:1 }}>{LANGUAGE_NAMES[locale]}</TextLabel>
+            </Pressable>
+          </View>
         </View>
         <ScrollView key={screen} style={{ flex:1 }} contentContainerStyle={styles.body}>
           {screen === "home" ? <>
@@ -291,7 +322,7 @@ function AppContent() {
                 </Pressable>)}
             </ScrollView>
             {!position && <Message text={t("permission")} warning/>}
-            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300}/>
+            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"}/>
             <Message text={"🎒 " + t("notes")}/>
             <Message text={t("notOpen")} warning/>
             {shelterState==="loading" && <ActivityIndicator color={COLORS.teal} style={{ margin:20 }}/>}
@@ -312,7 +343,7 @@ function AppContent() {
               </View>
             </View>
             {screen==="tsunami" && <Message text={t("tsunamiMove")} warning/>}
-            <SafetyMap t={t} location={position} points={detailReports.map((item)=>({...item,title:displayDynamic(item.title)}))} selectedPoint={selectedPoint} height={320}/>
+            <SafetyMap t={t} location={position} points={detailReports.map((item)=>({...item,title:displayDynamic(item.title)}))} selectedPoint={selectedPoint} height={320} dark={effectiveScheme==="dark"}/>
             {!detailReports.some((r)=>r.coordinate) && <Message text={t("unknownPoint")}/>}
             <View style={[styles.sectionTop,{marginTop:18}]}>
               <Heading>{t("list")}</Heading>
@@ -355,13 +386,14 @@ function AppContent() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ThemeContext.Provider>
   );
 }
 export default function App() { return <SafeAreaProvider><AppContent/></SafeAreaProvider>; }
 // Apple HIG-inspired hierarchy: native symbols, dynamic system colors, dynamic
 // type and >=44pt touch targets. Grouped lists preserve content readability.
-const styles=StyleSheet.create({
+const createStyles = (COLORS) => StyleSheet.create({
   root:{ flex:1, backgroundColor:COLORS.bg },
   body:{ paddingHorizontal:18, paddingTop:18, paddingBottom:36, alignItems:"stretch" },
   header:{ minHeight:56, paddingHorizontal:18, paddingVertical:6, flexDirection:"row",
@@ -369,7 +401,9 @@ const styles=StyleSheet.create({
     borderBottomWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:12 },
   brand:{ fontSize:18,fontWeight:"700",flexShrink:1 },
   backButton:{ minHeight:44,minWidth:60,flexDirection:"row",alignItems:"center",gap:5 },
-  langButton:{ minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"54%" },
+  headerActions:{ flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:8,flexShrink:1 },
+  themeButton:{ minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center" },
+  langButton:{ minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"76%" },
   intro:{ paddingVertical:5,marginBottom:19,gap:6 },
   date:{ fontSize:26,lineHeight:33,fontWeight:"700",letterSpacing:-0.4 },
   locationRow:{ flexDirection:"row",gap:6,alignItems:"center",flexWrap:"wrap" },

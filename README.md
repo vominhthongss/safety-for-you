@@ -10,9 +10,10 @@
 - Home: Japan-local date and location without redundant greeting, compact fully visible responsive hazard grid (no horizontal scrolling), newest hazard **reports**.
 - P2PQuake live foreground WebSocket (551 earthquakes, 552 tsunami, 556 emergency earthquake warning), REST history and reconnect/backoff, issue timestamps and source labels.
 - JMA weather/bulletin feed adapter (Cloudflare Worker): typhoon, heavy rain, flood, landslide, volcano, snow and heat keyword-classified **recent bulletins**, **not authoritative active warning states**.
-- Map with user point and verified epicenter/event point if supplied; no invented coordinates for regional bulletins.
+- Native MapLibre map with GSI raster background and © GSI attribution; no Google Maps SDK or key. User and verified event coordinates are pinned, never guessed.
 - GSI designated **emergency evacuation places** by hazard, 3×3 nearby z10 tiles. Each facility clearly states which hazards it is designated for; this is not a real-time opening status.
-- Japanese interface labels always include manually provided Hepburn Romaji. Dynamic Japanese place names / notices can be romanized via optional self-hosted service; if unavailable the app explicitly says so.\n- 13 language choices: Japanese, English, Vietnamese, Simplified Chinese, Traditional Chinese, Korean, Filipino, Nepali, Indonesian, Portuguese, Burmese, Thai, Hindi. Basic navigation and safety phrases are localized, untranslated copy falls back to English. Official JMA headlines **remain Japanese** pending qualified translation.
+- Japanese interface labels include Romaji. Kana is converted on-device with WanaKana; optional Kuroshiro+Kuromoji handles Kanji. Missing readings stay in Japanese without placeholders.
+- 13 language choices: Japanese, English, Vietnamese, Simplified Chinese, Traditional Chinese, Korean, Filipino, Nepali, Indonesian, Portuguese, Burmese, Thai, Hindi. Basic navigation and safety phrases are localized, untranslated copy falls back to English. Official JMA headlines **remain Japanese** pending qualified translation.
 - No logins, ads, analytics, background tracking or uploaded GPS data in this code.
 
 ## Start
@@ -26,7 +27,7 @@ npx expo install --fix
 npx expo start
 ```
 
-> SDK 58 on real devices: test with a development build if Expo Go's installed release does not match. `npx expo install --check` checks native dependency versions. For Android maps in a standalone build, configure `GOOGLE_MAPS_ANDROID_API_KEY` in `.env`; enable Maps SDK for Android and limit its usage by package name and signing SHA-1.
+> SDK 58 on real devices: test with a development build if Expo Go's installed release does not match. `npx expo install --check` checks native dependency versions. Use a custom native development build for MapLibre on iOS and Android (not Expo Go); no Google Maps API key is required.
 
 ## Configure the JMA weather source
 
@@ -73,4 +74,14 @@ See [docs/UI_DESIGN.md](docs/UI_DESIGN.md) for design decisions, documented limi
 
 ## Japanese readings
 
-Japanese app labels include Romaji automatically (`日本語 / Nihongo`, `地震 / Jishin`). Dynamic JMA, P2PQuake, GSI shelter titles and addresses require the **optional** self-hosted conversion server described at [romaji-service/README.md](romaji-service/README.md). Set `EXPO_PUBLIC_ROMAJI_API_URL` in `.env`. If the service is unreachable, the app displays the original text and **Romaji: unavailable** rather than guessing a potentially unsafe place name. Review critical proper names manually.
+Japanese app labels include Romaji automatically (`日本語 / Nihongo`, `地震 / Jishin`). Dynamic JMA, P2PQuake, GSI shelter titles and addresses require the **optional** self-hosted conversion server described at [romaji-service/README.md](romaji-service/README.md). Set `EXPO_PUBLIC_ROMAJI_API_URL` in `.env`. If the service is unreachable, the original Japanese stays visible without a placeholder or guessed reading. Review critical proper names manually.
+
+## MapLibre, GSI, and theme switch
+
+MapLibre React Native v11 is the native renderer on iOS/Android. It uses the public Japan GSI standard raster tiles, with mandatory © GSI attribution. The map source has its own usage terms: https://maps.gsi.go.jp/development/ichiran.html . No Google Maps SDK, keys, or payment account are needed.
+
+MapLibre requires a custom native Expo build (`npx expo run:android`, `npx expo run:ios`, or EAS); **Expo Go is unsupported**. A native MapLibre Expo plugin is configured.
+
+The sun/moon button beside the language selector toggles Light / Dark Mode. It follows device mode before the first manual choice, then saves/restores the user's choice with AsyncStorage. Android uses `expo-system-ui` and an explicit dark palette; iOS uses semantic colors. The official GSI raster tiles keep their standard colors for readability.
+
+WanaKana converts Kana to Romaji locally without a backend. Kanji requires the optional Kuroshiro/Kuromoji service; if it is missing or cannot read a name, the original Japanese remains visible with no placeholder.

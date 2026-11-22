@@ -22,3 +22,7 @@
 - Real device testing, manual review of translations by native speakers, screen-reader testing and child-accessibility assessment.
 - Local government active shelter feed, reliable offline maps and cached local shelter index.
 - External legal review, provider attribution/licensing audit, privacy page and data handling assessment.
+
+## Map renderer and appearance
+
+`@maplibre/maplibre-react-native` v11 replaces react-native-maps on both platforms. GSI raster tiles supply the map background, with attribution. Expo Go is unsupported; custom native builds must include the plugin. A saved Light/Dark override uses Appearance and AsyncStorage. iOS semantic and Android explicit palette tokens style application surfaces. Official GSI map tiles are not recolored.

@@ -21,7 +21,7 @@ Last reviewed: 2026-11-22. Guidelines are principles, not an Apple design certif
 
 - Static Japanese UI terms: `src/jaRomaji.js` maps all Japanese translation keys to corresponding Latin-script readings. Labels show both lines to support unfamiliar readers.
 - Dynamic Japanese names/messages: configure `EXPO_PUBLIC_ROMAJI_API_URL` with the optional Kuroshiro/Kuromoji Node service. This is a phonetic guide, not an official translated alert.
-- Reading may be wrong for rare geographical names. Until a reading is returned, show the original plus explicit **Romaji: unavailable**. Do not fabricate readings or location coordinates.
+- Reading may be wrong for rare geographical names. Until a Kanji reading is returned, show the original Japanese without a placeholder. Do not fabricate readings or location coordinates.
 
 ## Manual acceptance checklist
 
@@ -40,3 +40,11 @@ Last reviewed: 2026-11-22. Guidelines are principles, not an Apple design certif
 - https://developer.apple.com/design/human-interface-guidelines/color
 - https://developer.apple.com/design/human-interface-guidelines/buttons
 - https://developer.apple.com/design/tips/
+
+## Theme and map renderer
+
+- A sun/moon button appears immediately beside language selection, with a 44pt minimum hit area and localized accessibility label.
+- Device theme is the default; manual Light / Dark Mode override persists through AsyncStorage and React Native Appearance.
+- iOS semantic system colors and Android dark/light tokens style text, backgrounds, separators, controls and map overlays.
+- MapLibre renders official GSI raster tiles without Google Maps, and retains original GSI map colors for geographic readability.
+- WanaKana reads Kana locally. Kanji readings require Kuroshiro+Kuromoji when configured. Missing readings show original Japanese without a placeholder.

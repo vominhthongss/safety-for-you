@@ -50,9 +50,36 @@ test("All static Japanese translations have matching Romaji readings", () => {
   for (const key of jaKeys) assert.ok(readings[key], "Missing Japanese reading for " + key);
   assert.ok(i18n.includes('ja: "日本語 (Nihongo)"'));
 });
-test("Live Japanese strings are paired with Romaji or explicit unavailable state", () => {
+test("Live Japanese readings convert Kana locally without placeholders", () => {
   const code = read("src/romanization.js");
   assert.ok(code.includes("showJapaneseWithRomaji"));
-  assert.ok(code.includes("Romaji: unavailable"));
   assert.ok(code.includes("CONFIG.romajiService"));
+});
+
+test("Live Romaji conversion uses WanaKana and never displays placeholder", () => {
+  const src = read("src/romanization.js");
+  assert.ok(src.includes('from "wanakana"'));
+  assert.ok(src.includes("toRomaji(value)"));
+  assert.ok(src.includes("if (!reading || reading === value) return value;"));
+  assert.ok(!src.includes("Romaji: unavailable"));
+});
+test("Native MapLibre GSI map replaces Google Maps", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const config = read("app.config.js");
+  const map = read("src/SafetyMap.js");
+  assert.ok(pkg.dependencies["@maplibre/maplibre-react-native"]);
+  assert.ok(!pkg.dependencies["react-native-maps"]);
+  assert.ok(config.includes('"@maplibre/maplibre-react-native"'));
+  assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
+  assert.ok(map.includes('from "@maplibre/maplibre-react-native"'));
+  assert.ok(map.includes("© GSI"));
+});
+test("Light Dark mode button next to language persists override", () => {
+  const app = read("App.js");
+  assert.ok(app.includes("toggleTheme"));
+  assert.ok(app.includes("Appearance.setColorScheme(next)"));
+  assert.ok(app.includes('AsyncStorage.setItem("sfy_color_scheme",next)'));
+  assert.ok(app.includes("styles.themeButton"));
+  assert.ok(app.includes("styles.langButton"));
+  assert.ok(JSON.parse(read("package.json")).dependencies["expo-system-ui"]);
 });
