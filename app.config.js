@@ -6,7 +6,7 @@ module.exports = {
     scheme: "safetyforyou",
     version: "0.1.0",
     orientation: "portrait",
-    userInterfaceStyle: "light",
+    userInterfaceStyle: "automatic",
     ios: {
       supportsTablet: true,
       bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.vominhthongss.safetyforyou",

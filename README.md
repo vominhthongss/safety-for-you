@@ -7,12 +7,12 @@
 ## Features
 
 - Quick native splash plus optional friendly splash (`.env`, 0–600 ms, **never waits for APIs**).
-- Home: Japan-local date, permission-based location, accessible emoji illustrated horizontal 2-row grid, newest hazard **reports**.
+- Home: Japan-local date and location without redundant greeting, compact fully visible responsive hazard grid (no horizontal scrolling), newest hazard **reports**.
 - P2PQuake live foreground WebSocket (551 earthquakes, 552 tsunami, 556 emergency earthquake warning), REST history and reconnect/backoff, issue timestamps and source labels.
 - JMA weather/bulletin feed adapter (Cloudflare Worker): typhoon, heavy rain, flood, landslide, volcano, snow and heat keyword-classified **recent bulletins**, **not authoritative active warning states**.
 - Map with user point and verified epicenter/event point if supplied; no invented coordinates for regional bulletins.
 - GSI designated **emergency evacuation places** by hazard, 3×3 nearby z10 tiles. Each facility clearly states which hazards it is designated for; this is not a real-time opening status.
-- 13 language choices: Japanese, English, Vietnamese, Simplified Chinese, Traditional Chinese, Korean, Filipino, Nepali, Indonesian, Portuguese, Burmese, Thai, Hindi. Basic navigation and safety phrases are localized, untranslated copy falls back to English. Official JMA headlines **remain Japanese** pending qualified translation.
+- Japanese interface labels always include manually provided Hepburn Romaji. Dynamic Japanese place names / notices can be romanized via optional self-hosted service; if unavailable the app explicitly says so.\n- 13 language choices: Japanese, English, Vietnamese, Simplified Chinese, Traditional Chinese, Korean, Filipino, Nepali, Indonesian, Portuguese, Burmese, Thai, Hindi. Basic navigation and safety phrases are localized, untranslated copy falls back to English. Official JMA headlines **remain Japanese** pending qualified translation.
 - No logins, ads, analytics, background tracking or uploaded GPS data in this code.
 
 ## Start
@@ -64,3 +64,13 @@ npx expo install --check
 ```
 
 Tests currently cover configuration/source contract only, not runtime hardware safety scenarios.
+
+## iOS / Apple Human Interface Guidelines-inspired UI
+
+Apple-style semantic typography and adaptive system colors on iOS, SF Symbols for iOS and native Material Symbols for Android. Updated home contains all 10 hazard options at once instead of a horizontal carousel. Responsive columns avoid clipping at large accessibility fonts; all primary controls meet at least 44pt touch targets.
+
+See [docs/UI_DESIGN.md](docs/UI_DESIGN.md) for design decisions, documented limitations, and QA checks.
+
+## Japanese readings
+
+Japanese app labels include Romaji automatically (`日本語 / Nihongo`, `地震 / Jishin`). Dynamic JMA, P2PQuake, GSI shelter titles and addresses require the **optional** self-hosted conversion server described at [romaji-service/README.md](romaji-service/README.md). Set `EXPO_PUBLIC_ROMAJI_API_URL` in `.env`. If the service is unreachable, the app displays the original text and **Romaji: unavailable** rather than guessing a potentially unsafe place name. Review critical proper names manually.

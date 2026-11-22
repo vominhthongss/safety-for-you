@@ -31,7 +31,7 @@ export default function SafetyMap({ location, points = [], selectedPoint, t, hei
   );
 }
 const styles = StyleSheet.create({
-  shell: { borderRadius: 20, overflow: "hidden", backgroundColor: COLORS.tealLight, borderWidth: 1, borderColor: COLORS.border },
-  overlay: { position: "absolute", top: 12, left: 12, backgroundColor: "white", borderRadius: 10, padding: 7 },
+  shell: { borderRadius: 12, overflow: "hidden", backgroundColor: COLORS.tealLight, borderWidth: 1, borderColor: COLORS.border },
+  overlay: { position: "absolute", top: 12, left: 12, backgroundColor: COLORS.white, borderRadius: 10, padding: 10 },
   overlayText: { fontSize: 12, color: COLORS.muted, fontWeight: "600" }
 });

@@ -29,3 +29,30 @@ test("Shelter layers only claim the officially matched hazard", () => {
   assert.ok(config.includes('tsunami: { tile: "skhb05"'));
   assert.ok(!config.includes('typhoon: { tile: "skhb03"'));
 });
+
+test("Apple HIG home does not require horizontal hazard scrolling or redundant greeting", () => {
+  const app = read("App.js");
+  assert.ok(app.includes('CATEGORIES.map((item)'));
+  assert.ok(app.includes("categoryWidth"));
+  assert.ok(app.includes("useWindowDimensions"));
+  assert.ok(!app.includes("styles.gridScroller"));
+  assert.ok(!app.includes('t("today")'));
+  assert.ok(app.includes("SymbolView"));
+  assert.ok(app.includes("fontScale"));
+});
+test("All static Japanese translations have matching Romaji readings", () => {
+  const i18n = read("src/i18n.js");
+  const ja = i18n.split("const ja = {")[1].split("};")[0];
+  const jaKeys = [...ja.matchAll(/(?:^|[,\\n])\\s*([A-Za-z][A-Za-z0-9]*):/g)].map((m) => m[1]);
+  const code = read("src/jaRomaji.js");
+  const json = code.slice(code.indexOf("{"), code.lastIndexOf("};") + 1);
+  const readings = JSON.parse(json);
+  for (const key of jaKeys) assert.ok(readings[key], "Missing Japanese reading for " + key);
+  assert.ok(i18n.includes('ja: "日本語 (Nihongo)"'));
+});
+test("Live Japanese strings are paired with Romaji or explicit unavailable state", () => {
+  const code = read("src/romanization.js");
+  assert.ok(code.includes("showJapaneseWithRomaji"));
+  assert.ok(code.includes("Romaji: unavailable"));
+  assert.ok(code.includes("CONFIG.romajiService"));
+});

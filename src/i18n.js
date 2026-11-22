@@ -1,7 +1,9 @@
+import { JA_ROMAJI } from "./jaRomaji";
+
 // Human-edited basic navigation/care phrases. JMA bulletins remain in Japanese until reviewed translations exist.
 // Country of residence does not imply a language; users can change it at any time.
 export const LANGUAGE_NAMES = {
-  ja: "日本語", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
+  ja: "日本語 (Nihongo)", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
   "zh-TW": "繁體中文", ko: "한국어", tl: "Filipino", ne: "नेपाली",
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
@@ -107,4 +109,10 @@ export function deviceLanguage(code = "en") {
   const simple = code.split("-")[0].toLowerCase();
   return strings[simple] ? simple : "en";
 }
-export const translate = (locale) => (key) => strings[locale]?.[key] || en[key] || key;
+export const translate = (locale) => (key) => {
+  const value = strings[locale]?.[key] || en[key] || key;
+  if (locale === "ja" && strings.ja[key] && JA_ROMAJI[key]) {
+    return value + "\n" + JA_ROMAJI[key];
+  }
+  return value;
+};
