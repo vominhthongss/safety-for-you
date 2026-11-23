@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: 刷新间隔（秒，至少60秒）。
+- `EXPO_PUBLIC_JMA_PROXY_URL`: 可选的JMA标题Cloudflare Worker地址。
+- `EXPO_PUBLIC_ROMAJI_API_URL`: 可选的自建Kanji转Romaji服务地址。
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: Android/iOS签名构建的固定标识符。
+- `EXPO_PUBLIC_*`: 公开变量会包含在客户端中，不得放入机密信息。
+- `Leaflet 1.9.4`: `postinstall`生成`src/generated/leafletAssets.js`；地图瓦片仍需联网。
 
 ## 可选服务
 
@@ -30,11 +30,10 @@ npx expo start --go -c
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+汉字转罗马字服务请参考`romaji-service/README.md`（Node.js 22+、HTTPS代理及速率限制）。未部署时保留空URL；缺少Worker时天气标题可能无法显示。修改`.env`里的Worker地址后重启Expo。
 
 ## 商店构建
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+仓库目前没有`eas.json`。先执行一次`build:configure`，检查生成的production配置，再设置签名凭证、商店账户、应用标识和生产环境变量。完整流程见下文。
 
 ## 发布检查
 
@@ -62,7 +61,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ## 开源条款
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+依照[MIT许可证](../../LICENSE)，在保留实质性副本中版权及许可证声明的前提下，可以使用、修改和重新分发源代码，包括商业用途。第三方库、地图、瓦片和数据源适用各自条款。贡献时必须保留来源标注、事实核查及安全提示。
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.zh-CN.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## 发布到应用商店
+
+请参阅[Google Play和Apple App Store详细发布指南](../stores/STORE_RELEASE.zh-CN.md)，了解签名、测试、隐私声明、商店审核与当前待办事项。

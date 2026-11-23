@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: Refresh interval ကို စက္ကန့်ဖြင့် သတ်မှတ်သည် (အနည်းဆုံး 60)။
+- `EXPO_PUBLIC_JMA_PROXY_URL`: JMA ခေါင်းစဉ်များအတွက် ရွေးချယ်နိုင်သော Cloudflare Worker URL။
+- `EXPO_PUBLIC_ROMAJI_API_URL`: ရွေးချယ်နိုင်သော Kanji-to-Romaji ကိုယ်ပိုင် service URL။
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: လက်မှတ်ထိုး Android/iOS build များအတွက် တည်ငြိမ်သော ID။
+- `EXPO_PUBLIC_*`: Public variable များသည် app တွင် ပါဝင်သဖြင့် လျှို့ဝှက်ချက် မထားပါနှင့်။
+- `Leaflet 1.9.4`: `postinstall` က `src/generated/leafletAssets.js` ဖန်တီးပြီး map tile များအတွက် Internet လိုအပ်သည်။
 
 ## ရွေးချယ်နိုင်သော ဝန်ဆောင်မှုများ
 
@@ -30,11 +30,10 @@ npx expo start --go -c
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+Kanji/Romaji အတွက်`romaji-service/README.md`ကို ကြည့်ပါ (Node.js 22+, HTTPS, request limit)။ Service မတင်ထားပါက URL အလွတ်ထားပါ။ Worker မရှိလျှင် weather headline မရနိုင်ပါ။ `.env` ပြင်ဆင်ပြီး Expo ပြန်စတင်ပါ။
 
 ## Store build
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+Repository တွင်`eas.json`မရှိသေးပါ။ `build:configure` ကို တစ်ကြိမ်လုပ်ဆောင်ပြီး production setting စစ်ဆေးပါ။ Build မပြုလုပ်မီ signing credential၊ store account၊ ID နှင့် environment variable တို့ကို ပြင်ဆင်ပါ။ အသေးစိတ်အတွက် အောက်ပါလမ်းညွှန်ကို ကြည့်ပါ။
 
 ## မထုတ်ဝေမီ စစ်ဆေးရန်
 
@@ -62,7 +61,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ## Open-source စည်းကမ်းချက်များ
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+[MIT လိုင်စင်](../../LICENSE)အရ အရေးကြီးသော မိတ္တူများတွင် မူပိုင်ခွင့်နှင့် လိုင်စင်စာတမ်းကို ထိန်းသိမ်းထားပါက ကုန်သွယ်ရေးအပါအဝင် အသုံးပြုခြင်း၊ ပြင်ဆင်ခြင်း၊ ပြန်လည်ဖြန့်ချိခြင်းတို့ ပြုလုပ်နိုင်သည်။ Third-party library၊ map၊ tile နှင့် data feed များတွင် သီးခြားစည်းမျဉ်းရှိသည်။ ပံ့ပိုးမှုတိုင်းတွင် source attribution နှင့် ဘေးကင်းရေးအသိပေးချက် ထိန်းသိမ်းပါ။
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.my.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## App Store များသို့ ထုတ်ဝေခြင်း
+
+Signing၊ testing၊ privacy၊ store review နှင့် ကျန်ရှိသော လုပ်ငန်းများအတွက်[Google Play နှင့် Apple App Store လမ်းညွှန်](../stores/STORE_RELEASE.my.md)ကို ဖတ်ပါ။

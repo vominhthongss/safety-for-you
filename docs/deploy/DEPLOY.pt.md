@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: Intervalo de atualização em segundos (mínimo 60).
+- `EXPO_PUBLIC_JMA_PROXY_URL`: URL opcional do Cloudflare Worker para títulos da JMA.
+- `EXPO_PUBLIC_ROMAJI_API_URL`: URL opcional de serviço próprio de Kanji para Romaji.
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: Identificadores permanentes de builds Android/iOS assinados.
+- `EXPO_PUBLIC_*`: Variáveis públicas entram no aplicativo; não armazene segredos.
+- `Leaflet 1.9.4`: O `postinstall` gera `src/generated/leafletAssets.js`; os blocos do mapa ainda exigem Internet.
 
 ## Serviços opcionais
 
@@ -30,11 +30,10 @@ O Worker opcional da Cloudflare publica títulos recentes da JMA em /hazards, n�
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+Consulte`romaji-service/README.md`para conversão Kanji/Romaji (Node.js 22+, HTTPS e limites de requisições). Deixe a URL vazia quando o serviço não estiver implantado; sem Worker, títulos meteorológicos podem não aparecer. Reinicie o Expo após alterar `.env`.
 
 ## Builds para lojas
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+O repositório ainda não inclui`eas.json`. Execute`build:configure`uma vez e revise o perfil production. Configure credenciais de assinatura, contas das lojas, identificadores e variáveis de produção antes do build. Consulte as instruções detalhadas abaixo.
 
 ## Verificação de lançamento
 
@@ -62,7 +61,11 @@ Antes da publicação, forneça informações de privacidade, ícone, capturas d
 
 ## Termos de código aberto
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+Pela[Licença MIT](../../LICENSE), o código pode ser usado, modificado e redistribuído, inclusive comercialmente, desde que o aviso de direitos autorais e licença seja preservado em cópias substanciais. Bibliotecas, mapas, tiles e fontes externas mantêm termos próprios. Contribuições devem preservar atribuição, verificação de fontes e avisos de segurança.
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.pt.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## Publicação nas lojas de aplicativos
+
+Veja o[guia de publicação no Google Play e na Apple App Store](../stores/STORE_RELEASE.pt.md), com assinatura, testes, privacidade, revisão e pendências atuais.
