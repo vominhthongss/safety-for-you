@@ -173,8 +173,8 @@ test("Common JMA Japanese place names have offline Romaji; unknown Kanji is not 
   assert.equal(lookupPlaceReading("宮城県"),"Miyagi-ken");
   assert.equal(lookupPlaceReading("北海道太平洋沿岸東部"),"Hokkaidō Taiheiyō engan tōbu");
   assert.equal(lookupPlaceReading("未知の地名"),"");
-  const roman=read("src/romanization.js");
-  assert.ok(roman.includes("lookupPlaceReading(text)"));
+  const {getReliableReading}=require("../src/romajiLabel.cjs");
+  assert.equal(getReliableReading("愛知県"),"Aichi-ken");
 });
 test("Official JMA GeoJSON URLs are used for earthquake and tsunami published regions", () => {
   const z=require("../src/hazardZones.cjs");
@@ -224,10 +224,10 @@ test("Multi-prefecture Romaji and common JMA phrases work without remote server"
   assert.equal(composeReadings("愛知県, 名古屋市",lookupPlaceReading),
     "Aichi-ken, Nagoya-shi");
   assert.equal(composeReadings("宮城県 · 未知の地名",lookupPlaceReading),"");
-  const roman=read("src/romanization.js");
-  assert.ok(roman.includes("composeReadings(text"));
-  assert.ok(roman.includes("lookupPlaceReading(text)"));
-  assert.ok(!roman.includes("Romaji: unavailable"));
+  const {getReliableReading,showJapaneseWithRomaji}=
+    require("../src/romajiLabel.cjs");
+  assert.equal(getReliableReading("宮城県 · 岩手県"),"Miyagi-ken · Iwate-ken");
+  assert.equal(showJapaneseWithRomaji("未知の地名"),"未知の地名");
 });
 test("Cards, map pins and shaded JMA zones use data-backed severity colors", () => {
   const app=read("App.js");
