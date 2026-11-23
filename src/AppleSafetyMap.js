@@ -100,7 +100,7 @@ export default function AppleSafetyMap({
           ...eventPoints.filter(item=>item.coordinate.latitude===selected.latitude &&
             item.coordinate.longitude===selected.longitude)
             .flatMap(item=>[item.title,item.detail].filter(Boolean))]
-          .filter(Boolean).join(" · ")||undefined
+          .filter(Boolean).join(" · ")||undefined}
         anchor={{x:0.5,y:0.5}} tracksViewChanges={false}>
         <View style={[styles.epicenter,{backgroundColor:mapColor(selectedColor)}]}>
           <Text style={styles.epicenterText}>✦</Text>
