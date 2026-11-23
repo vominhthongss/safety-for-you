@@ -13,6 +13,8 @@ export function getColors(dark = false) {
     border: ios("separator", "#D1D1D6", "#44444C"),
     teal: ios("systemBlue", "#007AFF", "#77B5FF"),
     tealLight: ios("tertiarySystemFill", "#E7F2FA", "#2A3644"),
+    // Distinguishable report dates without implying an emergency warning level.
+    timestamp: ios("systemIndigo", "#44449B", "#C6C3FF"),
     alert: ios("systemRed", "#D92D20", "#FF8174"),
     alertBg: ios("secondarySystemGroupedBackground", "#FFF2EF", "#352523"),
     yellow: "#FDECC9"

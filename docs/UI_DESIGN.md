@@ -9,9 +9,9 @@ Safety For You uses restrained grouped surfaces, native SF Symbols on iOS, local
 - Sun/moon Light/Dark toggle sits alongside language choice. Saved locally and restored after app relaunch.
 - Japanese static strings show original Japanese + Romaji; dynamic readings are only added when reliable.
 
-## Leaflet + GSI map
+## Leaflet + OpenStreetMap Japan map
 
-- Expo Go-compatible WebView displays Leaflet, packaged locally during `npm install`, with GSI raster tiles. No MapLibre native SDK, Mapbox account or Google Maps key.
+- Expo Go-compatible WebView displays Leaflet, packaged locally during `npm install`, with OpenStreetMap Japan raster tiles. No MapLibre native SDK, Mapbox account or Google Maps key.
 - Panning, pinching, zoom controls, individual interactive markers and a clearly visible GSI attribution/terms link.
 - When an event with verified coordinates is selected, its pin and user GPS pin are both visible via `fitBounds` (including geographically distant points). No false event pin for area warnings. If GPS is denied, the event is centered.
 - On slow/no network, map imagery may be unavailable; the app should show an error and must never imply there is no danger.
@@ -41,3 +41,21 @@ Safety For You uses restrained grouped surfaces, native SF Symbols on iOS, local
 - Shared mapping in `src/hazardSeverity.cjs` controls event card and pin colors; `src/hazardZones.cjs` uses the same mapping for official observed shaking-region polygons and tsunami forecast coastlines.
 - Tsunami grades are yellow (advisory), red (warning), and purple (major warning). Cancellations and unavailable measurements are neutral gray. No generic weather bulletin receives arbitrary red/green severity coloring.
 - Common Japanese geographic names, source phrases and joined region titles receive Romaji without depending on optional backend configuration. For unknown Kanji, avoid incorrect pronunciation; no invented Romaji is displayed.
+
+## Apple HIG review (2026-11-23)
+
+Verified design targets against [Apple Buttons](https://developer.apple.com/design/human-interface-guidelines/buttons), [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility), [Typography](https://developer.apple.com/design/human-interface-guidelines/typography) and [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets):
+
+- Main controls and filter chips use at least **44pt** touch targets; category cards can grow when text scales. No deeply nested pressable actions within report selection.
+- Report timestamps have a semantic indigo accent **distinct from risk-grade colors** and prepend localized **Today** only on the same calendar date in Japan (`Asia/Tokyo`). Colors never indicate hazard severity by themselves.
+- The language selector displays `日本語` without Romaji, has a localized close label, marks the selected option for VoiceOver, provides a scrollable list and a height suitable for the visible screen.
+- Semantic iOS system colors adapt to appearance; larger text, VoiceOver, safe areas, compact layouts, reduced contrast and dark mode require device QA.
+- This is an **implementation review, not an Apple certification or App Store approval**. Verify contrast, WCAG-equivalent accessibility behavior and human safety copy on physical devices.
+
+### Manual iOS QA still required
+
+- [ ] VoiceOver order/selected language and dismissal of sheet.
+- [ ] Dynamic Type at accessibility sizes, long translations and iPad split-screen.
+- [ ] Light/Dark/high-contrast, touch targets and report card actions.
+- [ ] Screen reader map fallback, denied location and offline feed behavior.
+- [ ] App Store privacy/metadata, location permission wording and accurate non-official warning disclaimer.

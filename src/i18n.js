@@ -3,7 +3,7 @@ import { JA_ROMAJI } from "./jaRomaji";
 // Human-edited basic navigation/care phrases. JMA bulletins remain in Japanese until reviewed translations exist.
 // Country of residence does not imply a language; users can change it at any time.
 export const LANGUAGE_NAMES = {
-  ja: "日本語 (Nihongo)", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
+  ja: "日本語", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
   "zh-TW": "繁體中文", ko: "한국어", tl: "Filipino", ne: "नेपाली",
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
@@ -184,7 +184,22 @@ const other = {
   th: {earthquake:"แผ่นดินไหว",tsunami:"สึนามิ",typhoon:"พายุไต้ฝุ่น",rain:"ฝนตกหนัก",flood:"น้ำท่วม",landslide:"ดินถล่ม",volcano:"ภูเขาไฟ",snow:"หิมะตกหนัก",heat:"อากาศร้อนจัด",shelter:"จุดอพยพ",location:"ตำแหน่งของคุณ",latest:"ข่าวล่าสุด",allowLocation:"อนุญาตตำแหน่ง",language:"ภาษา",map:"แผนที่",refresh:"รีเฟรช",notes:"นำเอกสารสำคัญ ยา และน้ำไปด้วย ชาวต่างชาติควรนำหนังสือเดินทางและบัตรพำนักหากหยิบได้ง่าย นำของให้น้อย ชีวิตสำคัญที่สุด",noGuarantee:"ไม่มีรายงานใหม่ไม่ได้หมายความว่าปลอดภัย โปรดทำตามประกาศทางการ"},
   hi: {earthquake:"भूकंप",tsunami:"सुनामी",typhoon:"तूफ़ान",rain:"भारी बारिश",flood:"बाढ़",landslide:"भूस्खलन",volcano:"ज्वालामुखी",snow:"भारी बर्फ़",heat:"भीषण गर्मी",shelter:"निकासी स्थल",location:"आपका स्थान",latest:"ताज़ा जानकारी",allowLocation:"स्थान की अनुमति दें",language:"भाषा",map:"नक्शा",refresh:"रीफ़्रेश",notes:"ज़रूरी दस्तावेज़, दवाएँ और पानी साथ लें। विदेशी निवासी हों तो संभव हो तो पासपोर्ट और निवास कार्ड लें। कम सामान लें। जीवन सबसे ज़रूरी है।",noGuarantee:"नई सूचना न होना सुरक्षित होने का प्रमाण नहीं है। आधिकारिक निर्देश मानें।"}
 };
+const TODAY_LABELS = {
+  en:"Today", ja:"今日", vi:"Hôm nay", "zh-CN":"今天", "zh-TW":"今天",
+  ko:"오늘", tl:"Ngayon", ne:"आज", id:"Hari ini", pt:"Hoje",
+  my:"ယနေ့", th:"วันนี้", hi:"आज"
+};
+const CLOSE_LABELS = {
+  en:"Close", ja:"閉じる", vi:"Đóng", "zh-CN":"关闭", "zh-TW":"關閉",
+  ko:"닫기", tl:"Isara", ne:"बन्द गर्नुहोस्", id:"Tutup", pt:"Fechar",
+  my:"ပိတ်ရန်", th:"ปิด", hi:"बंद करें"
+};
 export const strings = { en, ja, vi, ...other };
+export function translatePlain(locale,key) {
+  if (key === "today") return TODAY_LABELS[locale] || TODAY_LABELS.en;
+  if (key === "close") return CLOSE_LABELS[locale] || CLOSE_LABELS.en;
+  return strings[locale]?.[key] || en[key] || key;
+}
 export function deviceLanguage(code = "en") {
   if (strings[code]) return code;
   const lower = code.toLowerCase();
@@ -194,7 +209,7 @@ export function deviceLanguage(code = "en") {
   return strings[simple] ? simple : "en";
 }
 export const translate = (locale) => (key) => {
-  const value = strings[locale]?.[key] || en[key] || key;
+  const value = translatePlain(locale,key);
   if (locale === "ja" && strings.ja[key] && JA_ROMAJI[key]) {
     return value + "\n" + JA_ROMAJI[key];
   }

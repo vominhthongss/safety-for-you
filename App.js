@@ -14,13 +14,14 @@ import { getColors } from "./src/theme";
 import { SymbolView } from "expo-symbols";
 import { showJapaneseWithRomaji, useJapaneseReadings } from "./src/romanization";
 import { CATEGORIES, COLORS, CONFIG, SHELTER_LAYERS, CATEGORY_SYMBOLS } from "./src/config";
-import { LANGUAGE_NAMES, deviceLanguage, translate } from "./src/i18n";
+import { LANGUAGE_NAMES, deviceLanguage, translate, translatePlain } from "./src/i18n";
 import {
   getQuakeReports, getWeatherReports, getShelters,
   mergeReports, normalizeQuake, isVeryRecentUrgent
 } from "./src/data";
 const {reportMetrics,heightText} = require("./src/hazardView.cjs");
 const {getReportSeverity,getAreaSeverity} = require("./src/hazardSeverity.cjs");
+const {formatReportDate} = require("./src/dateTime.cjs");
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -51,11 +52,7 @@ function Message({ text, warning=false }) {
   return <View style={[styles.message, warning && styles.warning]}><TextLabel style={{ fontSize:15, lineHeight:22 }}>{text}</TextLabel></View>;
 }
 function formatDate(time, locale) {
-  if (!time) return "—";
-  const parsed = new Date(String(time).replace(/^(\d{4})\/(\d\d)\/(\d\d) (\d\d:\d\d:\d\d)/, "$1-$2-$3T$4+09:00"));
-  if (!Number.isFinite(parsed.getTime())) return String(time);
-  try { return new Intl.DateTimeFormat(locale === "ja" ? "en-US" : locale, { timeZone:"Asia/Tokyo", year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit" }).format(parsed); }
-  catch { return parsed.toISOString(); }
+  return formatReportDate(time,locale,translatePlain(locale,"today"));
 }
 function AppContent() {
   const detected = deviceLanguage(Localization.getLocales()?.[0]?.languageTag || "en");
@@ -82,7 +79,7 @@ function AppContent() {
   const reportsScroll = useRef(null);
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
-  const { width, fontScale } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const systemScheme = useColorScheme();
   const [themeOverride,setThemeOverride] = useState(null);
   const effectiveScheme = themeOverride || systemScheme || "light";
@@ -91,9 +88,9 @@ function AppContent() {
   const SMALL_TEXT = useMemo(() => ({ color:COLORS.muted,fontSize:14,lineHeight:20 }), [COLORS]);
   const themeContext = useMemo(() => ({ colors:COLORS, styles }), [COLORS,styles]);
   const gridWidth = Math.min(Math.max(240, width - 36), 550);
-  const columns = fontScale > 1.35 ? 3 : gridWidth >= 330 ? 5 : 4;
+  const columns = fontScale > 1.8 ? 2 : fontScale > 1.25 ? 3 : gridWidth >= 330 ? 5 : 4;
   const categoryWidth = (gridWidth - (columns - 1) * 8) / columns;
-  const categoryHeight = (locale === "ja" ? 108 : 88) + (fontScale > 1.35 ? 25 : 0);
+  const categoryHeight = (locale === "ja" ? 118 : 104) + (fontScale > 1.25 ? 28 : 0);
 
   useEffect(() => {
     let live = true;
@@ -281,12 +278,12 @@ function AppContent() {
       inHome ? 1 : expanded ? 30 : 3);
     const remaining = Math.max(0,(report.tsunamiAreas?.length || 0)-tsunamiAreas.length);
     return (
-      <Pressable key={report.id} onPress={()=>selectReport(report)}
-        accessibilityRole="button"
-        accessibilityLabel={t(report.category)+": "+report.title}
-        style={[styles.report,
+      <View key={report.id} style={[styles.report,
           {borderLeftColor:severity.color,borderLeftWidth:4},
           expanded && {borderColor:COLORS.teal,borderLeftColor:severity.color}]}>
+        <Pressable onPress={()=>selectReport(report)} style={styles.reportMain}
+          accessibilityRole="button"
+          accessibilityLabel={t(report.category)+": "+report.title}>
         <View style={styles.reportTop}>
           <View style={{flexDirection:"row",alignItems:"center",flex:1,gap:8}}>
             <AppSymbol id={report.category} size={19}/>
@@ -294,7 +291,7 @@ function AppContent() {
               {t(report.category)}
             </TextLabel>
           </View>
-          <TextLabel style={{...SMALL_TEXT,fontSize:12,flexShrink:1,textAlign:"right"}}>
+          <TextLabel style={[styles.timestamp,{flexShrink:1,textAlign:"right"}]}>
             {formatDate(report.time,locale)}
           </TextLabel>
         </View>
@@ -329,9 +326,10 @@ function AppContent() {
             {!report.cancelled && <TextLabel style={SMALL_TEXT}>
               {t("forecastHeight")}: {heightText(area.forecastHeight,t) || t("notPublished")}
             </TextLabel>}
-            {!inHome && !!area.arrivalTime && <TextLabel style={SMALL_TEXT}>
-              {t("estimatedArrival")}: {formatDate(area.arrivalTime,locale)}
-            </TextLabel>}
+            {!inHome && !!area.arrivalTime && <View style={styles.reportMeta}>
+              <TextLabel style={SMALL_TEXT}>{t("estimatedArrival")}:</TextLabel>
+              <TextLabel style={styles.timestamp}>{formatDate(area.arrivalTime,locale)}</TextLabel>
+            </View>}
             {!inHome && !!area.arrivalCondition && <TextLabel style={SMALL_TEXT}>
               {displayDynamic(area.arrivalCondition)}
             </TextLabel>}
@@ -343,20 +341,24 @@ function AppContent() {
         {!inHome && report.category !== "earthquake" &&
           report.category !== "tsunami" && metrics.length === 0 &&
           <TextLabel style={SMALL_TEXT}>{t("notPublished")}</TextLabel>}
-        <TextLabel style={{...SMALL_TEXT,fontSize:12,marginTop:3}}>
-          {t("sources")}: {report.source} · {t("issuedAt")}: {formatDate(report.issuedAt || report.time,locale)}
-        </TextLabel>
+        <View style={[styles.reportMeta,{marginTop:3}]}>
+          <TextLabel style={{...SMALL_TEXT,fontSize:13}}>
+            {t("sources")}: {report.source} · {t("issuedAt")}:
+          </TextLabel>
+          <TextLabel style={styles.timestamp}>{formatDate(report.issuedAt || report.time,locale)}</TextLabel>
+        </View>
         {report.category === "tsunami" && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
           {t("asIssued")}
         </TextLabel>}
         {actionable && <TextLabel style={{color:COLORS.alert,fontWeight:"700",fontSize:13}}>
           {t("active")}
         </TextLabel>}
+        </Pressable>
         {!inHome && <View style={styles.rowButtons}>
           {report.coordinate && <Action label={t("openMap")} subtle onPress={()=>selectReport(report)}/>}
           {report.url && <Action label={t("openOfficial")} subtle onPress={()=>openUrl(report.url)}/>}
         </View>}
-      </Pressable>
+      </View>
     );
   };
 
@@ -435,7 +437,7 @@ function AppContent() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap:8,marginBottom:14 }}>
               {Object.keys(SHELTER_LAYERS).map((hazard)=>
                 <Pressable key={hazard} onPress={()=>setShelterHazard(hazard)}
-                  accessibilityRole="button" accessibilityState={{selected:shelterHazard===hazard}} style={[styles.chip,shelterHazard===hazard && styles.chipActive]}>
+                  accessibilityRole="button" accessibilityLabel={t(hazard)} accessibilityState={{selected:shelterHazard===hazard}} style={[styles.chip,shelterHazard===hazard && styles.chipActive]}>
                   <TextLabel style={{fontSize:13,fontWeight:"800",color:shelterHazard===hazard?COLORS.white:COLORS.teal}}>{t(hazard)}</TextLabel>
                 </Pressable>)}
             </ScrollView>
@@ -508,16 +510,16 @@ function AppContent() {
       <Modal visible={languageOpen} transparent animationType="slide" onRequestClose={()=>setLanguageOpen(false)}>
         <View style={styles.backdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={()=>setLanguageOpen(false)}
-            accessibilityRole="button" accessibilityLabel="Close language selection"/>
-          <View style={styles.languageSheet}>
+            accessibilityRole="button" accessibilityLabel={t("close")}/>
+          <View style={styles.languageSheet} accessibilityViewIsModal>
             <View style={styles.sheetHeader}>
               <Heading>{t("language")}</Heading>
               <Pressable onPress={()=>setLanguageOpen(false)} accessibilityRole="button"
-                accessibilityLabel="Close language selection" style={styles.sheetClose}>
+                accessibilityLabel={t("close")} style={styles.sheetClose}>
                 <TextLabel style={{color:COLORS.teal,fontWeight:"600"}}>✕</TextLabel>
               </Pressable>
             </View>
-            <ScrollView style={{maxHeight:420}}>
+            <ScrollView style={{maxHeight:Math.min(520,Math.max(220,height*0.6))}}>
               {Object.entries(LANGUAGE_NAMES).map(([code,name])=><Pressable key={code} style={styles.languageItem}
                 accessibilityRole="button" accessibilityState={{selected:code===locale}}
                 onPress={()=>chooseLanguage(code)}>
@@ -546,13 +548,13 @@ const createStyles = (COLORS) => StyleSheet.create({
   themeButton:{ minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center" },
   langButton:{ minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"76%" },
   intro:{ paddingVertical:5,marginBottom:19,gap:6 },
-  date:{ fontSize:26,lineHeight:33,fontWeight:"700",letterSpacing:-0.4 },
+  date:{ fontSize:26,lineHeight:33,fontWeight:"700",letterSpacing:-0.4,color:COLORS.timestamp },
   locationRow:{ flexDirection:"row",gap:6,alignItems:"center",flexWrap:"wrap" },
   categoryGrid:{ flexDirection:"row", flexWrap:"wrap",columnGap:8,rowGap:8,alignSelf:"center",marginBottom:16 },
   category:{ borderRadius:12,paddingHorizontal:3,paddingVertical:9,backgroundColor:COLORS.white,
     justifyContent:"center",alignItems:"center",gap:5,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  categoryLabel:{ fontSize:11.5,lineHeight:15,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
+  categoryLabel:{ fontSize:13,lineHeight:18,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
   sectionTop:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
   refresh:{ minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5 },
   severityRow:{flexDirection:"row",alignItems:"center",gap:8,marginVertical:3,flexWrap:"wrap"},
@@ -565,7 +567,10 @@ const createStyles = (COLORS) => StyleSheet.create({
     marginTop:5,paddingTop:9,gap:2 },
   report:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginBottom:9,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:6 },
+  reportMain:{minHeight:44,gap:6},
   reportTop:{ flexDirection:"row",alignItems:"center",gap:8,justifyContent:"space-between",marginBottom:3 },
+  reportMeta:{flexDirection:"row",alignItems:"baseline",gap:5,flexWrap:"wrap"},
+  timestamp:{fontSize:14,lineHeight:21,color:COLORS.timestamp,fontWeight:"700"},
   message:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginVertical:6,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
   warning:{ borderLeftWidth:3,borderLeftColor:COLORS.alert },

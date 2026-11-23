@@ -18,7 +18,7 @@ Open with Expo Go on iOS/Android or the matching Simulator. **No Xcode rebuild, 
 
 - The map renders with **react-native-webview 14.0.1** (included in Expo Go 58).
 - **Leaflet 1.9.4** is packaged **inside the app** by `postinstall` (`scripts/bundle-leaflet.cjs`). This avoids downloading Leaflet from a CDN at runtime. If Metro cannot find `src/generated/leafletAssets.js`, rerun `npm install` or `npm run bundle:maps`.
-- Real map tiles come from the public **Geospatial Information Authority of Japan (GSI)** over HTTPS. No Google Maps API key, account, billing, or Mapbox token is required. GSI tile access still needs Internet and is subject to [GSI terms](https://maps.gsi.go.jp/development/ichiran.html). Always keep the visible `© GSI` attribution.
+- Raster basemap tiles come from **OpenStreetMap Japan** over HTTPS; the separate **GSI** service provides designated evacuation places. No Google Maps API key or native map plugin is required. Respect both map/data-provider terms and preserve the visible OSM/GSI attributions.
 - The old native MapLibre package and Expo config plugin are **removed**; `MLRNCameraModule` is no longer referenced by the app.
 - If Expo Go itself runs a different SDK than 58, install a compatible Expo Go version. This is an **SDK mismatch**, not a MapLibre dependency.
 
@@ -29,7 +29,7 @@ Open with Expo Go on iOS/Android or the matching Simulator. **No Xcode rebuild, 
 - Other JMA categories (typhoon, heavy rain, flood, landslide, volcano, heavy snow, extreme heat) use a separately deployed optional JMA Atom-feed Worker (`EXPO_PUBLIC_JMA_PROXY_URL`). This Worker currently categorizes **recent bulletin titles only**, not active warnings or verified numerical observations. The app never invents wind, flood, or rainfall figures.
 - **Leaflet + OpenStreetMap Japan map** with markers for the user and verified hazard coordinates. Select an event and `fitBounds` automatically frames both the event and GPS location. Regional warnings without confirmed coordinates **do not get a fake pin**. If GPS is denied, focus the event only.
 - Nearby GSI **designated emergency evacuation locations** filtered by the relevant hazard, including safety notes for foreign residents (papers, passport/residence card if within reach, medication, water, travel light).
-- 13 languages: ja, en, vi, zh-CN, zh-TW, ko, tl, ne, id, pt, my, th, hi. Japanese static interface strings include Romaji. WanaKana converts Kana locally; dynamic Kanji readings optionally come from the Kuroshiro/Kuromoji service (`EXPO_PUBLIC_ROMAJI_API_URL`). Unverified readings remain in Japanese without a misleading placeholder.
+- 13 languages: ja, en, vi, zh-CN, zh-TW, ko, tl, ne, id, pt, my, th, hi. Japanese static interface strings may include verified Romaji, but the language picker uses **日本語** without Romaji. WanaKana converts Kana locally; dynamic Kanji readings optionally come from the Kuroshiro/Kuromoji service (`EXPO_PUBLIC_ROMAJI_API_URL`). Unverified readings remain in Japanese without a misleading placeholder.
 - A sun/moon toggle next to the language picker saves Light/Dark Mode locally.
 
 ## Deploy the optional weather news Worker
@@ -87,3 +87,13 @@ The app bundles a reviewed dictionary of prefectures and common Japanese coastal
 - Improved Japanese/Romaji handling recognizes additional geographic names, JMA information phrases and combined names such as `宮城県 · 岩手県` → `Miyagi-ken · Iwate-ken`. Known names are converted locally without an extra network call; rare Kanji place names still require the optional Kuroshiro/Kuromoji service (set `EXPO_PUBLIC_ROMAJI_API_URL`). Never guess an unverified name reading.
 
 The colors are an accessible **application visualization**, not a claim of official JMA color certification. Always show the text severity and official issued timestamp. The geography overlays remain observed areas or issued coastal warning zones, **not** dynamic wave propagation forecasts.
+
+## Documentation in all 13 languages
+
+The [documentation index](docs/README.md) links to an **Architecture Decision Record (ADR-0001)** and a **deployment guide** in every language supported by the app. The deployment guides cover development, optional Cloudflare JMA Worker and Romaji services, Android/iOS store builds, and release risks.
+
+## Open source and license
+
+Safety For You is **free, nonprofit and open source under the [MIT License](LICENSE)**. Anyone may read, fork, modify, redistribute or use the source commercially, provided the MIT copyright and license notice is preserved in substantial copies. Third-party map tiles, official data, libraries and other assets retain their own terms; MIT does not override them.
+
+This project is an independent disaster-information aid, **not** a government app or a certified real-time emergency-alert system. Data availability, bulletin validity, map access and evacuation-site availability are not guaranteed. In an emergency, follow JMA, J-Alert, authorities and local broadcasts. Contributions and issues are welcome; please preserve factual source checks and accessible, safety-first UI.

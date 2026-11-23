@@ -5,7 +5,7 @@
 - Expo SDK 58 + React Native 0.88, **JavaScript**.
 - `src/SafetyMap.js`: `react-native-webview` with a local, npm-packaged Leaflet engine. No native map SDK or custom Expo config plugin.
 - `scripts/bundle-leaflet.cjs` runs during `npm install`, reads Leaflet 1.9.4 CSS/JS from `node_modules`, and generates `src/generated/leafletAssets.js` (intentionally gitignored).
-- WebView runs a self-contained map HTML. Raster tiles come only from `https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png`. The GSI source link and attribution appear in the React Native overlay.
+- WebView runs a self-contained map HTML. Raster basemap tiles use OSM Japan's English-label raster service; GSI separately provides designated evacuation-place GeoJSON. Preserve each data provider's attribution and usage terms.
 - Native-to-WebView messages pass serialized JSON into a **restricted update function**, not executable API data. Label popups use `textContent`, not `innerHTML`.
 - `src/mapViewport.cjs` computes verified user + selected-event bounds. Leaflet `fitBounds` updates the zoom when a report is selected. A regional warning without coordinates gets no marker.
 - `src/theme.js` provides semantic iOS and explicit Android Light/Dark colors. The preference uses AsyncStorage and React Native Appearance.
@@ -44,3 +44,7 @@
 `src/hazardSeverity.cjs` maps **P2PQuake/JMA Shindo codes** independently of magnitude to colors, labels and ranks for cards, pins and observation polygons. `src/hazardZones.cjs` uses these same colors. Tsunami color is based on published warning grade per affected coast, not estimated wave height or geographic proximity. No realtime active level is derived from historic JMA Atom headlines. A future structured adapter must explicitly mark `severityVerified: true` and a supported `warningGrade` to color meteorological reports.
 
 `src/placeReadings.cjs` includes reviewed names for 47 prefectures and frequent epicenter/coastal regions and common JMA fixed phrases; `src/romajiComposition.cjs` joins reliable readings in multi-prefecture headlines without guessing unknown Kanji. `src/romanization.js` prefers exact online Kuroshiro readings when the optional service is configured and uses local reviewed/Kana fallback when absent. Arbitrary Kanji names cannot safely be transliterated by WanaKana alone.
+
+## ADR, deployment and licensing
+
+See [localized ADR/deployment guides](README.md) for all 13 interface languages. Day-sensitive bulletin rendering is centralized in `src/dateTime.cjs` using `Asia/Tokyo`; `src/i18n.js` provides translated same-day labels. Timestamp tint is semantic/system indigo and is deliberately independent from `src/hazardSeverity.cjs`. The codebase is released under [MIT](../LICENSE), while external map/data services have separate terms. App Store builds require a publisher-managed EAS configuration and manual safety/accessibility validation.

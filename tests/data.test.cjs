@@ -40,7 +40,7 @@ test("Apple HIG home does not require horizontal hazard scrolling or redundant g
   assert.ok(app.includes("SymbolView"));
   assert.ok(app.includes("fontScale"));
 });
-test("All static Japanese translations have matching Romaji readings", () => {
+test("Japanese content keeps Romaji, while language picker shows only 日本語", () => {
   const i18n = read("src/i18n.js");
   const ja = i18n.split("const ja = {")[1].split("};")[0];
   const jaKeys = [...ja.matchAll(/(?:^|[,\\n])\\s*([A-Za-z][A-Za-z0-9]*):/g)].map((m) => m[1]);
@@ -48,7 +48,8 @@ test("All static Japanese translations have matching Romaji readings", () => {
   const json = code.slice(code.indexOf("{"), code.lastIndexOf("};") + 1);
   const readings = JSON.parse(json);
   for (const key of jaKeys) assert.ok(readings[key], "Missing Japanese reading for " + key);
-  assert.ok(i18n.includes('ja: "日本語 (Nihongo)"'));
+  assert.ok(i18n.includes('ja: "日本語"'));
+  assert.ok(!i18n.includes('日本語 (Nihongo)'));
 });
 test("Live Japanese readings convert Kana locally without placeholders", () => {
   const code = read("src/romanization.js");
