@@ -1,47 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { toRomaji } from "wanakana";
-import { CONFIG } from "./config";
-const {lookupPlaceReading}=require("./placeReadings.cjs");
-
-const JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/;
-const KANJI = /[\u3400-\u9fff]/;
-const MAX_ITEMS = 400;
-const MAX_TEXT = 160;
-const {composeReadings}=require("./romajiComposition.cjs");
-
-export const hasJapanese = (value) => JAPANESE.test(String(value || ""));
-const isKanji = (value) => KANJI.test(String(value || ""));
-const short = (value) => String(value || "").slice(0, MAX_TEXT);
-
-/**
- * A local reading is safe only when the original contains kana and no kanji.
- * Wanakana cannot infer kanji pronunciation: it transliterates kana only.
- */
-export function toLocalRomaji(text) {
-  const value = String(text || "");
-  if (!hasJapanese(value) || isKanji(value)) return "";
-  return toRomaji(value).trim();
-}
-
-// Transliterate all members of a multi-region title only when every component
-// has a reliable reading. Place/service dictionaries take precedence over
-// simple Kana conversion. Unknown Kanji names remain in the official script.
-export function getReliableReading(value, readings = {}) {
-  const text = String(value || "").trim();
-  if (!hasJapanese(text)) return "";
-  const exact = readings[text] || lookupPlaceReading(text) || toLocalRomaji(text);
-  if (exact && !KANJI.test(exact)) return exact;
-  return composeReadings(text, (piece) =>
-    readings[piece] || lookupPlaceReading(piece) || toLocalRomaji(piece));
-}
-/** No "Romaji:" prefix or missing-reading placeholder. Keep Japanese original. */
-export function showJapaneseWithRomaji(text, readings = {}) {
-  const value = String(text || "");
-  if (!hasJapanese(value)) return value;
-  const reading = getReliableReading(value, readings);
-  if (!reading || reading === value) return value;
-  return value + "\n" + reading;
-}
+import {useEffect,useMemo,useState} from "react";
+import {CONFIG} from "./config";
+const {hasJapanese,isKanji,toLocalRomaji,getReliableReading,
+  showJapaneseWithRomaji}=require("./romajiLabel.cjs");
+const MAX_ITEMS=400;
+const MAX_TEXT=160;
+const short=(value)=>String(value||"").slice(0,MAX_TEXT);
+export {hasJapanese,isKanji,toLocalRomaji,getReliableReading,showJapaneseWithRomaji};
 
 /**
  * Kanji requires morphological analysis. Kuroshiro + Kuromoji runs in the

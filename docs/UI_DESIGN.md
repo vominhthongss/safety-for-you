@@ -68,3 +68,10 @@ Verified design targets against [Apple Buttons](https://developer.apple.com/desi
 - On both platforms, selecting an earthquake includes the selected epicenter, GPS and published area bounds in the visible camera. Where GPS or valid JMA coverage is absent, show the explicit unavailable state instead of a made-up marker.
 - Tsunami warning coasts retain their official colored lines; the map must not simulate wave motion, travel time or inland inundation.
 - On iOS validate native marker size, zoom/gesture interactions, text accessibility, MapKit attribution, long Japanese/Romaji names and dark appearance. On Android validate the WebView region-number badges and map/OSM attribution.
+
+## Map marker readings
+
+- iOS native Apple Maps: original Japanese marker title, verified Romaji in the subtitle, plus reported Shindo when present.
+- Android Leaflet: popup label retains original Japanese and Romaji on separate lines; verified area-intensity badges do not represent exact station coordinates.
+- WanaKana transliterates Kana locally. Kanji relies on the reviewed `src/placeReadings.cjs` dictionary or optional reading service; unknown readings remain Japanese.
+- Language picker keeps plain `日本語`, without the extra Romaji subtitle.

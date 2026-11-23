@@ -108,3 +108,7 @@ This project is an independent disaster-information aid, **not** a government ap
 - Test real devices for marker overlap, map accessibility, large polygons, permission denial, offline map failures and iOS dark appearance. Exporting JS bundles alone does not validate the native MapKit component.
 
 Expo SDK 58 mapping reference: https://docs.expo.dev/versions/v58.0.0/sdk/map-view/ .
+
+### WanaKana Romaji for Apple Maps and Android maps
+
+The app already depends on **WanaKana 5.3.1**. `src/romajiLabel.cjs` now centralizes Kana → Romaji for both map providers; Japanese/Kana labels appear with Romaji in pin callouts and verified JMA region labels. MapKit displays the original name as the callout title and Romaji as the detail; Android Leaflet popups display both lines. When a trusted reading for Kanji comes from the reviewed local place-name dictionary or optional Romaji service as Kana, WanaKana transliterates it. Unknown Kanji names stay in Japanese instead of showing fabricated readings. The language selection option itself remains `日本語` without Romaji.

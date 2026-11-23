@@ -8,6 +8,12 @@ const {valid}=require("./mapViewport.cjs");
 const JAPAN={latitude:36.2048,longitude:138.2529};
 const safe=(p)=>valid(p) ? {latitude:Number(p.latitude),longitude:Number(p.longitude)}:null;
 const mapColor=(s)=>typeof s==="string" && /^#[a-fA-F0-9]{6}$/.test(s)?s:"#82909A";
+// Keep the original Japanese name and the validated Romaji reading on separate
+// Apple Maps callout lines; MapKit may truncate multiline marker titles.
+function calloutLabel(value) {
+  const lines=String(value||"").split("\n").map(s=>s.trim()).filter(Boolean);
+  return {title:lines[0]||"",detail:lines.slice(1).join(" · ")};
+}
 function initialRegion(primary) {
   return {latitude:primary.latitude,longitude:primary.longitude,
     latitudeDelta:4,longitudeDelta:4};
@@ -27,7 +33,7 @@ export default function AppleSafetyMap({
   const eventPoints=useMemo(()=>points.filter(p=>safe(p.coordinate)).slice(0,100)
     .map((p,index)=>({
       key:String(p.id||index),coordinate:safe(p.coordinate),
-      title:String(p.title||p.name||"").slice(0,300),
+      ...calloutLabel(String(p.title||p.name||"").slice(0,300)),
       tint:kind==="shelter"?"#238353":mapColor(p.color)
     })),[points,kind]);
   const coordinates=useMemo(()=>{
@@ -76,7 +82,9 @@ export default function AppleSafetyMap({
         strokeColor={p.color} strokeWidth={6} tappable={false}/>)}
       {mapZones.markers.map(item=><Marker key={item.key}
         coordinate={item.coordinate} anchor={{x:0.5,y:0.5}}
-        title={item.title} description={item.value} tracksViewChanges={false}
+        title={calloutLabel(item.title).title}
+        description={[calloutLabel(item.title).detail,item.value].filter(Boolean).join(" · ")}
+        tracksViewChanges={false}
         accessibilityLabel={item.title+" · "+item.value}>
         <View style={[styles.shindoMarker,{borderColor:item.color}]}>
           <Text style={styles.shindoText}>{item.shortLabel}</Text>
@@ -85,11 +93,14 @@ export default function AppleSafetyMap({
       {eventPoints.map(item=>selected && item.coordinate.latitude===selected.latitude &&
           item.coordinate.longitude===selected.longitude?null:
         <Marker key={item.key} coordinate={item.coordinate} title={item.title}
-          pinColor={item.tint} />)}
+          description={item.detail||undefined} pinColor={item.tint} />)}
       {selected && <Marker coordinate={selected}
-        title={kind==="earthquake"?t("earthquake"):t("map")}
-        description={eventPoints.find(item=>item.coordinate.latitude===selected.latitude &&
-          item.coordinate.longitude===selected.longitude)?.title||undefined}
+        title={calloutLabel(kind==="earthquake"?t("earthquake"):t("map")).title}
+        description={[calloutLabel(kind==="earthquake"?t("earthquake"):t("map")).detail,
+          ...eventPoints.filter(item=>item.coordinate.latitude===selected.latitude &&
+            item.coordinate.longitude===selected.longitude)
+            .flatMap(item=>[item.title,item.detail].filter(Boolean))]
+          .filter(Boolean).join(" · ")||undefined
         anchor={{x:0.5,y:0.5}} tracksViewChanges={false}>
         <View style={[styles.epicenter,{backgroundColor:mapColor(selectedColor)}]}>
           <Text style={styles.epicenterText}>✦</Text>

@@ -58,11 +58,12 @@ test("Live Japanese readings convert Kana locally without placeholders", () => {
 });
 
 test("Live Romaji conversion uses WanaKana and never displays placeholder", () => {
-  const src = read("src/romanization.js");
-  assert.ok(src.includes('from "wanakana"'));
-  assert.ok(src.includes("toRomaji(value)"));
-  assert.ok(src.includes("if (!reading || reading === value) return value;"));
-  assert.ok(!src.includes("Romaji: unavailable"));
+  const src=read("src/romanization.js");
+  const helper=read("src/romajiLabel.cjs");
+  assert.ok(src.includes('require("./romajiLabel.cjs")'));
+  assert.ok(helper.includes('require("wanakana")'));
+  assert.ok(helper.includes("toRomaji(reading)"));
+  assert.ok(!helper.includes("Romaji: unavailable"));
 });
 test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   const pkg = JSON.parse(read("package.json"));

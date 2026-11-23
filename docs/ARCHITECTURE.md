@@ -49,3 +49,7 @@
 ## ADR, deployment and licensing
 
 See [localized ADR/deployment guides](README.md) for all 13 interface languages. Day-sensitive bulletin rendering is centralized in `src/dateTime.cjs` using `Asia/Tokyo`; `src/i18n.js` provides translated same-day labels. Timestamp tint is semantic/system indigo and is deliberately independent from `src/hazardSeverity.cjs`. The codebase is released under [MIT](../LICENSE), while external map/data services have separate terms. App Store builds require a publisher-managed EAS configuration and manual safety/accessibility validation.
+
+## Romaji normalization for native and WebView maps
+
+`src/romajiLabel.cjs` is shared by `src/romanization.js` and both map renderers. It uses **WanaKana 5.3.1** for Kana, then the reviewed Japanese place-name dictionary and optional morphological-analysis service for Kanji. Known Japanese + Romaji labels are passed to native Apple Maps callouts on iOS and to the safe Leaflet text popup on Android. Never infer Kanji pronunciation from WanaKana alone. Regression coverage: `tests/romajiLabel.test.cjs`.
