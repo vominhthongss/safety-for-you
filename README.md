@@ -91,7 +91,7 @@ The colors are an accessible **application visualization**, not a claim of offic
 
 ## Documentation in all 13 languages
 
-The [documentation index](docs/README.md) links to an **Architecture Decision Record (ADR-0001)** and a **deployment guide** in every language supported by the app. The deployment guides cover development, optional Cloudflare JMA Worker and Romaji services, Android/iOS store builds, and release risks.
+The [documentation index](docs/README.md) contains an **Architecture Decision Record (ADR-0001)**, a **deployment guide**, and a dedicated **Google Play / Apple App Store publication guide** for every one of the app's 13 locales. Store guides cover EAS production configuration, Android AAB / iOS IPA signing, internal and TestFlight testing, privacy and data disclosures, review submissions, and release-readiness gaps. Follow the [documentation style guide](docs/STYLE_GUIDE.md) and [AI contributor instructions](AGENTS.md) for consistent maintenance.
 
 ## Open source and license
 
