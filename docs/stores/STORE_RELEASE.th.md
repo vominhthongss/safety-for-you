@@ -20,12 +20,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — ตัวอย่างการกำหนดค่า (ตรวจหลังสร้าง):
 
 ```json
 {
@@ -49,7 +48,6 @@ npx eas-cli build:configure
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ npx eas-cli submit --platform android --latest
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ npx eas-cli submit --platform ios --latest
 
 เพิ่มหมายเลขเวอร์ชันและ build ทุกครั้ง ทดสอบอุปกรณ์จริงซ้ำ ใช้การเผยแพร่แบบเป็นขั้นตอนเมื่อทำได้ เฝ้าตรวจ crash และข้อกำหนดผู้ให้ข้อมูล ปรับการเปิดเผยความเป็นส่วนตัวเมื่อการจัดการข้อมูลเปลี่ยน และเมื่อแหล่งข้อมูลล้มเหลวต้องแจ้งสถานะพร้อมชี้ไปยังช่องทางทางการ
 
-## Official references
+## แหล่งอ้างอิงทางการ
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ npx eas-cli submit --platform ios --latest
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.th.md) · [Documentation index](../README.md)
+[ภาพรวมการติดตั้ง](../deploy/DEPLOY.th.md) · [สารบัญเอกสาร](../README.md)

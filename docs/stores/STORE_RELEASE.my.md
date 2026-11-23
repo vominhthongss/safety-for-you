@@ -20,12 +20,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — ပြင်ဆင်မှု ဥပမာ (ဖန်တီးပြီးနောက် စစ်ဆေးပါ):
 
 ```json
 {
@@ -49,7 +48,6 @@ Production AAB တည်ဆောက်ပါ။ ပထမဖိုင်ကိ�
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Apple Developer Program တွင် ပါဝင်၍ တူညီသော Bu
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ App Store Connect တွင် App Privacy၊ အသုံးပြုနို�
 
 အပ်ဒိတ်တိုင်း version နှင့် build number တိုးပါ၊ စက်တွင် ထပ်မံစမ်းသပ်ပါ၊ ရနိုင်လျှင် အဆင့်လိုက်ထုတ်ဝေပါ၊ crash နှင့် data provider စည်းမျဉ်းများ စောင့်ကြည့်ပါ၊ privacy disclosure များကို ပြင်ဆင်ပါ။ သတင်းရင်းမြစ် ပျက်ကွက်လျှင် အခြေအနေကို ဖော်ပြ၍ တရားဝင် သတိပေးလမ်းကြောင်းသို့ ညွှန်းပါ။
 
-## Official references
+## တရားဝင် ကိုးကားချက်များ
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ App Store Connect တွင် App Privacy၊ အသုံးပြုနို�
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.my.md) · [Documentation index](../README.md)
+[ဖြန့်ချိမှု အကျဉ်းချုပ်](../deploy/DEPLOY.my.md) · [စာရွက်စာတမ်း အညွှန်း](../README.md)

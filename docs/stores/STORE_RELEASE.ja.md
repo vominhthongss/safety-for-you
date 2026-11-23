@@ -20,12 +20,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — 設定例（生成後に確認）:
 
 ```json
 {
@@ -49,7 +48,6 @@ production向けAABをビルドします。初回はPlay Consoleから手動ア�
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Apple Developer Programに参加し、同一Bundle IDのApp IDとApp Store Conne
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ iOSのApple MapsとAndroidのLeafletを実機で検証します。13言語、文
 
 更新時には公開バージョンとビルド番号を増やし、実機再検証、段階公開、クラッシュ監視、データ提供元の利用条件確認、プライバシー申告の更新を行います。情報源に障害がある場合は劣化状態を明示し、公的な警報経路へ案内してください。
 
-## Official references
+## 公式参考資料
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ iOSのApple MapsとAndroidのLeafletを実機で検証します。13言語、文
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.ja.md) · [Documentation index](../README.md)
+[デプロイ概要](../deploy/DEPLOY.ja.md) · [ドキュメント一覧](../README.md)

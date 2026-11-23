@@ -20,12 +20,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — कॉन्फ़िगरेशन उदाहरण (बनने के बाद जाँचें):
 
 ```json
 {
@@ -49,7 +48,6 @@ production AAB बनाएँ। पहला अपलोड Play Console म�
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Apple Developer Program में शामिल हों और समान 
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ App Store Connect में App Privacy, सक्रिय गोपनीय�
 
 हर अपडेट में संस्करण और build नंबर बढ़ाएँ, उपकरण परीक्षण दोहराएँ, संभव हो तो चरणबद्ध रिलीज़ करें, क्रैश और डेटा प्रदाता की शर्तें जाँचें तथा डेटा उपयोग बदलने पर गोपनीयता विवरण संशोधित करें। स्रोत उपलब्ध न होने पर स्पष्ट संदेश देकर आधिकारिक चेतावनी माध्यमों की ओर निर्देशित करें।
 
-## Official references
+## आधिकारिक संदर्भ
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ App Store Connect में App Privacy, सक्रिय गोपनीय�
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.hi.md) · [Documentation index](../README.md)
+[डिप्लॉयमेंट का अवलोकन](../deploy/DEPLOY.hi.md) · [दस्तावेज़ सूची](../README.md)

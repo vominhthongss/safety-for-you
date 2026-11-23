@@ -20,12 +20,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — Ví dụ cấu hình (cần kiểm tra sau khi tạo):
 
 ```json
 {
@@ -49,7 +48,6 @@ Tạo tệp AAB cho môi trường production. Có thể tải bản đầu tiê
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Tạo bản IPA đã ký, tải lên App Store Connect (Expo Submit chỉ tải 
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ Kiểm thử Apple Maps trên iOS và Leaflet trên Android bằng thiết bị 
 
 Tăng phiên bản công khai và mã bản dựng trước mỗi lần cập nhật, kiểm thử lại thiết bị, phát hành từng giai đoạn nếu nền tảng hỗ trợ, theo dõi lỗi và điều khoản của nhà cung cấp dữ liệu, cập nhật khai báo quyền riêng tư khi cách xử lý dữ liệu thay đổi. Nếu nguồn dữ liệu gián đoạn, hiển thị trạng thái suy giảm rõ ràng và hướng người dùng đến kênh cảnh báo chính thức.
 
-## Official references
+## Tài liệu tham khảo chính thức
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ Tăng phiên bản công khai và mã bản dựng trước mỗi lần cập nh
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.vi.md) · [Documentation index](../README.md)
+[Tổng quan triển khai](../deploy/DEPLOY.vi.md) · [Mục lục tài liệu](../README.md)

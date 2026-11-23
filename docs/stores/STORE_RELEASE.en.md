@@ -20,12 +20,11 @@ Set `ANDROID_PACKAGE` and `IOS_BUNDLE_ID` in `.env` to identifiers you control b
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — Configuration example (review after generation):
 
 ```json
 {
@@ -49,7 +48,6 @@ Build an AAB for the production track. The first upload may be done manually in 
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Build a signed IPA, upload it to App Store Connect (Expo Submit uploads but does
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 

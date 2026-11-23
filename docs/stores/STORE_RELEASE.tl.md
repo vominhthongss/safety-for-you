@@ -20,12 +20,11 @@ Bago ang unang release, itakda sa `.env` ang natatanging `ANDROID_PACKAGE` at `I
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — Halimbawa ng configuration (suriin pagkatapos buuin):
 
 ```json
 {
@@ -49,7 +48,6 @@ Bumuo ng production AAB. Maaaring mano-manong i-upload ang una sa Play Console; 
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Bumuo ng nilagdaang IPA, i-upload sa App Store Connect, at subukan ang naproseso
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ Subukan sa tunay na iOS at Android device ang Apple Maps at Leaflet, 13 wika, ac
 
 Taasan ang bersyon at build number sa bawat update, ulitin ang device tests, gamitin ang staged release kung available, subaybayan ang crash at data-provider terms, at i-update ang privacy disclosures kung nagbago ang pagproseso ng data. Ipakita ang malinaw na error state at ituro ang opisyal na babala kapag pumalya ang feed.
 
-## Official references
+## Mga opisyal na sanggunian
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ Taasan ang bersyon at build number sa bawat update, ulitin ang device tests, gam
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.tl.md) · [Documentation index](../README.md)
+[Pangkalahatang deployment](../deploy/DEPLOY.tl.md) · [Talaan ng dokumentasyon](../README.md)

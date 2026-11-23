@@ -20,12 +20,11 @@ Sebelum rilis pertama, tentukan `ANDROID_PACKAGE` dan `IOS_BUNDLE_ID` unik yang 
 
 ```bash
 cp .env.example .env
-# Set ANDROID_PACKAGE and IOS_BUNDLE_ID in .env before the first release.
 npx eas-cli login
 npx eas-cli build:configure
 ```
 
-`eas.json` (example; review after generation):
+`eas.json` — Contoh konfigurasi (periksa setelah dibuat):
 
 ```json
 {
@@ -49,7 +48,6 @@ Bangun AAB production. Unggahan pertama dapat dilakukan secara manual di Play Co
 
 ```bash
 npx eas-cli build --platform android --profile production
-# After configuring Google Play API access and service-account credentials:
 npx eas-cli submit --platform android --latest
 ```
 
@@ -65,7 +63,6 @@ Bangun IPA bertanda tangan, unggah ke App Store Connect, dan uji build melalui T
 
 ```bash
 npx eas-cli build --platform ios --profile production
-# After configuring Apple credentials and App Store Connect:
 npx eas-cli submit --platform ios --latest
 ```
 
@@ -81,7 +78,7 @@ Uji Apple Maps pada iOS dan Leaflet pada Android di perangkat nyata, 13 bahasa, 
 
 Naikkan versi dan nomor build setiap pembaruan, uji ulang perangkat, gunakan peluncuran bertahap bila tersedia, pantau crash dan aturan penyedia data, serta perbarui pengungkapan privasi saat pengolahan data berubah. Jika sumber gagal, tampilkan status kegagalan dan arahkan pengguna ke saluran peringatan resmi.
 
-## Official references
+## Referensi resmi
 
 - [Expo: build setup](https://docs.expo.dev/build/setup/)
 - [Expo: version management](https://docs.expo.dev/build-reference/app-versions/)
@@ -93,4 +90,4 @@ Naikkan versi dan nomor build setiap pembaruan, uji ulang perangkat, gunakan pel
 - [Apple: submit for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Apple: privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
-[Deployment overview](../deploy/DEPLOY.id.md) · [Documentation index](../README.md)
+[Ringkasan deployment](../deploy/DEPLOY.id.md) · [Indeks dokumentasi](../README.md)
