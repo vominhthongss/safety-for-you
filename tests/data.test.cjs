@@ -58,11 +58,12 @@ test("Live Japanese readings convert Kana locally without placeholders", () => {
 });
 
 test("Live Romaji conversion uses WanaKana and never displays placeholder", () => {
-  const src = read("src/romanization.js");
-  assert.ok(src.includes('from "wanakana"'));
-  assert.ok(src.includes("toRomaji(value)"));
-  assert.ok(src.includes("if (!reading || reading === value) return value;"));
-  assert.ok(!src.includes("Romaji: unavailable"));
+  const src=read("src/romanization.js");
+  const helper=read("src/romajiLabel.cjs");
+  assert.ok(src.includes('require("./romajiLabel.cjs")'));
+  assert.ok(helper.includes('require("wanakana")'));
+  assert.ok(helper.includes("toRomaji(reading)"));
+  assert.ok(!helper.includes("Romaji: unavailable"));
 });
 test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   const pkg = JSON.parse(read("package.json"));
@@ -72,7 +73,13 @@ test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   assert.equal(pkg.dependencies["react-native-webview"], "14.0.1");
   assert.equal(pkg.dependencies.leaflet, "1.9.4");
   assert.ok(!pkg.dependencies["@maplibre/maplibre-react-native"]);
-  assert.ok(!pkg.dependencies["react-native-maps"]);
+  assert.equal(pkg.dependencies["react-native-maps"], "1.29.11");
+  const nativeMap=read("src/AppleSafetyMap.js");
+  assert.ok(map.includes('Platform.OS==="ios"'));
+  assert.ok(nativeMap.includes('from "react-native-maps"'));
+  assert.ok(nativeMap.includes("showsUserLocation={false}"));
+  assert.ok(nativeMap.includes("mapZones.markers.map"));
+  assert.ok(nativeMap.includes("fitToCoordinates"));
   assert.ok(!config.includes("@maplibre/maplibre-react-native"));
   assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
   assert.ok(map.includes('from "react-native-webview"'));
@@ -166,8 +173,8 @@ test("Common JMA Japanese place names have offline Romaji; unknown Kanji is not 
   assert.equal(lookupPlaceReading("宮城県"),"Miyagi-ken");
   assert.equal(lookupPlaceReading("北海道太平洋沿岸東部"),"Hokkaidō Taiheiyō engan tōbu");
   assert.equal(lookupPlaceReading("未知の地名"),"");
-  const roman=read("src/romanization.js");
-  assert.ok(roman.includes("lookupPlaceReading(text)"));
+  const {getReliableReading}=require("../src/romajiLabel.cjs");
+  assert.equal(getReliableReading("愛知県"),"Aichi-ken");
 });
 test("Official JMA GeoJSON URLs are used for earthquake and tsunami published regions", () => {
   const z=require("../src/hazardZones.cjs");
@@ -217,10 +224,10 @@ test("Multi-prefecture Romaji and common JMA phrases work without remote server"
   assert.equal(composeReadings("愛知県, 名古屋市",lookupPlaceReading),
     "Aichi-ken, Nagoya-shi");
   assert.equal(composeReadings("宮城県 · 未知の地名",lookupPlaceReading),"");
-  const roman=read("src/romanization.js");
-  assert.ok(roman.includes("composeReadings(text"));
-  assert.ok(roman.includes("lookupPlaceReading(text)"));
-  assert.ok(!roman.includes("Romaji: unavailable"));
+  const {getReliableReading,showJapaneseWithRomaji}=
+    require("../src/romajiLabel.cjs");
+  assert.equal(getReliableReading("宮城県 · 岩手県"),"Miyagi-ken · Iwate-ken");
+  assert.equal(showJapaneseWithRomaji("未知の地名"),"未知の地名");
 });
 test("Cards, map pins and shaded JMA zones use data-backed severity colors", () => {
   const app=read("App.js");

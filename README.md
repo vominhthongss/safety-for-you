@@ -14,10 +14,10 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-Open with Expo Go on iOS/Android or the matching Simulator. **No Xcode rebuild, `expo prebuild`, Google Maps key, MapLibre or custom development client is needed for the map.**
+Open with Expo Go compatible with SDK 58 on iOS/Android or a matching simulator. **iOS now uses native Apple Maps (MapKit) through `react-native-maps` 1.29.11; Android keeps the existing WebView + Leaflet map.** No Google Maps key or custom development client is required for these providers in Expo Go. Production builds still need platform signing and device QA.
 
-- The map renders with **react-native-webview 14.0.1** (included in Expo Go 58).
-- **Leaflet 1.9.4** is packaged **inside the app** by `postinstall` (`scripts/bundle-leaflet.cjs`). This avoids downloading Leaflet from a CDN at runtime. If Metro cannot find `src/generated/leafletAssets.js`, rerun `npm install` or `npm run bundle:maps`.
+- **iPhone/iPad:** native Apple Maps using `react-native-maps` (Expo SDK 58 compatible), with region overlays and source-backed Shindo area badges. **Android:** `react-native-webview` 14.0.1 + Leaflet, preserving the existing raster basemap.
+- **Leaflet 1.9.4** is packaged **inside the Android map** by `postinstall` (`scripts/bundle-leaflet.cjs`). This avoids downloading Leaflet from a CDN at runtime. If Metro cannot find `src/generated/leafletAssets.js`, rerun `npm install` or `npm run bundle:maps`.
 - Raster basemap tiles come from **OpenStreetMap Japan** over HTTPS; the separate **GSI** service provides designated evacuation places. No Google Maps API key or native map plugin is required. Respect both map/data-provider terms and preserve the visible OSM/GSI attributions.
 - The old native MapLibre package and Expo config plugin are **removed**; `MLRNCameraModule` is no longer referenced by the app.
 - If Expo Go itself runs a different SDK than 58, install a compatible Expo Go version. This is an **SDK mismatch**, not a MapLibre dependency.
@@ -27,7 +27,8 @@ Open with Expo Go on iOS/Android or the matching Simulator. **No Xcode rebuild, 
 - Quick configurable splash (`EXPO_PUBLIC_SPLASH_MIN_MS`), Japan-local date, consent-based location permission and compact 10-hazard grid.
 - Earthquake and tsunami reports from P2PQuake v2, a foreground WebSocket and REST history. Earthquakes show **Magnitude (M), JMA Shindo (measured/predicted) and hypocenter depth** when reported. Tsunami warnings show **wave-height forecasts per coastal region**, warning level, arrival estimates, and cancellation where available.
 - Other JMA categories (typhoon, heavy rain, flood, landslide, volcano, heavy snow, extreme heat) use a separately deployed optional JMA Atom-feed Worker (`EXPO_PUBLIC_JMA_PROXY_URL`). This Worker currently categorizes **recent bulletin titles only**, not active warnings or verified numerical observations. The app never invents wind, flood, or rainfall figures.
-- **Leaflet + OpenStreetMap Japan map** with markers for the user and verified hazard coordinates. Select an event and `fitBounds` automatically frames both the event and GPS location. Regional warnings without confirmed coordinates **do not get a fake pin**. If GPS is denied, focus the event only.
+- **Apple Maps on iOS / Leaflet + OpenStreetMap Japan on Android**, each with the user's foreground location, a distinct verified earthquake epicenter marker, source-backed JMA observed Shindo region polygons and area badges (e.g. 1, 3, 5-). Badge anchors represent the *area*, not an individual seismic measurement station. Both platforms show selected-event + user coordinates together. Tsunami warning boundaries remain issued coastal zones, not modeled wave propagation.
+- Original Android Leaflet map with markers for the user and verified hazard coordinates. Select an event and `fitBounds` automatically frames both the event and GPS location. Regional warnings without confirmed coordinates **do not get a fake pin**. If GPS is denied, focus the event only.
 - Nearby GSI **designated emergency evacuation locations** filtered by the relevant hazard, including safety notes for foreign residents (papers, passport/residence card if within reach, medication, water, travel light).
 - 13 languages: ja, en, vi, zh-CN, zh-TW, ko, tl, ne, id, pt, my, th, hi. Japanese static interface strings may include verified Romaji, but the language picker uses **日本語** without Romaji. WanaKana converts Kana locally; dynamic Kanji readings optionally come from the Kuroshiro/Kuromoji service (`EXPO_PUBLIC_ROMAJI_API_URL`). Unverified readings remain in Japanese without a misleading placeholder.
 - A sun/moon toggle next to the language picker saves Light/Dark Mode locally.
@@ -97,3 +98,17 @@ The [documentation index](docs/README.md) links to an **Architecture Decision Re
 Safety For You is **free, nonprofit and open source under the [MIT License](LICENSE)**. Anyone may read, fork, modify, redistribute or use the source commercially, provided the MIT copyright and license notice is preserved in substantial copies. Third-party map tiles, official data, libraries and other assets retain their own terms; MIT does not override them.
 
 This project is an independent disaster-information aid, **not** a government app or a certified real-time emergency-alert system. Data availability, bulletin validity, map access and evacuation-site availability are not guaranteed. In an emergency, follow JMA, J-Alert, authorities and local broadcasts. Contributions and issues are welcome; please preserve factual source checks and accessible, safety-first UI.
+
+## Platform map implementation (2026-11-23)
+
+- `src/SafetyMap.js` chooses Apple Maps on iOS and keeps OSM Japan/Leaflet WebView on Android. `src/AppleSafetyMap.js` uses MapKit through `react-native-maps` (`provider` left at default; do **not** set `PROVIDER_GOOGLE`). The SDK 58 compatible version is **1.29.11**.
+- `src/mapFeatures.cjs` converts only verified JMA GeoJSON polygons/coastlines into native overlays and area markers. A displayed Shindo number is the **observed intensity assigned to a published area**, not a sensor pin or earthquake propagation model.
+- Map viewport includes the user's last known/foreground location, the confirmed epicenter and affected-region bounds. When the user denies location, do not fabricate a user pin.
+- Android uses existing OSM Japan tile services and Leaflet, while iOS uses native Apple Maps terms/attribution. GSI evacuation-place data is shared on both platforms.
+- Test real devices for marker overlap, map accessibility, large polygons, permission denial, offline map failures and iOS dark appearance. Exporting JS bundles alone does not validate the native MapKit component.
+
+Expo SDK 58 mapping reference: https://docs.expo.dev/versions/v58.0.0/sdk/map-view/ .
+
+### WanaKana Romaji for Apple Maps and Android maps
+
+The app already depends on **WanaKana 5.3.1**. `src/romajiLabel.cjs` now centralizes Kana → Romaji for both map providers; Japanese/Kana labels appear with Romaji in pin callouts and verified JMA region labels. MapKit displays the original name as the callout title and Romaji as the detail; Android Leaflet popups display both lines. When a trusted reading for Kanji comes from the reviewed local place-name dictionary or optional Romaji service as Kana, WanaKana transliterates it. Unknown Kanji names stay in Japanese instead of showing fabricated readings. The language selection option itself remains `日本語` without Romaji.

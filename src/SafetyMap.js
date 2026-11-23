@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import AppleSafetyMap from "./AppleSafetyMap";
 import { WebView } from "react-native-webview";
 import { CONFIG } from "./config";
 import { getColors } from "./theme";
 import { LEAFLET_JS, LEAFLET_CSS } from "./generated/leafletAssets";
 const { valid, boundsForPoints } = require("./mapViewport.cjs");
+const {buildMapZones}=require("./mapFeatures.cjs");
 
 // Expo Go has react-native-webview built in; no custom native map module.
 // Leaflet JS/CSS are bundled locally at npm install, NOT loaded from a CDN.
@@ -36,6 +38,7 @@ const MAP_RUNTIME = String.raw`
       if (tileErrors >= 10) send("tiles-error");
     });
     const pinLayer = L.layerGroup().addTo(map);
+    const zonePinLayer = L.layerGroup().addTo(map);
     const zoneLayer = L.featureGroup().addTo(map);
     const valid = (p) => p && typeof p.latitude === "number" &&
       typeof p.longitude === "number" &&
@@ -54,6 +57,7 @@ const MAP_RUNTIME = String.raw`
     };
     function update(payload) {
       pinLayer.clearLayers();
+      zonePinLayer.clearLayers();
       zoneLayer.clearLayers();
       const user = valid(payload.location) ? payload.location : null;
       const event = valid(payload.selectedPoint) ? payload.selectedPoint : null;
@@ -94,6 +98,26 @@ const MAP_RUNTIME = String.raw`
           shape.bindPopup(label);
         } catch (_) { /* invalid upstream geometry is omitted */ }
       });
+      // Area badges show PUBLISHED JMA region intensities, never assumed sensor points.
+      (Array.isArray(payload.zoneMarkers)?payload.zoneMarkers:[]).slice(0,60)
+        .forEach((item)=>{
+          if(!valid(item.coordinate) || !/^[0-7](?:[+-])?$|^≥5-/.test(String(item.shortLabel))) return;
+          const tint=/^#[a-fA-F0-9]{6}$/.test(item.color)?item.color:"#82909A";
+          const marker=L.marker(coords(item.coordinate),{
+            icon:L.divIcon({
+              className:"shindo-badge",
+              html:'<span class="shindo-badge-label"></span>',
+              iconSize:[32,32],iconAnchor:[16,16]
+            })
+          }).addTo(zonePinLayer);
+          const el=marker.getElement();
+          if(el){el.style.borderColor=tint;
+            const label=el.querySelector(".shindo-badge-label");
+            if(label)label.textContent=item.shortLabel;}
+          const popup=document.createElement("span");
+          popup.textContent=String(item.title||"")+" · "+String(item.value||"");
+          marker.bindPopup(popup);
+        });
       // Fit verified event + GPS AND any published region boundaries.
       const bounds = payload.bounds;
       let fit=null;
@@ -135,6 +159,7 @@ const MAP_HTML = [
   "html,body,#map{width:100%;height:100%;margin:0;padding:0;overflow:hidden;}",
   ".leaflet-container{background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}",
   ".leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;}.leaflet-popup-content{white-space:pre-line;line-height:1.45;}",
+  ".shindo-badge{display:flex!important;align-items:center;justify-content:center;background:#fff;border:3px solid #82909A;border-radius:50%;box-sizing:border-box;box-shadow:0 1px 4px #0007;color:#1c1c1e;font-weight:800;font-size:13px;}",
   "</style></head><body><div id='map'></div>",
   "<script>", LEAFLET_JS.replace(/<\/script/gi,"<\\/script"), "</script>",
   "<script>", MAP_RUNTIME, "</script></body></html>"
@@ -161,13 +186,14 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
     })),
     kind, dark,
     zones:Array.isArray(zones) ? zones : [],
+    zoneMarkers:buildMapZones(zones).markers,
     youLabel:t("you"),
     eventLabel:t("map")
   };
 }
 
 /** WebView + bundled Leaflet with OSM Japan English-label raster tiles. */
-export default function SafetyMap({
+function LeafletSafetyMap({
   location, points = [], selectedPoint, t, height = 270, kind = "hazard",
   zones = [], dark = false, selectedColor = "#82909A"
 }) {
@@ -254,3 +280,8 @@ const styles = StyleSheet.create({
   legendItemText:{fontSize:10,fontWeight:"700"},
   swatch:{width:14,height:10,borderRadius:3}
 });
+
+// Apple Maps on iPhone via native MapKit; Android keeps WebView/Leaflet.
+export default function SafetyMap(props) {
+  return Platform.OS==="ios" ? <AppleSafetyMap {...props}/> : <LeafletSafetyMap {...props}/>;
+}
