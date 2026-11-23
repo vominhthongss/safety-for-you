@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView,
+  AccessibilityInfo, ActivityIndicator, AppState, Linking, Modal, ScrollView, findNodeHandle,
   StatusBar, StyleSheet, Text, View, useWindowDimensions, useColorScheme, Appearance
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -9,53 +9,48 @@ import * as Localization from "expo-localization";
 import * as SplashScreen from "expo-splash-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import SafetyMap from "./src/SafetyMap";
+import Pressable from "./src/Pressable";
+import useReduceMotion from "./src/useReduceMotion";
 import { loadHazardZones } from "./src/hazardGeo";
 import { getColors } from "./src/theme";
 import { SymbolView } from "expo-symbols";
 import { showJapaneseWithRomaji, useJapaneseReadings } from "./src/romanization";
-import { CATEGORIES, COLORS, CONFIG, SHELTER_LAYERS, CATEGORY_SYMBOLS } from "./src/config";
+import { CATEGORIES, CONFIG, SHELTER_LAYERS, CATEGORY_SYMBOLS } from "./src/config";
 import { LANGUAGE_NAMES, deviceLanguage, translate } from "./src/i18n";
 import {
   getQuakeReports, getWeatherReports, getShelters,
   mergeReports, normalizeQuake, isVeryRecentUrgent
 } from "./src/data";
+const {formatReportTime,parseBulletinTime} = require("./src/dateTime.cjs");
 const {reportMetrics,heightText} = require("./src/hazardView.cjs");
 const {getReportSeverity,getAreaSeverity} = require("./src/hazardSeverity.cjs");
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const ThemeContext = React.createContext(null);
-const SMALL_TEXT = { fontSize:14, lineHeight:20 };
 function TextLabel({ children, style, ...rest }) {
   const { colors } = React.useContext(ThemeContext);
   return <Text {...rest} style={[{ fontSize:17,lineHeight:24,color:colors.ink },style]}>{children}</Text>;
 }
-function Heading({ children }) {
-  return <TextLabel accessibilityRole="header" style={{ fontWeight:"700", fontSize:21, lineHeight:27, marginBottom:10 }}>{children}</TextLabel>;
+function Heading({ children, ...props }) {
+  return <TextLabel {...props} accessibilityRole="header" style={{ fontWeight:"700", fontSize:21, lineHeight:27, marginBottom:10 }}>{children}</TextLabel>;
 }
 function AppSymbol({ id, size = 24, color }) {
   const { colors } = React.useContext(ThemeContext);
   return <SymbolView name={CATEGORY_SYMBOLS[id] || CATEGORY_SYMBOLS.shelter} size={size}
-    tintColor={color || colors.teal} type="hierarchical"
+    tintColor={color || colors.teal} type="hierarchical" accessible={false} importantForAccessibility="no"
     fallback={<TextLabel style={{ fontSize:size*0.85 }}>{CATEGORIES.find((item)=>item.id===id)?.icon || "●"}</TextLabel>} />;
 }
 function Action({ label, onPress, subtle, disabled }) {
   const { colors: COLORS,styles } = React.useContext(ThemeContext);
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
     onPress={onPress} style={[styles.action, subtle && styles.subtle, disabled && { opacity:.5 }]}>
-    <TextLabel style={{ color:subtle ? COLORS.teal : COLORS.white, fontSize:15, fontWeight:"600" }}>{label}</TextLabel>
+    <TextLabel style={{ color:subtle ? COLORS.teal : COLORS.onAction, fontSize:15, fontWeight:"600" }}>{label}</TextLabel>
   </Pressable>;
 }
 function Message({ text, warning=false }) {
   const { styles } = React.useContext(ThemeContext);
   return <View style={[styles.message, warning && styles.warning]}><TextLabel style={{ fontSize:15, lineHeight:22 }}>{text}</TextLabel></View>;
-}
-function formatDate(time, locale) {
-  if (!time) return "—";
-  const parsed = new Date(String(time).replace(/^(\d{4})\/(\d\d)\/(\d\d) (\d\d:\d\d:\d\d)/, "$1-$2-$3T$4+09:00"));
-  if (!Number.isFinite(parsed.getTime())) return String(time);
-  try { return new Intl.DateTimeFormat(locale === "ja" ? "en-US" : locale, { timeZone:"Asia/Tokyo", year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit" }).format(parsed); }
-  catch { return parsed.toISOString(); }
 }
 function AppContent() {
   const detected = deviceLanguage(Localization.getLocales()?.[0]?.languageTag || "en");
@@ -71,7 +66,14 @@ function AppContent() {
   const [weatherState,setWeatherState] = useState("loading");
   const [liveState,setLiveState] = useState("reconnecting");
   const [foreground,setForeground] = useState(true);
-  const [lastUpdated,setLastUpdated] = useState(null);
+  const [clock,setClock] = useState(Date.now);
+  const reduceMotion = useReduceMotion();
+  const languageTrigger = useRef(null);
+  const languageHeading = useRef(null);
+  const focusOn = (ref) => {
+    const target = findNodeHandle(ref.current);
+    if (target) AccessibilityInfo.setAccessibilityFocus(target);
+  };
   const [shelterHazard,setShelterHazard] = useState("earthquake");
   const [shelters,setShelters] = useState([]);
   const [shelterState,setShelterState] = useState("idle");
@@ -82,7 +84,9 @@ function AppContent() {
   const reportsScroll = useRef(null);
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
-  const { width, fontScale } = useWindowDimensions();
+  const formatDate = (time) => formatReportTime(time,locale,t("today"),clock);
+  const { width, height, fontScale } = useWindowDimensions();
+  const compactHeader = width < 360 || fontScale > 1.35;
   const systemScheme = useColorScheme();
   const [themeOverride,setThemeOverride] = useState(null);
   const effectiveScheme = themeOverride || systemScheme || "light";
@@ -90,8 +94,8 @@ function AppContent() {
   const styles = useMemo(() => createStyles(COLORS), [COLORS]);
   const SMALL_TEXT = useMemo(() => ({ color:COLORS.muted,fontSize:14,lineHeight:20 }), [COLORS]);
   const themeContext = useMemo(() => ({ colors:COLORS, styles }), [COLORS,styles]);
-  const gridWidth = Math.min(Math.max(240, width - 36), 550);
-  const columns = fontScale > 1.35 ? 3 : gridWidth >= 330 ? 5 : 4;
+  const gridWidth = Math.min(Math.max(0, width - 36), 550);
+  const columns = fontScale >= 2 ? 2 : fontScale > 1.35 ? 3 : gridWidth >= 330 ? 5 : 4;
   const categoryWidth = (gridWidth - (columns - 1) * 8) / columns;
   const categoryHeight = (locale === "ja" ? 108 : 88) + (fontScale > 1.35 ? 25 : 0);
 
@@ -115,6 +119,17 @@ function AppContent() {
     return () => sub.remove();
   }, []);
 
+  useEffect(() => {
+    if (!foreground) return;
+    let timer;
+    const tick = () => {
+      setClock(Date.now());
+      timer = setTimeout(tick, 60000 - Date.now() % 60000);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [foreground]);
+
   const askLocation = useCallback(async () => {
     setPermission("checking");
     try {
@@ -133,7 +148,15 @@ function AppContent() {
       }).catch(() => {});
     } catch { setPermission("denied"); }
   }, []);
-  useEffect(() => { askLocation(); }, [askLocation]);
+  useEffect(() => {
+    let active = true;
+    Location.getForegroundPermissionsAsync().then((result) => {
+      if (!active) return;
+      if (result.granted) askLocation();
+      else setPermission("denied");
+    }).catch(() => { if (active) setPermission("denied"); });
+    return () => { active = false; };
+  }, [askLocation]);
 
   const refreshAll = useCallback(() => {
     setQuakeState("loading");
@@ -146,7 +169,6 @@ function AppContent() {
       setWeather(list);
       setWeatherState("ready");
     }).catch(() => setWeatherState("error"));
-    setLastUpdated(new Date());
   }, []);
   useEffect(() => {
     if (!foreground) return;
@@ -197,7 +219,7 @@ function AppContent() {
   }, [position?.latitude,position?.longitude,screen,shelterHazard]);
 
   const reports = useMemo(() =>
-    [...quake,...weather].sort((a,b)=>Date.parse(String(b.time).replaceAll("/", "-"))-Date.parse(String(a.time).replaceAll("/", "-"))), [quake,weather]);
+    [...quake,...weather].sort((a,b)=>(parseBulletinTime(b.time)?.getTime() || 0)-(parseBulletinTime(a.time)?.getTime() || 0)), [quake,weather]);
   const latest = reports.slice(0,4);
   const dynamicJapanese = useMemo(() => [
     place,
@@ -234,7 +256,7 @@ function AppContent() {
       if (active) setHazardZoneState("error");
     });
     return () => {active=false;};
-  }, [selectedReportId, selectedReport?.time, readings,screen]);
+  }, [selectedReportId, selectedReport?.time, readings,screen,locale]);
   const isQuakeCategory = ["earthquake","tsunami"].includes(screen);
   const currentState = isQuakeCategory ? quakeState : weatherState;
   const chooseLanguage = (lang) => {
@@ -258,7 +280,7 @@ function AppContent() {
     setSelectedPoint(report.coordinate || null);
     setScreen(report.category);
     if (screen === report.category) {
-      reportsScroll.current?.scrollTo({y:0,animated:true});
+      reportsScroll.current?.scrollTo({y:0,animated:!reduceMotion});
     }
   };
   const openUrl = async (url) => {
@@ -281,95 +303,102 @@ function AppContent() {
       inHome ? 1 : expanded ? 30 : 3);
     const remaining = Math.max(0,(report.tsunamiAreas?.length || 0)-tsunamiAreas.length);
     return (
-      <Pressable key={report.id} onPress={()=>selectReport(report)}
-        accessibilityRole="button"
-        accessibilityLabel={t(report.category)+": "+report.title}
-        style={[styles.report,
-          {borderLeftColor:severity.color,borderLeftWidth:4},
-          expanded && {borderColor:COLORS.teal,borderLeftColor:severity.color}]}>
-        <View style={styles.reportTop}>
-          <View style={{flexDirection:"row",alignItems:"center",flex:1,gap:8}}>
-            <AppSymbol id={report.category} size={19}/>
-            <TextLabel style={{fontWeight:"600",fontSize:14,flexShrink:1}}>
-              {t(report.category)}
-            </TextLabel>
+      <View key={report.id} style={[styles.report,
+        {borderLeftColor:severity.color,borderLeftWidth:4},
+        expanded && {borderColor:COLORS.teal,borderLeftColor:severity.color}]}>
+        <Pressable onPress={()=>selectReport(report)} accessibilityRole="button"
+          accessibilityState={{selected:expanded}} style={styles.reportContent}>
+          <View style={[styles.reportTop, compactHeader && styles.stacked]}>
+            <View style={{flexDirection:"row",alignItems:"center",flexGrow:1,flexShrink:1,gap:8}}>
+              <AppSymbol id={report.category} size={19}/>
+              <TextLabel style={{fontWeight:"600",fontSize:14,flexShrink:1}}>
+                {t(report.category)}
+              </TextLabel>
+            </View>
+            <View style={styles.timeBadge}>
+              <TextLabel style={styles.timeText}>
+                {t("issuedAt")}: {formatDate(report.issuedAt || report.time)}
+              </TextLabel>
+            </View>
           </View>
-          <TextLabel style={{...SMALL_TEXT,fontSize:12,flexShrink:1,textAlign:"right"}}>
-            {formatDate(report.time,locale)}
-          </TextLabel>
-        </View>
-        {!!severityLabel && <View style={styles.severityRow}>
-          <View style={[styles.severityDot,{backgroundColor:severity.color}]}/>
-          <TextLabel style={{fontWeight:"700",fontSize:14,color:COLORS.ink}}>
-            {severityLabel}
-          </TextLabel>
-        </View>}
-        <TextLabel style={{fontWeight:"600"}}>{displayDynamic(report.title)}</TextLabel>
-        {!!report.description && report.description !== report.title &&
-          <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
-        {metrics.length > 0 && <View style={styles.metricRow}>
-          {metrics.map((metric)=>(
-            <View key={metric.key} style={styles.metricCell}>
-              <TextLabel style={{...SMALL_TEXT,fontSize:12}}>{metric.label}</TextLabel>
-              <TextLabel style={styles.metricValue}>{metric.value}</TextLabel>
-              {!!metric.area && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
-                {displayDynamic(metric.area)}
+          {!!severityLabel && <View style={styles.severityRow}>
+            <View style={[styles.severityDot,{backgroundColor:severity.color}]}/>
+            <TextLabel style={{fontWeight:"700",fontSize:14,color:COLORS.ink}}>
+              {severityLabel}
+            </TextLabel>
+          </View>}
+          <TextLabel style={{fontWeight:"600"}}>{displayDynamic(report.title)}</TextLabel>
+          {!!report.description && report.description !== report.title &&
+            <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
+          {metrics.length > 0 && <View style={styles.metricRow}>
+            {metrics.map((metric)=>(
+              <View key={metric.key} style={styles.metricCell}>
+                <TextLabel style={{...SMALL_TEXT,fontSize:12}}>{metric.label}</TextLabel>
+                <TextLabel style={styles.metricValue}>{metric.value}</TextLabel>
+                {!!metric.area && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
+                  {displayDynamic(metric.area)}
+                </TextLabel>}
+              </View>
+            ))}
+          </View>}
+          {report.category === "tsunami" && tsunamiAreas.map((area,index)=>(
+            <View key={area.name+"-"+index}
+              style={[styles.tsunamiArea,{borderLeftColor:getAreaSeverity("tsunami",area).color,
+                borderLeftWidth:4,paddingLeft:10}]}>
+              <TextLabel style={{fontSize:14,fontWeight:"600"}}>
+                {displayDynamic(area.name)}
+              </TextLabel>
+              <TextLabel style={SMALL_TEXT}>{t("status")}: {t(area.grade)}</TextLabel>
+              {!report.cancelled && <TextLabel style={SMALL_TEXT}>
+                {t("forecastHeight")}: {heightText(area.forecastHeight,t) || t("notPublished")}
+              </TextLabel>}
+              {!inHome && !!area.arrivalTime && <TextLabel style={SMALL_TEXT}>
+                {t("estimatedArrival")}: <TextLabel style={styles.timeText}>{formatDate(area.arrivalTime)}</TextLabel>
+              </TextLabel>}
+              {!inHome && !!area.arrivalCondition && <TextLabel style={SMALL_TEXT}>
+                {displayDynamic(area.arrivalCondition)}
               </TextLabel>}
             </View>
           ))}
-        </View>}
-        {report.category === "tsunami" && tsunamiAreas.map((area,index)=>(
-          <View key={area.name+"-"+index}
-            style={[styles.tsunamiArea,{borderLeftColor:getAreaSeverity("tsunami",area).color,
-              borderLeftWidth:4,paddingLeft:10}]}>
-            <TextLabel style={{fontSize:14,fontWeight:"600"}}>
-              {displayDynamic(area.name)}
-            </TextLabel>
-            <TextLabel style={SMALL_TEXT}>{t("status")}: {t(area.grade)}</TextLabel>
-            {!report.cancelled && <TextLabel style={SMALL_TEXT}>
-              {t("forecastHeight")}: {heightText(area.forecastHeight,t) || t("notPublished")}
-            </TextLabel>}
-            {!inHome && !!area.arrivalTime && <TextLabel style={SMALL_TEXT}>
-              {t("estimatedArrival")}: {formatDate(area.arrivalTime,locale)}
-            </TextLabel>}
-            {!inHome && !!area.arrivalCondition && <TextLabel style={SMALL_TEXT}>
-              {displayDynamic(area.arrivalCondition)}
-            </TextLabel>}
-          </View>
-        ))}
-        {remaining > 0 && <TextLabel style={SMALL_TEXT}>
-          {t("moreRegions")}: {remaining}
-        </TextLabel>}
-        {!inHome && report.category !== "earthquake" &&
-          report.category !== "tsunami" && metrics.length === 0 &&
-          <TextLabel style={SMALL_TEXT}>{t("notPublished")}</TextLabel>}
-        <TextLabel style={{...SMALL_TEXT,fontSize:12,marginTop:3}}>
-          {t("sources")}: {report.source} · {t("issuedAt")}: {formatDate(report.issuedAt || report.time,locale)}
-        </TextLabel>
-        {report.category === "tsunami" && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
-          {t("asIssued")}
-        </TextLabel>}
-        {actionable && <TextLabel style={{color:COLORS.alert,fontWeight:"700",fontSize:13}}>
-          {t("active")}
-        </TextLabel>}
+          {remaining > 0 && <TextLabel style={SMALL_TEXT}>
+            {t("moreRegions")}: {remaining}
+          </TextLabel>}
+          {!inHome && report.category !== "earthquake" &&
+            report.category !== "tsunami" && metrics.length === 0 &&
+            <TextLabel style={SMALL_TEXT}>{t("notPublished")}</TextLabel>}
+          <TextLabel style={{...SMALL_TEXT,fontSize:12,marginTop:3}}>
+            {t("sources")}: {report.source}
+          </TextLabel>
+          {report.category === "earthquake" && <TextLabel style={styles.timeText}>
+            {t("eventTime")}: {formatDate(report.time)}
+          </TextLabel>}
+          {report.category === "tsunami" && <TextLabel style={{...SMALL_TEXT,fontSize:12}}>
+            {t("asIssued")}
+          </TextLabel>}
+          {actionable && <TextLabel style={{color:COLORS.alert,fontWeight:"700",fontSize:13}}>
+            {t("active")}
+          </TextLabel>}
+        </Pressable>
         {!inHome && <View style={styles.rowButtons}>
           {report.coordinate && <Action label={t("openMap")} subtle onPress={()=>selectReport(report)}/>}
           {report.url && <Action label={t("openOfficial")} subtle onPress={()=>openUrl(report.url)}/>}
         </View>}
-      </Pressable>
+      </View>
     );
   };
 
   return (
     <ThemeContext.Provider value={themeContext}>
-      <SafeAreaView style={styles.root} edges={["top","bottom"]}>
+      <SafeAreaView style={styles.root} edges={["top","bottom","left","right"]}
+        accessibilityElementsHidden={languageOpen}
+        importantForAccessibility={languageOpen ? "no-hide-descendants" : "auto"}>
       <StatusBar barStyle={effectiveScheme==="dark" ? "light-content" : "dark-content"} backgroundColor={COLORS.bg}/>
       {friendlySplash ? <View style={styles.boot}>
         <TextLabel style={{ fontSize:58 }}>🛟</TextLabel>
         <TextLabel style={{ fontSize:28,fontWeight:"900" }}>Safety For You</TextLabel>
       </View> :
       <>
-        <View style={styles.header}>
+        <View style={[styles.header,compactHeader && styles.headerStacked]}>
           {screen === "home" ?
             <TextLabel style={styles.brand} accessibilityRole="header">Safety For You</TextLabel> :
             <Pressable onPress={()=>navigate("home")} style={styles.backButton}
@@ -383,7 +412,7 @@ function AppContent() {
               accessibilityHint={t(effectiveScheme==="dark" ? "switchLight" : "switchDark")}>
               <AppSymbol id={effectiveScheme==="dark" ? "sun" : "moon"} size={21}/>
             </Pressable>
-            <Pressable onPress={()=>setLanguageOpen(true)} style={styles.langButton}
+            <Pressable ref={languageTrigger} onPress={()=>setLanguageOpen(true)} style={styles.langButton}
               accessibilityRole="button" accessibilityLabel={t("language")}>
               <AppSymbol id="language" size={18}/>
               <TextLabel style={{ color:COLORS.teal,fontWeight:"600",fontSize:13,flexShrink:1 }}>{LANGUAGE_NAMES[locale]}</TextLabel>
@@ -394,15 +423,18 @@ function AppContent() {
           {screen === "home" ? <>
             <View style={styles.intro}>
               <TextLabel style={styles.date} accessibilityRole="header">
-                {new Intl.DateTimeFormat(locale === "ja" ? "en-US" : locale,
-                  {timeZone:"Asia/Tokyo",year:"numeric",month:"long",day:"numeric",weekday:"long"}).format(new Date())}
+                {new Intl.DateTimeFormat(locale,
+                  {timeZone:"Asia/Tokyo",year:"numeric",month:"long",day:"numeric",weekday:"long"}).format(new Date(clock))}
               </TextLabel>
               <View style={styles.locationRow}>
                 <AppSymbol id="pin" size={17} color={COLORS.muted}/>
                 <TextLabel style={SMALL_TEXT}>{place ? displayDynamic(place) : (position ?
                   position.latitude.toFixed(3) + ", " + position.longitude.toFixed(3) : t("locationDenied"))}</TextLabel>
               </View>
-              {!position && <Action label={t("allowLocation")} onPress={askLocation} subtle />}
+              {!position && <>
+                <TextLabel style={SMALL_TEXT}>{t("permissionInfo")}</TextLabel>
+                <Action label={t("allowLocation")} onPress={askLocation} subtle disabled={permission==="checking"}/>
+              </>}
             </View>
             <Heading>{t("categories")}</Heading>
             <View style={[styles.categoryGrid,{ width:gridWidth }]}>
@@ -432,22 +464,22 @@ function AppContent() {
             <View style={styles.pageTitle}><AppSymbol id="shelter" size={32}/>
               <View style={{ flex:1 }}><Heading>{t("shelter")}</Heading><TextLabel style={SMALL_TEXT}>{t("chooseHazard")}</TextLabel></View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap:8,marginBottom:14 }}>
+            <View style={styles.hazardChoices}>
               {Object.keys(SHELTER_LAYERS).map((hazard)=>
                 <Pressable key={hazard} onPress={()=>setShelterHazard(hazard)}
                   accessibilityRole="button" accessibilityState={{selected:shelterHazard===hazard}} style={[styles.chip,shelterHazard===hazard && styles.chipActive]}>
-                  <TextLabel style={{fontSize:13,fontWeight:"800",color:shelterHazard===hazard?COLORS.white:COLORS.teal}}>{t(hazard)}</TextLabel>
+                  <TextLabel style={{fontSize:13,fontWeight:"800",color:shelterHazard===hazard?COLORS.onAction:COLORS.teal}}>{t(hazard)}</TextLabel>
                 </Pressable>)}
-            </ScrollView>
+            </View>
             {!position && <Message text={t("permission")} warning/>}
-            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"} kind="shelter"/>
+            <SafetyMap locale={locale} location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"} kind="shelter"/>
             <Message text={"🎒 " + t("notes")}/>
             <Message text={t("notOpen")} warning/>
             {shelterState==="loading" && <ActivityIndicator color={COLORS.teal} style={{ margin:20 }}/>}
             {shelterState==="error" && <Message warning text={t("unavailable")}/>}
             {shelterState==="ready" && !shelters.length && <Message text={t("noPlace")}/>}
-            {shelters.map((p)=><Pressable key={p.id} style={styles.report} onPress={()=>setSelectedPoint(p.coordinate)}
-              accessibilityRole="button" accessibilityLabel={t("viewSite")+": "+p.name}>
+            {shelters.map((p)=><Pressable key={p.id} style={[styles.report,styles.reportContent]} onPress={()=>setSelectedPoint(p.coordinate)}
+              accessibilityRole="button">
               <TextLabel style={{fontWeight:"600"}}>{displayDynamic(p.name)}</TextLabel>
               <TextLabel style={SMALL_TEXT}>{displayDynamic(p.address)}</TextLabel>
               <TextLabel style={{...SMALL_TEXT,color:COLORS.teal,fontWeight:"700"}}>{t("shelterType")}: {p.suitable.map(t).join(" · ")}</TextLabel>
@@ -461,7 +493,7 @@ function AppContent() {
               </View>
             </View>
             {screen==="tsunami" && <Message text={t("tsunamiMove")} warning/>}
-            <SafetyMap t={t} location={position}
+            <SafetyMap locale={locale} t={t} location={position}
               points={(selectedReport ? [selectedReport] : detailReports).map((item)=>{
                 const severity=getReportSeverity(item);
                 const severityText=severity.source==="observedShindo" ?
@@ -502,32 +534,41 @@ function AppContent() {
             {!isQuakeCategory && <Message text={t("jmaNote")}/>}
             <TextLabel style={{...SMALL_TEXT,marginTop:12}}>{t("refreshTime")}</TextLabel>
           </> : null}
-          <TextLabel style={{...SMALL_TEXT,textAlign:"center",marginVertical:22}}>{t("about")}</TextLabel>
+          <TextLabel style={{...SMALL_TEXT,textAlign:"center",marginTop:22}}>{t("about")}</TextLabel>
+          <Pressable accessibilityRole="link" onPress={()=>openUrl("https://github.com/vominhthongss/safety-for-you")}
+            style={styles.sourceLink}>
+            <TextLabel style={{color:COLORS.teal,fontSize:15,textAlign:"center"}}>{t("openSource")}</TextLabel>
+          </Pressable>
         </ScrollView>
       </>}
-      <Modal visible={languageOpen} transparent animationType="slide" onRequestClose={()=>setLanguageOpen(false)}>
+      </SafeAreaView>
+      <Modal visible={languageOpen} transparent animationType={reduceMotion ? "none" : "slide"}
+        onShow={()=>focusOn(languageHeading)} onDismiss={()=>focusOn(languageTrigger)}
+        onRequestClose={()=>setLanguageOpen(false)}>
         <View style={styles.backdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={()=>setLanguageOpen(false)}
-            accessibilityRole="button" accessibilityLabel="Close language selection"/>
-          <View style={styles.languageSheet}>
+            accessible={false} importantForAccessibility="no"/>
+          <SafeAreaView style={[styles.languageSheet,{maxHeight:height * 0.9}]}
+            edges={["bottom","left","right"]} accessibilityViewIsModal
+            onAccessibilityEscape={()=>setLanguageOpen(false)}>
             <View style={styles.sheetHeader}>
-              <Heading>{t("language")}</Heading>
+              <TextLabel ref={languageHeading} accessible accessibilityRole="header"
+                style={{fontSize:21,fontWeight:"700",flexShrink:1}}>{t("language")}</TextLabel>
               <Pressable onPress={()=>setLanguageOpen(false)} accessibilityRole="button"
-                accessibilityLabel="Close language selection" style={styles.sheetClose}>
+                accessibilityLabel={t("closeLanguage")} style={styles.sheetClose}>
                 <TextLabel style={{color:COLORS.teal,fontWeight:"600"}}>✕</TextLabel>
               </Pressable>
             </View>
-            <ScrollView style={{maxHeight:420}}>
+            <ScrollView style={{flexShrink:1}}>
               {Object.entries(LANGUAGE_NAMES).map(([code,name])=><Pressable key={code} style={styles.languageItem}
                 accessibilityRole="button" accessibilityState={{selected:code===locale}}
                 onPress={()=>chooseLanguage(code)}>
                 <TextLabel style={{fontWeight:code===locale?"700":"400"}}>{name} {code===locale?"✓":""}</TextLabel>
               </Pressable>)}
             </ScrollView>
-          </View>
+          </SafeAreaView>
         </View>
       </Modal>
-      </SafeAreaView>
     </ThemeContext.Provider>
   );
 }
@@ -536,24 +577,27 @@ export default function App() { return <SafeAreaProvider><AppContent/></SafeArea
 // type and >=44pt touch targets. Grouped lists preserve content readability.
 const createStyles = (COLORS) => StyleSheet.create({
   root:{ flex:1, backgroundColor:COLORS.bg },
-  body:{ paddingHorizontal:18, paddingTop:18, paddingBottom:36, alignItems:"stretch" },
+  body:{ paddingHorizontal:18, paddingTop:18, paddingBottom:36, alignItems:"stretch",
+    width:"100%",maxWidth:760,alignSelf:"center" },
   header:{ minHeight:56, paddingHorizontal:18, paddingVertical:6, flexDirection:"row",
     alignItems:"center",justifyContent:"space-between",backgroundColor:COLORS.white,
     borderBottomWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:12 },
+  headerStacked:{flexDirection:"column",alignItems:"stretch"},
+  stacked:{flexDirection:"column",alignItems:"stretch"},
   brand:{ fontSize:18,fontWeight:"700",flexShrink:1 },
   backButton:{ minHeight:44,minWidth:60,flexDirection:"row",alignItems:"center",gap:5 },
   headerActions:{ flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:8,flexShrink:1 },
   themeButton:{ minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center" },
-  langButton:{ minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"76%" },
+  langButton:{ minWidth:44,minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"76%" },
   intro:{ paddingVertical:5,marginBottom:19,gap:6 },
-  date:{ fontSize:26,lineHeight:33,fontWeight:"700",letterSpacing:-0.4 },
+  date:{ color:COLORS.time,fontSize:26,lineHeight:33,fontWeight:"700",letterSpacing:-0.4 },
   locationRow:{ flexDirection:"row",gap:6,alignItems:"center",flexWrap:"wrap" },
   categoryGrid:{ flexDirection:"row", flexWrap:"wrap",columnGap:8,rowGap:8,alignSelf:"center",marginBottom:16 },
   category:{ borderRadius:12,paddingHorizontal:3,paddingVertical:9,backgroundColor:COLORS.white,
     justifyContent:"center",alignItems:"center",gap:5,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
   categoryLabel:{ fontSize:11.5,lineHeight:15,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
-  sectionTop:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
+  sectionTop:{ flexDirection:"row",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
   refresh:{ minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5 },
   severityRow:{flexDirection:"row",alignItems:"center",gap:8,marginVertical:3,flexWrap:"wrap"},
   severityDot:{width:13,height:13,borderRadius:4,borderWidth:1,borderColor:"#00000020"},
@@ -563,24 +607,29 @@ const createStyles = (COLORS) => StyleSheet.create({
   metricValue:{ fontSize:18,fontWeight:"700",color:COLORS.ink },
   tsunamiArea:{ borderTopWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,
     marginTop:5,paddingTop:9,gap:2 },
-  report:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginBottom:9,
+  report:{ backgroundColor:COLORS.white,borderRadius:12,marginBottom:9,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:6 },
+  reportContent:{padding:14,gap:6,minHeight:44,borderRadius:12},
+  timeBadge:{backgroundColor:COLORS.timeBg,borderRadius:8,paddingHorizontal:8,paddingVertical:5,flexShrink:1},
+  timeText:{color:COLORS.time,fontSize:13,lineHeight:19,fontWeight:"600"},
   reportTop:{ flexDirection:"row",alignItems:"center",gap:8,justifyContent:"space-between",marginBottom:3 },
   message:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginVertical:6,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
   warning:{ borderLeftWidth:3,borderLeftColor:COLORS.alert },
-  action:{ backgroundColor:COLORS.teal,alignSelf:"flex-start",minHeight:44,marginTop:8,
+  action:{ backgroundColor:COLORS.actionFill,minWidth:44,alignSelf:"flex-start",minHeight:44,marginTop:8,
     borderRadius:11,paddingVertical:10,paddingHorizontal:15,justifyContent:"center" },
   subtle:{ backgroundColor:COLORS.tealLight },
-  rowButtons:{ flexDirection:"row",gap:8,flexWrap:"wrap",marginTop:5 },
+  rowButtons:{ flexDirection:"row",gap:8,flexWrap:"wrap",paddingHorizontal:14,paddingBottom:14 },
   pageTitle:{ flexDirection:"row",alignItems:"center",gap:14,marginBottom:16 },
+  hazardChoices:{flexDirection:"row",flexWrap:"wrap",gap:8,marginBottom:14},
+  sourceLink:{minHeight:44,minWidth:44,alignItems:"center",justifyContent:"center",paddingVertical:10},
   chip:{ backgroundColor:COLORS.white,borderRadius:20,paddingVertical:11,paddingHorizontal:15,minHeight:44,
     borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  chipActive:{ backgroundColor:COLORS.teal },
+  chipActive:{ backgroundColor:COLORS.actionFill },
   boot:{ flex:1,alignItems:"center",justifyContent:"center",gap:16,backgroundColor:COLORS.bg },
   backdrop:{ flex:1,justifyContent:"flex-end",backgroundColor:"#0007" },
   languageSheet:{ backgroundColor:COLORS.white,borderTopLeftRadius:18,borderTopRightRadius:18,
-    paddingHorizontal:20,paddingTop:14,paddingBottom:25 },
+    paddingHorizontal:20,paddingTop:14,paddingBottom:20,width:"100%",maxWidth:640,alignSelf:"center" },
   sheetHeader:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between" },
   sheetClose:{ minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center" },
   languageItem:{ minHeight:50,paddingVertical:12,justifyContent:"center",

@@ -1,6 +1,8 @@
 node_modules/
 .expo/
 dist/
+dist-ios/
+dist-android/
 web-build/
 .env
 .env.local

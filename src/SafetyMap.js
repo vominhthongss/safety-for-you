@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { WebView } from "react-native-webview";
-import { CONFIG } from "./config";
+import Pressable from "./Pressable";
+import useReduceMotion from "./useReduceMotion";
 import { getColors } from "./theme";
 import { LEAFLET_JS, LEAFLET_CSS } from "./generated/leafletAssets";
 const { valid, boundsForPoints } = require("./mapViewport.cjs");
@@ -108,12 +109,18 @@ const MAP_RUNTIME = String.raw`
       if (fit && fit.isValid()) {
         if (user) fit.extend(coords(user));
         if (event) fit.extend(coords(event));
-        map.fitBounds(fit,{padding:[36,46],maxZoom:12,animate:true,duration:0.4});
+        map.fitBounds(fit,{padding:[36,46],maxZoom:12,animate:!payload.reduceMotion,duration:0.4});
       } else if (event) {
-        map.setView(coords(event),11,{animate:true});
+        map.setView(coords(event),11,{animate:!payload.reduceMotion});
       } else if (user) {
-        map.setView(coords(user),10,{animate:true});
+        map.setView(coords(user),10,{animate:!payload.reduceMotion});
       }
+      document.documentElement.style.fontSize = String(17 * (payload.fontScale || 1)) + "px";
+      document.documentElement.lang = payload.locale || "en";
+      [[".leaflet-control-zoom-in",payload.zoomIn],[".leaflet-control-zoom-out",payload.zoomOut]].forEach(([selector,label]) => {
+        const control = document.querySelector(selector);
+        if (control) { control.setAttribute("aria-label",label); control.title = label; }
+      });
       document.body.style.backgroundColor = payload.dark ? "#1C1C20" : "#F2F2F7";
       setTimeout(() => map.invalidateSize(), 0);
     }
@@ -129,11 +136,11 @@ const MAP_RUNTIME = String.raw`
 `;
 const MAP_HTML = [
   "<!DOCTYPE html><html><head>",
-  '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">',
+  '<meta name="viewport" content="width=device-width,initial-scale=1">',
   '<meta charset="utf-8">',
   "<style>", LEAFLET_CSS.replace(/<\/style/gi,"<\\/style"),
   "html,body,#map{width:100%;height:100%;margin:0;padding:0;overflow:hidden;}",
-  ".leaflet-container{background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}",
+  ".leaflet-container{background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:1rem;}",
   ".leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;}.leaflet-popup-content{white-space:pre-line;line-height:1.45;}",
   "</style></head><body><div id='map'></div>",
   "<script>", LEAFLET_JS.replace(/<\/script/gi,"<\\/script"), "</script>",
@@ -143,7 +150,7 @@ const MAP_HTML = [
 const sanitize = (point) => valid(point) ?
   {latitude:Number(point.latitude),longitude:Number(point.longitude)} : null;
 
-function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}) {
+function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor,reduceMotion,fontScale,locale}) {
   const user = sanitize(location);
   const event = sanitize(selectedPoint);
   const extent = boundsForPoints([user,event]); // [west,south,east,north]
@@ -159,7 +166,8 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
       color:typeof p.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(p.color) ?
         p.color : "#82909A"
     })),
-    kind, dark,
+    kind, dark, reduceMotion, fontScale, locale,
+    zoomIn:t("zoomIn"), zoomOut:t("zoomOut"),
     zones:Array.isArray(zones) ? zones : [],
     youLabel:t("you"),
     eventLabel:t("map")
@@ -169,26 +177,31 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
 /** WebView + bundled Leaflet with OSM Japan English-label raster tiles. */
 export default function SafetyMap({
   location, points = [], selectedPoint, t, height = 270, kind = "hazard",
-  zones = [], dark = false, selectedColor = "#82909A"
+  zones = [], dark = false, selectedColor = "#82909A", locale = "en"
 }) {
   const ref = useRef(null);
+  const reduceMotion = useReduceMotion();
+  const {fontScale} = useWindowDimensions();
   const [ready,setReady] = useState(false);
   const [mapFailed,setMapFailed] = useState(false);
   const colors = useMemo(() => getColors(dark),[dark]);
   // Stable content avoids remounting the WebView whenever a report is selected.
   const source = useMemo(() => ({html:MAP_HTML,baseUrl:"https://tile.openstreetmap.jp/"}),[]);
   const payload = useMemo(() =>
-    buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}),
+    buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor,reduceMotion,fontScale,locale}),
     [location?.latitude,location?.longitude,selectedPoint?.latitude,
-      selectedPoint?.longitude,points,kind,dark,t,zones,selectedColor]
+      selectedPoint?.longitude,points,kind,dark,t,zones,selectedColor,reduceMotion,fontScale,locale]
   );
+  // The parent's clock can rerender with equivalent point arrays. Do not
+  // reset a user's map position unless the actual map data has changed.
+  const serializedPayload = JSON.stringify(payload);
   useEffect(() => {
     if (!ready) return;
     // JSON double-encoding passes the payload as a *string* to the JS bridge.
     // Incoming JMA/GSI titles remain data and never become executable JS.
-    const body = JSON.stringify(JSON.stringify(payload));
+    const body = JSON.stringify(serializedPayload);
     ref.current?.injectJavaScript("window.SFY_MAP_UPDATE("+body+");true;");
-  },[ready,payload]);
+  },[ready,serializedPayload]);
   const onMessage = (event) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
@@ -198,19 +211,21 @@ export default function SafetyMap({
     } catch { setMapFailed(true); }
   };
   return (
-    <View style={[styles.shell,{height,backgroundColor:colors.bg,borderColor:colors.border}]}>
-      <WebView ref={ref} style={styles.map} source={source}
-        originWhitelist={["*"]} javaScriptEnabled
-        domStorageEnabled={false} scrollEnabled={false}
-        setSupportMultipleWindows={false}
-        onMessage={onMessage} onError={()=>setMapFailed(true)}
-        onHttpError={()=>setMapFailed(true)}
-        accessibilityLabel={t("map")} testID="gsi-map"
-      />
-      {mapFailed && <View style={[styles.error,{backgroundColor:colors.white}]} pointerEvents="none">
+    <View style={[styles.shell,{backgroundColor:colors.white,borderColor:colors.border}]}>
+      <View style={{height}}>
+        <WebView ref={ref} style={styles.map} source={source}
+          originWhitelist={["*"]} javaScriptEnabled
+          domStorageEnabled={false} scrollEnabled={false}
+          setSupportMultipleWindows={false}
+          onMessage={onMessage} onError={()=>setMapFailed(true)}
+          onHttpError={()=>setMapFailed(true)}
+          accessibilityLabel={t("map")} testID="gsi-map"
+        />
+      </View>
+      {mapFailed && <View style={styles.notice}>
         <Text style={[styles.note,{color:colors.ink}]}>{t("unavailable")}</Text>
       </View>}
-      {!valid(location) && <View style={[styles.gps,{backgroundColor:colors.white}]} pointerEvents="none">
+      {!valid(location) && <View style={styles.notice}>
         <Text style={[styles.note,{color:colors.ink}]}>{t("noLocationPin")}</Text>
       </View>}
       {!!zones.length && kind !== "shelter" && <View style={[styles.legend,{backgroundColor:colors.white}]}>
@@ -228,7 +243,7 @@ export default function SafetyMap({
             ))}
         </View>
       </View>}
-      <Pressable accessibilityRole="link" accessibilityLabel="OpenStreetMap attribution"
+      <Pressable accessibilityRole="link" accessibilityLabel={t("mapSource")+": OpenStreetMap / OSM Japan"}
         style={[styles.credit,{backgroundColor:colors.white}]}
         onPress={()=>Linking.openURL("https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver").catch(()=>{})}>
         <Text style={[styles.creditText,{color:colors.ink}]}>
@@ -241,16 +256,14 @@ export default function SafetyMap({
 const styles = StyleSheet.create({
   shell:{borderWidth:StyleSheet.hairlineWidth,borderRadius:12,overflow:"hidden"},
   map:{flex:1,backgroundColor:"transparent"},
-  error:{position:"absolute",top:8,left:8,right:8,padding:10,borderRadius:8},
-  gps:{position:"absolute",top:8,left:8,padding:10,borderRadius:8},
+  notice:{paddingHorizontal:12,paddingVertical:8},
   note:{fontSize:13,fontWeight:"600"},
-  credit:{position:"absolute",right:6,bottom:6,minHeight:36,
-    paddingHorizontal:10,justifyContent:"center",borderRadius:8},
-  creditText:{fontSize:10},
-  legend:{position:"absolute",left:8,bottom:8,maxWidth:"54%",padding:9,borderRadius:10,gap:6},
-  legendText:{fontSize:11,fontWeight:"700"},
+  credit:{minHeight:44,minWidth:44,paddingHorizontal:12,paddingVertical:10,justifyContent:"center"},
+  creditText:{fontSize:12},
+  legend:{padding:12,gap:8},
+  legendText:{fontSize:14,fontWeight:"700"},
   legendSwatches:{flexDirection:"row",gap:6,flexWrap:"wrap"},
-  legendItem:{flexDirection:"row",alignItems:"center",gap:3},
-  legendItemText:{fontSize:10,fontWeight:"700"},
+  legendItem:{flexDirection:"row",alignItems:"center",gap:3,maxWidth:"100%"},
+  legendItemText:{flexShrink:1,fontSize:13,fontWeight:"700"},
   swatch:{width:14,height:10,borderRadius:3}
 });

@@ -3,7 +3,7 @@ import { JA_ROMAJI } from "./jaRomaji";
 // Human-edited basic navigation/care phrases. JMA bulletins remain in Japanese until reviewed translations exist.
 // Country of residence does not imply a language; users can change it at any time.
 export const LANGUAGE_NAMES = {
-  ja: "日本語 (Nihongo)", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
+  ja: "日本語", en: "English", vi: "Tiếng Việt", "zh-CN": "简体中文",
   "zh-TW": "繁體中文", ko: "한국어", tl: "Filipino", ne: "नेपाली",
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
@@ -184,7 +184,23 @@ const other = {
   th: {earthquake:"แผ่นดินไหว",tsunami:"สึนามิ",typhoon:"พายุไต้ฝุ่น",rain:"ฝนตกหนัก",flood:"น้ำท่วม",landslide:"ดินถล่ม",volcano:"ภูเขาไฟ",snow:"หิมะตกหนัก",heat:"อากาศร้อนจัด",shelter:"จุดอพยพ",location:"ตำแหน่งของคุณ",latest:"ข่าวล่าสุด",allowLocation:"อนุญาตตำแหน่ง",language:"ภาษา",map:"แผนที่",refresh:"รีเฟรช",notes:"นำเอกสารสำคัญ ยา และน้ำไปด้วย ชาวต่างชาติควรนำหนังสือเดินทางและบัตรพำนักหากหยิบได้ง่าย นำของให้น้อย ชีวิตสำคัญที่สุด",noGuarantee:"ไม่มีรายงานใหม่ไม่ได้หมายความว่าปลอดภัย โปรดทำตามประกาศทางการ"},
   hi: {earthquake:"भूकंप",tsunami:"सुनामी",typhoon:"तूफ़ान",rain:"भारी बारिश",flood:"बाढ़",landslide:"भूस्खलन",volcano:"ज्वालामुखी",snow:"भारी बर्फ़",heat:"भीषण गर्मी",shelter:"निकासी स्थल",location:"आपका स्थान",latest:"ताज़ा जानकारी",allowLocation:"स्थान की अनुमति दें",language:"भाषा",map:"नक्शा",refresh:"रीफ़्रेश",notes:"ज़रूरी दस्तावेज़, दवाएँ और पानी साथ लें। विदेशी निवासी हों तो संभव हो तो पासपोर्ट और निवास कार्ड लें। कम सामान लें। जीवन सबसे ज़रूरी है।",noGuarantee:"नई सूचना न होना सुरक्षित होने का प्रमाण नहीं है। आधिकारिक निर्देश मानें।"}
 };
-export const strings = { en, ja, vi, ...other };
+const interfaceUpdates = {
+  en: {today:"Today",closeLanguage:"Close language selection",eventTime:"Occurred",openSource:"Open source · MIT",zoomIn:"Zoom in",zoomOut:"Zoom out",mapSource:"Map attribution"},
+  ja: {today:"今日",closeLanguage:"言語の選択を閉じる",eventTime:"発生時刻",openSource:"オープンソース · MIT",zoomIn:"拡大",zoomOut:"縮小",mapSource:"地図の出典"},
+  vi: {today:"Hôm nay",closeLanguage:"Đóng phần chọn ngôn ngữ",eventTime:"Xảy ra lúc",openSource:"Mã nguồn mở · MIT",zoomIn:"Phóng to",zoomOut:"Thu nhỏ",mapSource:"Nguồn bản đồ"},
+  "zh-CN": {today:"今天",closeLanguage:"关闭语言选择",eventTime:"发生时间",openSource:"开源 · MIT",zoomIn:"放大",zoomOut:"缩小",mapSource:"地图来源"},
+  "zh-TW": {today:"今天",closeLanguage:"關閉語言選擇",eventTime:"發生時間",openSource:"開放原始碼 · MIT",zoomIn:"放大",zoomOut:"縮小",mapSource:"地圖來源"},
+  ko: {today:"오늘",closeLanguage:"언어 선택 닫기",eventTime:"발생 시각",openSource:"오픈 소스 · MIT",zoomIn:"확대",zoomOut:"축소",mapSource:"지도 출처"},
+  tl: {today:"Ngayon",closeLanguage:"Isara ang pagpili ng wika",eventTime:"Oras ng pangyayari",openSource:"Bukas na source code · MIT",zoomIn:"Palakihin",zoomOut:"Paliitin",mapSource:"Pinagmulan ng mapa"},
+  ne: {today:"आज",closeLanguage:"भाषा छनोट बन्द गर्नुहोस्",eventTime:"घटना भएको समय",openSource:"खुला स्रोत · MIT",zoomIn:"ठूलो बनाउनुहोस्",zoomOut:"सानो बनाउनुहोस्",mapSource:"नक्साको स्रोत"},
+  id: {today:"Hari ini",closeLanguage:"Tutup pilihan bahasa",eventTime:"Waktu kejadian",openSource:"Sumber terbuka · MIT",zoomIn:"Perbesar",zoomOut:"Perkecil",mapSource:"Sumber peta"},
+  pt: {today:"Hoje",closeLanguage:"Fechar seleção de idioma",eventTime:"Ocorrido em",openSource:"Código aberto · MIT",zoomIn:"Ampliar",zoomOut:"Reduzir",mapSource:"Fonte do mapa"},
+  my: {today:"ယနေ့",closeLanguage:"ဘာသာစကားရွေးချယ်မှု ပိတ်ရန်",eventTime:"ဖြစ်ပွားချိန်",openSource:"အများသုံးရင်းမြစ်ကုဒ် · MIT",zoomIn:"ချဲ့ရန်",zoomOut:"ချုံ့ရန်",mapSource:"မြေပုံရင်းမြစ်"},
+  th: {today:"วันนี้",closeLanguage:"ปิดการเลือกภาษา",eventTime:"เวลาเกิดเหตุ",openSource:"โอเพนซอร์ส · MIT",zoomIn:"ขยาย",zoomOut:"ย่อ",mapSource:"แหล่งที่มาของแผนที่"},
+  hi: {today:"आज",closeLanguage:"भाषा चयन बंद करें",eventTime:"घटना का समय",openSource:"खुला स्रोत · MIT",zoomIn:"बड़ा करें",zoomOut:"छोटा करें",mapSource:"नक्शे का स्रोत"}
+};
+export const strings = Object.fromEntries(Object.entries({ en, ja, vi, ...other })
+  .map(([code, messages]) => [code, { ...messages, ...interfaceUpdates[code] }]));
 export function deviceLanguage(code = "en") {
   if (strings[code]) return code;
   const lower = code.toLowerCase();

@@ -1,6 +1,7 @@
 import { CONFIG, SHELTER_LAYERS } from "./config";
 const { earthquakeDetails, normalizeTsunamiAreas, tsunamiStatus, tsunamiSummary, weatherDetails, scaleLabel } =
   require("./hazardFacts.cjs");
+const { parseBulletinTime } = require("./dateTime.cjs");
 
 const finite = (value) => value !== null && value !== "" && Number.isFinite(Number(value));
 const coords = (lat, lon) => {
@@ -9,10 +10,7 @@ const coords = (lat, lon) => {
     latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180 &&
     !(latitude === 0 && longitude === 0) ? { latitude, longitude } : null;
 };
-const timeValue = (time) => {
-  const date = new Date(String(time || "").replace(/^(\d{4})\/(\d\d)\/(\d\d) (\d\d:\d\d:\d\d)/, "$1-$2-$3T$4+09:00"));
-  return Number.isFinite(date.getTime()) ? date.getTime() : 0;
-};
+const timeValue = (time) => parseBulletinTime(time)?.getTime() || 0;
 export function mergeReports(previous = [], incoming = []) {
   const indexed = new Map();
   for (const item of [...previous, ...incoming]) if (item?.id) indexed.set(item.id, item);

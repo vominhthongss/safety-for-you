@@ -36,7 +36,7 @@ test("Apple HIG home does not require horizontal hazard scrolling or redundant g
   assert.ok(app.includes("categoryWidth"));
   assert.ok(app.includes("useWindowDimensions"));
   assert.ok(!app.includes("styles.gridScroller"));
-  assert.ok(!app.includes('t("today")'));
+  assert.ok(!app.includes('<Heading>{t("today")}</Heading>'));
   assert.ok(app.includes("SymbolView"));
   assert.ok(app.includes("fontScale"));
 });
@@ -48,7 +48,7 @@ test("All static Japanese translations have matching Romaji readings", () => {
   const json = code.slice(code.indexOf("{"), code.lastIndexOf("};") + 1);
   const readings = JSON.parse(json);
   for (const key of jaKeys) assert.ok(readings[key], "Missing Japanese reading for " + key);
-  assert.ok(i18n.includes('ja: "日本語 (Nihongo)"'));
+  assert.ok(i18n.includes('ja: "日本語"'));
 });
 test("Live Japanese readings convert Kana locally without placeholders", () => {
   const code = read("src/romanization.js");
@@ -232,4 +232,44 @@ test("Cards, map pins and shaded JMA zones use data-backed severity colors", () 
   assert.ok(map.includes("severityColor"));
   assert.ok(map.includes("selectedColor"));
   assert.ok(zones.includes("hazardSeverity.cjs"));
+});
+
+test("Bulletin timestamps keep JST for unzoned P2PQuake and honor ISO offsets", () => {
+  const {parseBulletinTime} = require("../src/dateTime.cjs");
+  for (const input of ["2026/11/23 00:05:00", "2026-11-23 00:05:00", "2026-11-23T00:05:00+09:00", "2026-11-22T15:05:00Z"]) {
+    assert.equal(parseBulletinTime(input).toISOString(), "2026-11-22T15:05:00.000Z");
+  }
+  for (const input of [null, "", "unknown", "2026/02/30 10:00:00", "2026-02-30T10:00:00+09:00"]) {
+    assert.equal(parseBulletinTime(input), null);
+  }
+});
+
+test("Today changes at Japan midnight, including year boundaries", () => {
+  const {isTodayInJapan,formatReportTime} = require("../src/dateTime.cjs");
+  const before = Date.parse("2026-12-31T14:59:59Z");
+  const after = Date.parse("2026-12-31T15:00:00Z");
+  const report = "2026/12/31 23:59:00";
+  assert.equal(isTodayInJapan(report,before), true);
+  assert.equal(isTodayInJapan(report,after), false);
+  assert.equal(isTodayInJapan("2027/01/01 00:00:00",after), true);
+  assert.ok(formatReportTime(report,"vi","Hôm nay",before).startsWith("Hôm nay · "));
+  assert.ok(!formatReportTime(report,"vi","Hôm nay",after).includes("Hôm nay"));
+  assert.ok(formatReportTime(report,"ja","今日",before).endsWith("JST"));
+  assert.equal(formatReportTime("unknown","vi","Hôm nay",before),"unknown");
+  assert.equal(formatReportTime(null,"vi","Hôm nay",before),"—");
+});
+
+test("Every selectable language localizes Today and new accessible actions", () => {
+  const vm = require("node:vm");
+  const readings = read("src/jaRomaji.js").replace("export const", "const");
+  const i18n = read("src/i18n.js").replace(/^import .*;\n/, "").replaceAll("export const", "const").replaceAll("export function", "function");
+  const {strings,LANGUAGE_NAMES,translate} = vm.runInNewContext(readings + "\n" + i18n + "\n({strings,LANGUAGE_NAMES,translate})");
+  assert.equal(LANGUAGE_NAMES.ja,"日本語");
+  for (const code of Object.keys(LANGUAGE_NAMES)) {
+    for (const key of ["today","closeLanguage","eventTime","openSource","zoomIn","zoomOut","mapSource"]) {
+      assert.ok(strings[code][key],`${code}: missing ${key}`);
+      assert.notEqual(translate(code)(key),key);
+    }
+  }
+  assert.ok(translate("ja")("earthquake").includes("Jishin"));
 });

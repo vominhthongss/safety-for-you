@@ -1,6 +1,12 @@
 // Reviewed Hepburn-style readings for all Japanese interface strings.
 // Dynamic JMA/GSI/P2PQuake data uses the optional morphological analyzer service.
 export const JA_ROMAJI = {
+  "closeLanguage":"Gengo no sentaku o tojiru",
+  "eventTime":"Hassei jikoku",
+  "openSource":"Ōpun sōsu · MIT",
+  "zoomIn":"Kakudai",
+  "zoomOut":"Shukushō",
+  "mapSource":"Chizu no shutten",
   "emergencyWarning":"Tokubetsu keihō (happyō jiten)",
   "quakeZoneLegend":"Kansoku shindo no chiiki",
   "tsunamiZoneLegend":"Tsunami keihō no engan kuiki",

@@ -1,6 +1,7 @@
 {
   "name": "safety-for-you-romaji",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "description": "Optional self-hosted romanization for Japanese names and notices",
   "scripts": { "start": "node server.cjs" },

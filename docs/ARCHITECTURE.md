@@ -1,46 +1,34 @@
 # Architecture: Safety For You
 
-## Frontend
+[ADRs and deployment in 13 languages](README.md) record the decisions, context and tradeoffs. This page maps them to the current implementation.
 
-- Expo SDK 58 + React Native 0.88, **JavaScript**.
-- `src/SafetyMap.js`: `react-native-webview` with a local, npm-packaged Leaflet engine. No native map SDK or custom Expo config plugin.
-- `scripts/bundle-leaflet.cjs` runs during `npm install`, reads Leaflet 1.9.4 CSS/JS from `node_modules`, and generates `src/generated/leafletAssets.js` (intentionally gitignored).
-- WebView runs a self-contained map HTML. Raster tiles come only from `https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png`. The GSI source link and attribution appear in the React Native overlay.
-- Native-to-WebView messages pass serialized JSON into a **restricted update function**, not executable API data. Label popups use `textContent`, not `innerHTML`.
-- `src/mapViewport.cjs` computes verified user + selected-event bounds. Leaflet `fitBounds` updates the zoom when a report is selected. A regional warning without coordinates gets no marker.
-- `src/theme.js` provides semantic iOS and explicit Android Light/Dark colors. The preference uses AsyncStorage and React Native Appearance.
+| Boundary | Implementation | Responsibility |
+| --- | --- | --- |
+| App shell | `App.js`, `src/Pressable.js`, `src/useReduceMotion.js` | Navigation, permission requests, accessible language sheet, foreground lifecycle and shared press feedback |
+| Presentation | `src/theme.js`, `src/i18n.js`, `src/dateTime.cjs` | Semantic surfaces, adaptive contrast, 13 language choices, JST parsing and localized Today |
+| Reports | `src/data.js`, `src/hazardFacts.cjs`, `src/hazardView.cjs` | Normalize P2PQuake 551/552/556 and recent JMA headlines; preserve issued/event times and published measurements |
+| Severity | `src/hazardSeverity.cjs` | One mapping for Shindo and published tsunami grades across cards, markers and regions; neutral unknown/cancelled state |
+| Map | `src/SafetyMap.js`, `src/mapViewport.cjs` | Expo Go WebView with bundled Leaflet, OSM Japan English-label raster tiles, verified GPS/event framing |
+| Regions | `src/hazardGeo.js`, `src/hazardZones.cjs` | Fetch/cache JMA boundaries for 24 hours; match reported areas without guessing coordinates |
+| Readings | `src/romanization.js`, `src/placeReadings.cjs`, `src/romajiComposition.cjs`, `src/jaRomaji.js` | Reviewed local names, Kana conversion and optional contextual readings; retain Japanese originals |
+| Weather adapter | `server/worker.js`, `wrangler.toml` | Optional public Cloudflare endpoint `/hazards` for recent JMA Atom titles |
+| Romaji backend | `romaji-service/server.cjs` | Optional Node/Kuroshiro/Kuromoji service, `/health` and POST `/romaji` |
+| Distribution | `app.config.js`, `eas.json`, `.env.example` | Public app identifiers/service URLs and separate preview/simulator/production builds |
 
-## Data
+## Data flow and safety semantics
 
-- `src/data.js` normalizes P2PQuake 551/552/556 events and queries GSI hazard-specific GeoJSON evacuation points.
-- `src/hazardFacts.cjs` and `src/hazardView.cjs` maintain source-backed earthquake magnitude, Shindo, tsunami region/height/grade and optional weather measurements. JMA Atom headlines are **not** real-time active alert state.
-- `server/worker.js` is an optional Cloudflare Worker that categorizes *recent* JMA Atom bulletins. It does not provide structured warning severity, geometry, or numerical weather measurement.
-- `src/romanization.js` uses WanaKana on-device for Kana. An optional Node Kuroshiro/Kuromoji service handles Kanji. Readings for rare place names need review.
+REST history and a reconnecting foreground WebSocket supply P2PQuake reports. Weather titles arrive through the optional Worker. The app keeps issued time distinct from earthquake event time. Unzoned P2PQuake timestamps are JST; explicit ISO offsets remain authoritative. Sorting, urgency checks and Today formatting share the same parser. The displayed day refreshes at minute boundaries and when returning to the foreground, independently of network success.
 
-## Boundaries / risks
+Shindo is not magnitude. Only published grades and matched official geometry color hazard regions; station readings without coordinates do not become area polygons. Tsunami coastal lines represent the selected issued bulletin, not wave travel or inland flooding. JMA Atom headlines do not provide live warning validity or verified weather severity. Missing fields remain unknown.
 
-- **Expo Go supported**, but requires an Expo Go build matching SDK 58. WebView is included natively in that build.
-- The Leaflet engine is bundled locally; GSI raster and P2PQuake/JMA data require Internet, so no offline emergency guarantee.
-- GSI map tiles are generally appropriate for Japan and surroundings; using the map from elsewhere may show areas without tile coverage.
-- GSI evacuation facility listings are not live opening-status information.
-- No emergency alert latency guarantee; use J-Alert, JMA, official municipality announcements and broadcasts.
-- Validate Expo Go on real iOS and Android devices, user GPS denied, dark mode, connectivity failures, screen readers and small screens before release.
+## Map and accessibility boundaries
 
-## References
+`npm install` runs `scripts/bundle-leaflet.cjs`, generating ignored `src/generated/leafletAssets.js`. The map engine is available locally; tiles and live feeds still need Internet. The basemap is OSM Japan, while GSI separately supplies evacuation GeoJSON. Keep OSM, GSI and JMA attribution and terms.
 
-- https://docs.expo.dev/versions/v58.0.0/sdk/webview/
-- https://leafletjs.com/reference.html
-- https://maps.gsi.go.jp/development/ichiran.html
+The native-to-WebView bridge double-encodes JSON and uses a restricted update function. External labels use DOM `textContent`. Map popups follow the device font scale, camera transitions honor Reduce Motion, and native status, legend and attribution rows flow below the map. Report cards provide the textual alternative to geographic overlays. Screen-reader access to every Leaflet feature still needs physical-device validation.
 
-## Official JMA hazard map boundaries
+## State, privacy and operations
 
-- Earthquake: P2PQuake `points[].isArea === true` Shindo reading can be matched to the corresponding official JMA `earthquake.json` area boundary. **Individual station readings have no coordinates** in P2PQuake's payload and therefore are not plotted or used to assign intensities to entire municipalities.
-- Tsunami: `areas[].name/code/grade` from P2PQuake code 552 is matched to official JMA `tsunami.json` coastal geometry. This highlights an issued coastal *warning area*, not the actual wave propagation or predicted flood depth.
-- `src/hazardZones.cjs` contains deterministic matching and scale/grade colors; `src/hazardGeo.js` retrieves official JMA GeoJSON (24h cache) when a report is selected, not every frame. `src/SafetyMap.js` paints Leaflet geographic features and fits map bounds to official regions plus GPS/epicenter.
-- The base layer switches from GSI standard tiles to OSM Japan `maptiler-basic-en` raster labels, under OpenStreetMap attribution and tile service usage restrictions. Nearby evacuation shelters still use the separate GSI designated-place GeoJSON service.
+AsyncStorage holds language and appearance preferences. Location is requested after an explicit action, or reused if already granted. GSI queries and map tiles reveal approximate viewed areas to providers; reverse geocoding and optional Romaji requests also contact external services. Do not describe this as fully on-device processing. The Romaji service can receive Japanese bulletin text and shelter addresses. It needs HTTPS, request limits and appropriate logging settings in production.
 
-## Severity and Romanization coverage
-
-`src/hazardSeverity.cjs` maps **P2PQuake/JMA Shindo codes** independently of magnitude to colors, labels and ranks for cards, pins and observation polygons. `src/hazardZones.cjs` uses these same colors. Tsunami color is based on published warning grade per affected coast, not estimated wave height or geographic proximity. No realtime active level is derived from historic JMA Atom headlines. A future structured adapter must explicitly mark `severityVerified: true` and a supported `warningGrade` to color meteorological reports.
-
-`src/placeReadings.cjs` includes reviewed names for 47 prefectures and frequent epicenter/coastal regions and common JMA fixed phrases; `src/romajiComposition.cjs` joins reliable readings in multi-prefecture headlines without guessing unknown Kanji. `src/romanization.js` prefers exact online Kuroshiro readings when the optional service is configured and uses local reviewed/Kana fallback when absent. Arbitrary Kanji names cannot safely be transliterated by WanaKana alone.
+There is no database, account system, background emergency push pipeline, delivery SLA, persisted offline bulletin archive or configured EAS Update channel. Deploy optional services separately. EXPO_PUBLIC values are compiled into the app, never a safe place for credentials. Store signing belongs to each distributor; the MIT license does not license external datasets or replace provider terms.

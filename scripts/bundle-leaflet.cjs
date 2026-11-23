@@ -1,6 +1,6 @@
 /**
  * Bundle Leaflet JS/CSS into the React Native JS bundle so the map engine
- * does not depend on a third-party CDN at runtime. GSI tiles still need internet.
+ * does not depend on a third-party CDN at runtime. Map tiles still need internet.
  * Runs automatically on npm install / npm ci.
  */
 const fs = require("node:fs");

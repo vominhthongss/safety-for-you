@@ -1,43 +1,41 @@
-# Interface guidelines (Apple HIG-inspired)
+# Apple interface and accessibility audit
 
-Safety For You uses restrained grouped surfaces, native SF Symbols on iOS, localized accessibility labels, 44pt minimum touch targets and semantic Light/Dark colors.
+Reviewed against Apple's [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility), [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) and [Buttons](https://developer.apple.com/design/human-interface-guidelines/buttons) guidance on 2026-11-23. These are design guidelines; this review is not Apple approval or an accessibility certification.
 
-## Home and navigation
+## Implemented changes
 
-- Home starts with Japan-local date and optional location, **without** the redundant "Today" heading.
-- All ten disaster categories fit in a responsive non-horizontal grid (small screens may use more rows). Latest Reports follows immediately after.
-- Sun/moon Light/Dark toggle sits alongside language choice. Saved locally and restored after app relaunch.
-- Japanese static strings show original Japanese + Romaji; dynamic readings are only added when reliable.
+| Area | Implementation |
+| --- | --- |
+| Touch controls | Shared pressed state; native buttons and attribution use at least 44pt targets. Report actions are siblings rather than nested buttons. Leaflet zoom controls remain 44px. |
+| Text and layout | Native text scaling remains enabled. Header/report metadata stack on small screens or larger fonts; hazard grid drops to two columns at 200%; shelter choices wrap; iPad content width is bounded. |
+| Time | Indigo text and tinted badges distinguish issue time; earthquake occurrence time is separate. Full localized date plus JST remains visible, with a localized Today prefix for the Japan calendar day. |
+| Appearance | System semantic text/surfaces remain. Action foreground no longer reuses a dark-mode surface color. Custom action/time palettes have light, dark and increased-contrast iOS variants. |
+| Modal | Language sheet respects bottom/side safe areas, scrolls within available height, hides underlying content from accessibility, focuses its heading and restores trigger focus on iOS dismissal. Close labels are localized; accessibility escape closes the sheet. |
+| Language | The language name is 日本語 only. Other Japanese UI retains its Romaji readings. New Today, event-time, close, map controls and source-link labels cover all 13 languages. |
+| Motion | Reduce Motion controls sheet transition, programmatic report scrolling and map-camera movement. |
+| Map | Legend, status messages and attribution flow below the fixed map frame. Popup text follows system font scale. Zoom controls have localized accessible labels; text reports remain available outside WebView. |
+| Permission | Explain location use and request permission after a tap. Previously granted permission may be reused. Reading reports does not require GPS. |
 
-## Leaflet + GSI map
+The severity palette remains separate from time styling. Known Shindo/tsunami values always have text labels; no missing data or cancelled report receives a green all-clear.
 
-- Expo Go-compatible WebView displays Leaflet, packaged locally during `npm install`, with GSI raster tiles. No MapLibre native SDK, Mapbox account or Google Maps key.
-- Panning, pinching, zoom controls, individual interactive markers and a clearly visible GSI attribution/terms link.
-- When an event with verified coordinates is selected, its pin and user GPS pin are both visible via `fitBounds` (including geographically distant points). No false event pin for area warnings. If GPS is denied, the event is centered.
-- On slow/no network, map imagery may be unavailable; the app should show an error and must never imply there is no danger.
-- Map source GSI tiles keep their standard colors in both themes for road/contour legibility.
+## Verification recorded for this change
 
-## QA
+- Automated data and timestamp checks, including Japan midnight/year rollover, explicit timezone offsets, unknown input, localization and existing hazard invariants.
+- JavaScript bundle exports for iOS and Android.
+- Source-level review of touch dimensions, modal behavior and adaptive layout.
+- Custom time/action colors checked numerically for contrast; system semantic colors still require Accessibility Inspector on-device.
 
-- [ ] Expo Go SDK 58 iOS Simulator and physical iPhone; no `MLRNCameraModule` error.
-- [ ] Expo Go SDK 58 Android emulator and device; no Google Maps key.
-- [ ] Tap an earthquake with known epicenter; verify both pins are framed correctly.
-- [ ] Select a tsunami/weather regional bulletin; map must not invent a point.
-- [ ] GPS denied and low connectivity; map fallback and official bulletin remain accessible.
-- [ ] GSI attribution visible; major labels readable with VoiceOver and large system font.
+## Manual device checks still required
 
-## Map visual design — OpenStreetMap Japan
+| Scenario | Expected result |
+| --- | --- |
+| Small iPhone, iPad split view, both platforms | No clipped header, card, sheet or attribution; safe area remains clear. |
+| Largest accessibility text sizes, at least 200%, all 13 languages | Text wraps without covering controls; all language choices and map legend values remain reachable. |
+| VoiceOver / TalkBack | Full report facts are read, official-link buttons can be reached separately, sheet traps focus and closes predictably. Test focus restoration on both OS versions. |
+| Light, dark, Increase Contrast | Text, buttons, severity labels and time badges remain readable; inspect semantic colors and WebView contents separately. |
+| Reduce Motion before launch and changed while running | No programmatic map zoom/fly or sheet slide when enabled. |
+| GPS denied, slow/offline network | Reports and explanatory errors remain readable; no false all-clear. |
+| UTC or another device timezone around Japan midnight | Today appears only for the Japan date; issue/occurrence labels are unambiguous. |
+| Leaflet interaction | Check zoom, popup readability, attribution, large text and screen-reader fallback to native report text. |
 
-- Replaces basic GSI standard raster tiles with a cleaner MapTiler Basic **English-label raster** from nonprofit OSM Japan's tile service.
-- Retains Expo Go compatibility through WebView + Leaflet. iOS and Android each show the same visual style and accessibility-friendly GSI/OSM source link (now updated to OSM Japan).
-- Source-confirmed quake Shindo region polygons are filled with readable colors. Source-confirmed tsunami forecast-coast lines have graded red, purple and amber strokes. A small legend clearly distinguishes an **issued coast warning** from a simulated moving tsunami.
-- Popup titles are passed through the existing Japanese/Romaji formatter, with untrusted text inserted through `textContent`.
-- User and event markers remain present, and the camera includes the boundaries when they exist. No fabricated radius or predicted shaking field.
-- Missing zone data is explicitly reported; the app never suggests that a lack of colored regions means the coast is safe.
-
-## Unified severity palette and accessible map markers
-
-- Shindo scale 1 and 3 have visibly different colors in both **report cards and map markers**, even when no official area geometry is available. A visible text label accompanies every known intensity.
-- Shared mapping in `src/hazardSeverity.cjs` controls event card and pin colors; `src/hazardZones.cjs` uses the same mapping for official observed shaking-region polygons and tsunami forecast coastlines.
-- Tsunami grades are yellow (advisory), red (warning), and purple (major warning). Cancellations and unavailable measurements are neutral gray. No generic weather bulletin receives arbitrary red/green severity coloring.
-- Common Japanese geographic names, source phrases and joined region titles receive Romaji without depending on optional backend configuration. For unknown Kanji, avoid incorrect pronunciation; no invented Romaji is displayed.
+Device runs and full store review were not performed by the source/bundle checks. Do not claim accessibility support in store metadata before completing the corresponding device evaluation.

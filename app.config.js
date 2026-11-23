@@ -28,6 +28,9 @@ module.exports = {
         imageWidth: 160
       }]
     ],
-    extra: { nonprofit: true }
+    extra: {
+      nonprofit: true,
+      ...(process.env.EAS_PROJECT_ID ? { eas: { projectId: process.env.EAS_PROJECT_ID } } : {})
+    }
   }
 };

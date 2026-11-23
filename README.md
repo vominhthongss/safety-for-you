@@ -1,12 +1,32 @@
-# Safety For You — Expo SDK 58
+# Safety For You
 
-A **free, nonprofit** React Native application (JavaScript only) for natural-disaster information in Japan.
+A free, nonprofit mobile app for people living in or visiting Japan. It brings together earthquake and tsunami reports, recent weather bulletins, maps and designated emergency evacuation places. Built with JavaScript, Expo SDK 58 and React Native 0.88 for iOS and Android.
 
-> **Important:** This prototype complements Japan's official emergency alerts. A missing or delayed feed is **not** an all-clear. Follow J-Alert, JMA, local authorities, and your surroundings.
+This is an independent community project, not a government service. Follow JMA and local authorities. An empty feed does not mean an area is safe; the app has no background emergency push service or offline safety guarantee.
 
-## Run in Expo Go (iOS + Android)
+## Documentation in all 13 app languages
 
-Use Node.js 22+ with an **Expo Go app that supports SDK 58**:
+Each language has a project introduction, deployment guide and seven architecture decision records (ADRs):
+
+| Language | Introduction & deployment | ADRs |
+| --- | --- | --- |
+| 日本語 | [デプロイ手順](docs/ja/DEPLOYMENT.md) | [決定記録](docs/ja/ADR.md) |
+| English | [Deployment](docs/en/DEPLOYMENT.md) | [Decisions](docs/en/ADR.md) |
+| Tiếng Việt | [Hướng dẫn triển khai](docs/vi/DEPLOYMENT.md) | [Quyết định kiến trúc](docs/vi/ADR.md) |
+| 简体中文 | [部署指南](docs/zh-CN/DEPLOYMENT.md) | [决策记录](docs/zh-CN/ADR.md) |
+| 繁體中文 | [部署指南](docs/zh-TW/DEPLOYMENT.md) | [決策紀錄](docs/zh-TW/ADR.md) |
+| 한국어 | [배포 안내](docs/ko/DEPLOYMENT.md) | [결정 기록](docs/ko/ADR.md) |
+| Filipino | [Deployment](docs/tl/DEPLOYMENT.md) | [Mga pasya](docs/tl/ADR.md) |
+| नेपाली | [डिप्लोय मार्गदर्शन](docs/ne/DEPLOYMENT.md) | [निर्णय अभिलेख](docs/ne/ADR.md) |
+| Bahasa Indonesia | [Penerapan](docs/id/DEPLOYMENT.md) | [Keputusan](docs/id/ADR.md) |
+| Português | [Implantação](docs/pt/DEPLOYMENT.md) | [Decisões](docs/pt/ADR.md) |
+| မြန်မာ | [လမ်းညွှန်](docs/my/DEPLOYMENT.md) | [ဆုံးဖြတ်ချက်](docs/my/ADR.md) |
+| ไทย | [คู่มือ](docs/th/DEPLOYMENT.md) | [การตัดสินใจ](docs/th/ADR.md) |
+| हिन्दी | [डिप्लॉय मार्गदर्शिका](docs/hi/DEPLOYMENT.md) | [निर्णय अभिलेख](docs/hi/ADR.md) |
+
+## Run in Expo Go
+
+Use Node.js 22+ and Expo Go compatible with SDK 58:
 
 ```bash
 npm install
@@ -14,76 +34,32 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-Open with Expo Go on iOS/Android or the matching Simulator. **No Xcode rebuild, `expo prebuild`, Google Maps key, MapLibre or custom development client is needed for the map.**
+Keep an existing `.env` instead of overwriting it. The map uses bundled Leaflet 1.9.4 in `react-native-webview`; no MapLibre rebuild or Google Maps key is required. If generated assets are missing, run `npm run bundle:maps`.
 
-- The map renders with **react-native-webview 14.0.1** (included in Expo Go 58).
-- **Leaflet 1.9.4** is packaged **inside the app** by `postinstall` (`scripts/bundle-leaflet.cjs`). This avoids downloading Leaflet from a CDN at runtime. If Metro cannot find `src/generated/leafletAssets.js`, rerun `npm install` or `npm run bundle:maps`.
-- Real map tiles come from the public **Geospatial Information Authority of Japan (GSI)** over HTTPS. No Google Maps API key, account, billing, or Mapbox token is required. GSI tile access still needs Internet and is subject to [GSI terms](https://maps.gsi.go.jp/development/ichiran.html). Always keep the visible `© GSI` attribution.
-- The old native MapLibre package and Expo config plugin are **removed**; `MLRNCameraModule` is no longer referenced by the app.
-- If Expo Go itself runs a different SDK than 58, install a compatible Expo Go version. This is an **SDK mismatch**, not a MapLibre dependency.
+## Features and data boundaries
 
-## User-facing features
+- P2PQuake REST and foreground WebSocket supply earthquake/tsunami reports. Magnitude, observed or forecast Shindo, depth, coastal tsunami grade/height and arrival estimates are shown only when published.
+- OSM Japan supplies the English-label basemap. GSI supplies hazard-specific designated evacuation locations, which do not guarantee a facility is open. JMA geometry outlines verified observed shaking regions and issued coastal warning areas, not wave propagation or inundation simulations.
+- The optional Cloudflare Worker categorizes recent JMA Atom headlines. It does not verify active weather warnings or invent measurements. An unconfigured feed is explicitly identified.
+- The optional Node Romaji service supplements local place dictionaries and Kana conversion. Japanese bulletin text remains available; uncertain readings are not guessed.
+- Thirteen language choices, saved light/dark preference, location permission after a user action, distinct time colors and localized “Today” based on Japan time. Issue time and earthquake occurrence time remain separate.
+- Apple HIG improvements include scalable text, 44pt controls, modal focus, reduced motion and map legends below the map. See the [UI audit](docs/UI_DESIGN.md) for device checks still required. Existing UI translations outside Japanese, English and Vietnamese remain partial with English fallback.
 
-- Quick configurable splash (`EXPO_PUBLIC_SPLASH_MIN_MS`), Japan-local date, consent-based location permission and compact 10-hazard grid.
-- Earthquake and tsunami reports from P2PQuake v2, a foreground WebSocket and REST history. Earthquakes show **Magnitude (M), JMA Shindo (measured/predicted) and hypocenter depth** when reported. Tsunami warnings show **wave-height forecasts per coastal region**, warning level, arrival estimates, and cancellation where available.
-- Other JMA categories (typhoon, heavy rain, flood, landslide, volcano, heavy snow, extreme heat) use a separately deployed optional JMA Atom-feed Worker (`EXPO_PUBLIC_JMA_PROXY_URL`). This Worker currently categorizes **recent bulletin titles only**, not active warnings or verified numerical observations. The app never invents wind, flood, or rainfall figures.
-- **Leaflet + OpenStreetMap Japan map** with markers for the user and verified hazard coordinates. Select an event and `fitBounds` automatically frames both the event and GPS location. Regional warnings without confirmed coordinates **do not get a fake pin**. If GPS is denied, focus the event only.
-- Nearby GSI **designated emergency evacuation locations** filtered by the relevant hazard, including safety notes for foreign residents (papers, passport/residence card if within reach, medication, water, travel light).
-- 13 languages: ja, en, vi, zh-CN, zh-TW, ko, tl, ne, id, pt, my, th, hi. Japanese static interface strings include Romaji. WanaKana converts Kana locally; dynamic Kanji readings optionally come from the Kuroshiro/Kuromoji service (`EXPO_PUBLIC_ROMAJI_API_URL`). Unverified readings remain in Japanese without a misleading placeholder.
-- A sun/moon toggle next to the language picker saves Light/Dark Mode locally.
+## Build and verify
 
-## Deploy the optional weather news Worker
+[eas.json](eas.json) defines Android APK/iOS ad hoc preview, iOS Simulator and production store builds. Follow your language's deployment guide to configure Expo project ownership, environment variables, signing and optional services. This repository is a mobile app; `expo export` produces JavaScript bundles, not a deployed website, APK or IPA.
 
 ```bash
-npx wrangler login
-npx wrangler deploy
-```
-
-Add its URL (for example `https://your-worker.workers.dev`) to `EXPO_PUBLIC_JMA_PROXY_URL` in `.env` and restart Expo. Details in `server/worker.js`. Without this backend, weather category pages show an explicit not-configured state, not mock warnings.
-
-## Tests
-
-```bash
-npm install
 npm test
 npx expo install --check
 npx expo export --platform ios --output-dir dist-ios
 npx expo export --platform android --output-dir dist-android
 ```
 
-The CI exports JavaScript bundles on **both platforms**, but a successful JS bundle is **not** a physical-device, WebView, network, or emergency safety certification. Check real hardware, accessibility zoom, GPS denied, poor connections, and map attribution.
+CI runs tests, dependency checking and both exports. Real-device accessibility, WebView, location, connectivity and store review remain separate checks.
 
-## Safety / production limits
+## Open source and contributing
 
-- Leaflet JS/CSS are bundled for offline *engine* availability, but **GSI map imagery still requires Internet**. Do not treat this as an offline navigation app or rely on a map during an outage.
-- GSI designations do **not** guarantee evacuation sites are open or accessible.
-- P2PQuake and JMA headlines are not a guaranteed real-time emergency warning service. WebSocket runs only in the foreground. Add a reliable monitored server-side alert pipeline, full JMA structured severity/cancellation parsing, geographic areas, and qualified translations before providing push emergency warnings.
-- The user's GPS is shared only as necessary for map tiles/local area queries. Publish a privacy policy and test accessibility and user safety before distribution.
+Original code and documentation are licensed under [MIT](LICENSE). You may use, modify, redistribute and sell copies while preserving the copyright and permission notice. This project's nonprofit purpose does not restrict commercial forks. The software comes without warranty; no official endorsement is implied.
 
-Sources: [Expo WebView v58](https://docs.expo.dev/versions/v58.0.0/sdk/webview/), [Leaflet reference](https://leafletjs.com/reference.html), [GSI map tiles](https://maps.gsi.go.jp/development/ichiran.html), [JMA](https://www.jma.go.jp/), [P2PQuake](https://www.p2pquake.net/develop/json_api_v2/).
-
-## Better basemap + verified hazard zones
-
-- **New basemap:** OpenStreetMap Japan's `MapTiler Basic EN` raster style. Its clean English-label map is easier to read and displays Japanese place names primarily in Latin script. No commercial API key and still works inside **Expo Go (WebView + Leaflet)**. Provider information: https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver . The basemap uses OSM copyright attribution; for significant traffic, obtain a hosting arrangement or host your own raster tiles.
-- The selected **earthquake** may show shaded region polygons in colors corresponding to reported **JMA Shindo**. The shapes are fetched from JMA's published `earthquake.json` GIS boundaries and only shown if P2PQuake reported a matching area-level Shindo. It does **not** simulate seismic waves or infer station coordinates.
-- The selected **tsunami** may show colored affected **coastal forecast-zone lines**, using the selected P2PQuake warning grade. The lines are matched to JMA's published `tsunami.json` coastal geometry. They **do not** show tsunami propagation, water travel time or inundation inland.
-- The map fits both the user's GPS, selected epicenter and any loaded official areas, where available. No location is invented. A canceled tsunami report does not paint a still-active warning.
-- All interactive markers and zone popups use **Japanese + Romaji when a verified/local reading is available**, and the English-label base map avoids Kanji-only base labels. For Kanji names with no built-in reading, configure the optional `EXPO_PUBLIC_ROMAJI_API_URL` Kuroshiro service; the app will keep the source name rather than guess.
-- Area boundaries are cached for 24 hours. If JMA GIS loading fails or no location areas match, no colored overlay is shown and a visible status message appears.
-- OSM Japan basemap data: https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver . JMA earthquake areas: https://www.jma.go.jp/bosai/common/const/geojson/earthquake.json . JMA tsunami forecast coasts: https://www.jma.go.jp/bosai/common/const/geojson/tsunami.json .
-
-**This is NOT a dynamic earthquake wave or tsunami propagation simulation.** Colored lines represent named **issued warning regions**, not a predicted ocean wavefront or street-level inundation. Do not use the visual alone to make evacuation decisions.
-
-### Romaji fallback for place names
-
-The app bundles a reviewed dictionary of prefectures and common Japanese coastal-region names in `src/placeReadings.cjs`, so map names such as **宮城県 / Miyagi-ken** work offline. Kana-only text is converted by WanaKana locally. For uncommon Kanji proper names, the existing optional Kuroshiro/Kuromoji service produces contextual Romaji; no made-up reading is shown when unavailable. The basemap itself uses **English/Latin-script place labels** for better accessibility.
-
-## Source-backed severity colors and more Romaji
-
-- **JMA Shindo (震度)** severity has an explicit, progressive palette: 1 light blue, 2 blue, 3 green, 4 yellow, 5- orange, 5+ deeper orange, 6- red, 6+ magenta, 7 dark purple. The color is based on **maximum published Shindo**, NOT earthquake magnitude (M); a strong M earthquake can have only Shindo 1 in an observed area.
-- Cards have a colored left bar + a text label ("Shindo 1", "Shindo 3" etc.) so severity isn't communicated only by color. Map event pins and published observation-area polygons share the exact same color definitions in `src/hazardSeverity.cjs`.
-- For tsunami **advisory**, **warning**, and **major warning**, colors are yellow, red, and purple. The coastal segments use the corresponding color for their own issued grade. Canceled bulletins use neutral gray, never a green all-clear.
-- Weather reports must carry a validated JMA warning grade from structured data before they gain a severity color. This repository's headline-only JMA Worker has no verified warning grade, so its weather items remain neutral. **Do not infer current alert levels from a headline or numeric wind/rainfall measurement.**
-- Improved Japanese/Romaji handling recognizes additional geographic names, JMA information phrases and combined names such as `宮城県 · 岩手県` → `Miyagi-ken · Iwate-ken`. Known names are converted locally without an extra network call; rare Kanji place names still require the optional Kuroshiro/Kuromoji service (set `EXPO_PUBLIC_ROMAJI_API_URL`). Never guess an unverified name reading.
-
-The colors are an accessible **application visualization**, not a claim of official JMA color certification. Always show the text severity and official issued timestamp. The geography overlays remain observed areas or issued coastal warning zones, **not** dynamic wave propagation forecasts.
+Dependencies, datasets and map tiles retain their own licenses and service terms; see [third-party notices](THIRD_PARTY_NOTICES.md). Fork the repository, create a branch, describe the behavior change, run the checks, update the corresponding ADR/deployment translations and open a PR. Keep credentials and signing files out of Git. `private: true` in package.json only prevents accidental npm publication; it does not restrict MIT reuse.
