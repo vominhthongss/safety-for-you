@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: Interval pembaruan dalam detik (minimal 60).
+- `EXPO_PUBLIC_JMA_PROXY_URL`: URL Cloudflare Worker opsional untuk judul berita JMA.
+- `EXPO_PUBLIC_ROMAJI_API_URL`: URL layanan Kanji-ke-Romaji mandiri yang bersifat opsional.
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: Pengenal tetap untuk build Android/iOS bertanda tangan.
+- `EXPO_PUBLIC_*`: Variabel publik masuk ke aplikasi; jangan simpan rahasia.
+- `Leaflet 1.9.4`: `postinstall` menghasilkan `src/generated/leafletAssets.js`; tile peta tetap memerlukan Internet.
 
 ## Layanan opsional
 
@@ -30,11 +30,10 @@ Worker Cloudflare opsional menyediakan judul buletin JMA terkini di /hazards, bu
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+Untuk konversi Kanji/Romaji, lihat`romaji-service/README.md`(Node.js 22+, HTTPS dan pembatasan permintaan). Kosongkan URL jika belum dipasang; tanpa Worker, judul cuaca mungkin tidak tersedia. Mulai ulang Expo setelah mengubah `.env`.
 
 ## Build toko aplikasi
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+Repositori belum mempunyai`eas.json`. Jalankan`build:configure`sekali dan periksa profil production. Atur kredensial penandatanganan, akun toko, pengenal, dan variabel produksi sebelum membangun. Ikuti petunjuk publikasi di bawah.
 
 ## Pemeriksaan rilis
 
@@ -62,7 +61,11 @@ Sebelum merilis, siapkan kebijakan privasi, ikon, tangkapan layar, kontak, uji p
 
 ## Ketentuan open source
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+Berdasarkan[Lisensi MIT](../../LICENSE), kode dapat digunakan, diubah, dan didistribusikan kembali termasuk untuk tujuan komersial, dengan tetap menyertakan pemberitahuan hak cipta dan lisensi pada salinan substansial. Pustaka, peta, tile, dan feed pihak ketiga memiliki ketentuan sendiri. Kontribusi harus mempertahankan atribusi, verifikasi sumber, dan peringatan keselamatan.
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.id.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## Publikasi ke toko aplikasi
+
+Ikuti[panduan publikasi Google Play dan Apple App Store](../stores/STORE_RELEASE.id.md)untuk penandatanganan, pengujian, privasi, peninjauan, dan pekerjaan yang masih diperlukan.

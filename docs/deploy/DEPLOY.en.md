@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: Refresh interval in seconds (minimum 60).
+- `EXPO_PUBLIC_JMA_PROXY_URL`: Optional Cloudflare Worker endpoint for JMA headlines.
+- `EXPO_PUBLIC_ROMAJI_API_URL`: Optional self-hosted Kanji-to-Romaji endpoint.
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: Stable identifiers for signed Android/iOS builds.
+- `EXPO_PUBLIC_*`: Public variables are included in the app bundle; never store secrets.
+- `Leaflet 1.9.4`: The `postinstall` step creates `src/generated/leafletAssets.js`; raster map tiles still need Internet.
 
 ## Optional services
 
@@ -30,11 +30,10 @@ The Cloudflare Worker exposes recent JMA bulletin headlines at /hazards. It is o
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+For Kanji readings, see `romaji-service/README.md` (Node.js 22+, HTTPS proxy and rate limiting). Leave the URL empty if not deployed; weather headlines can be unavailable without the Worker. Set the Worker URL in `.env`, then restart Expo.
 
 ## Store builds
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+`eas.json` is not yet committed. Run `build:configure` once and review the generated production profile. Set signing credentials, store accounts, identifiers, and production environment variables before building. See the complete store-release guide below.
 
 ## Release checklist
 
@@ -62,7 +61,11 @@ Before publishing, provide accurate privacy disclosures, an app icon, screenshot
 
 ## Open-source terms
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+Under the [MIT License](../../LICENSE), the source may be used, modified and redistributed, including commercially, if its copyright and license notice is retained in substantial copies. Third-party libraries, maps, tiles and feeds retain their own terms. Contributions must preserve attribution, source verification and safety notices.
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.en.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## Publishing to app stores
+
+Follow the step-by-step [Google Play and Apple App Store publication guide](../stores/STORE_RELEASE.en.md), including signing, testing, privacy disclosures, store review, and the current release blockers.

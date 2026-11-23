@@ -16,12 +16,12 @@ cp .env.example .env
 npx expo start --go -c
 ```
 
-- `EXPO_PUBLIC_REFRESH_SECONDS`: refresh interval (minimum 60 s).
-- `EXPO_PUBLIC_JMA_PROXY_URL`: optional Cloudflare Worker URL.
-- `EXPO_PUBLIC_ROMAJI_API_URL`: optional self-hosted Kanji/Romaji endpoint.
-- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: app identifiers for native builds.
-- `EXPO_PUBLIC_*` values are embedded in public client bundles; never put secrets in them.
-- Leaflet 1.9.4 is generated locally by `postinstall` into `src/generated/leafletAssets.js`. Map raster tiles still require network access.
+- `EXPO_PUBLIC_REFRESH_SECONDS`: 更新間隔（秒、最小60秒）。
+- `EXPO_PUBLIC_JMA_PROXY_URL`: 気象庁の見出しを取得する任意のCloudflare Worker URL。
+- `EXPO_PUBLIC_ROMAJI_API_URL`: 任意の自前Kanji→Romaji変換サービスURL。
+- `ANDROID_PACKAGE` / `IOS_BUNDLE_ID`: 署名済みAndroid/iOSビルドの固定識別子。
+- `EXPO_PUBLIC_*`: 公開変数は配布アプリに組み込まれます。秘密情報を含めないでください。
+- `Leaflet 1.9.4`: `postinstall`で`src/generated/leafletAssets.js`を生成します。地図画像の取得にはネット接続が必要です。
 
 ## 任意のサービス
 
@@ -30,11 +30,10 @@ Cloudflare Workerは最近の気象庁の見出しを/hazardsで配信します�
 ```bash
 npx wrangler login
 npx wrangler deploy
-# configure EXPO_PUBLIC_JMA_PROXY_URL=https://YOUR-WORKER.workers.dev
-# restart Expo after changing environment variables
+# Set EXPO_PUBLIC_JMA_PROXY_URL in .env and restart Expo.
 ```
 
-For Kanji readings, follow `romaji-service/README.md`; the service requires Node.js 22+, HTTPS proxy and request limits. If not configured, leave the URL empty. Weather headline pages may be unavailable without the Worker.
+漢字のローマ字化については`romaji-service/README.md`を参照してください（Node.js 22以上、HTTPSプロキシ、レート制限）。サービス未導入時はURLを空欄にします。Workerがない場合、気象見出しは利用できないことがあります。Worker URLを`.env`に設定した後、Expoを再起動します。
 
 ## ストア向けビルド
 
@@ -47,7 +46,7 @@ npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
 
-This repo does **not** currently include `eas.json`; `build:configure` is a one-time project setup. Ensure build profiles, native credentials, store accounts, and build-time public environment variables are correctly configured before invoking production builds. EAS service availability, pricing and signing requirements depend on the publisher's account.
+現時点で`eas.json`は未登録です。`build:configure`を一度実行し、生成されたproduction設定を確認してください。ビルド前に署名情報、ストアアカウント、識別子、環境変数を設定します。詳しい公開手順は以下をご覧ください。
 
 ## 公開前の確認
 
@@ -62,7 +61,11 @@ npx expo export --platform ios --output-dir dist-ios
 
 ## オープンソースの条件
 
-MIT: https://github.com/vominhthongss/safety-for-you/blob/main/LICENSE (on the proposed branch until merged). You may use, modify and distribute this code, including commercially, provided that the copyright and MIT license notice remain with substantial copies. Third-party assets, data feeds, fonts and map tiles retain their own licenses and provider terms. Contributions should preserve safety disclaimers, attribution and source verification.
+[MITライセンス](../../LICENSE)では、著作権・ライセンス表示を実質的な複製物に保持する条件で、商用を含む利用、変更、再配布が可能です。外部ライブラリ、地図、タイル、データソースにはそれぞれの利用条件が適用されます。貢献時は出典表示、事実確認、安全上の注意を維持してください。
 
 **Project:** https://github.com/vominhthongss/safety-for-you  
 **Related:** `docs/adr/ADR-0001.ja.md`, `docs/UI_DESIGN.md`, `romaji-service/README.md`.
+
+## アプリストアへの公開
+
+署名、テスト、プライバシー申告、審査、未対応事項を含む[Google Play・App Store公開ガイド](../stores/STORE_RELEASE.ja.md)を参照してください。
