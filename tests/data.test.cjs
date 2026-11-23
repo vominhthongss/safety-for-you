@@ -72,7 +72,13 @@ test("Expo Go supports WebView Leaflet OSM Japan without MapLibre", () => {
   assert.equal(pkg.dependencies["react-native-webview"], "14.0.1");
   assert.equal(pkg.dependencies.leaflet, "1.9.4");
   assert.ok(!pkg.dependencies["@maplibre/maplibre-react-native"]);
-  assert.ok(!pkg.dependencies["react-native-maps"]);
+  assert.equal(pkg.dependencies["react-native-maps"], "1.29.11");
+  const nativeMap=read("src/AppleSafetyMap.js");
+  assert.ok(map.includes('Platform.OS==="ios"'));
+  assert.ok(nativeMap.includes('from "react-native-maps"'));
+  assert.ok(nativeMap.includes("showsUserLocation={false}"));
+  assert.ok(nativeMap.includes("mapZones.markers.map"));
+  assert.ok(nativeMap.includes("fitToCoordinates"));
   assert.ok(!config.includes("@maplibre/maplibre-react-native"));
   assert.ok(!config.includes("GOOGLE_MAPS_ANDROID_API_KEY"));
   assert.ok(map.includes('from "react-native-webview"'));

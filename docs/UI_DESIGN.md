@@ -59,3 +59,12 @@ Verified design targets against [Apple Buttons](https://developer.apple.com/desi
 - [ ] Light/Dark/high-contrast, touch targets and report card actions.
 - [ ] Screen reader map fallback, denied location and offline feed behavior.
 - [ ] App Store privacy/metadata, location permission wording and accurate non-official warning disclaimer.
+
+## iPhone native Apple Maps and Android region intensity badges (2026-11-23)
+
+- iOS uses **native Apple Maps** (MapKit through `react-native-maps`, default provider) rather than the WebView map; Android continues to use Leaflet and OSM Japan tiles.
+- A blue dot shows the permitted foreground user position, a separate epicenter pin identifies the verified quake center, and JMA-published affected regions show appropriately colored polygon boundaries and circular **Shindo 1/2/3/4/5-/5+/6-/6+/7** labels.
+- Badge coordinates are derived solely from **official JMA polygon geometry**, not invented seismic-station coordinates. The official region's measured intensity is shown as text and color; a general quake magnitude M is never substituted for local intensity.
+- On both platforms, selecting an earthquake includes the selected epicenter, GPS and published area bounds in the visible camera. Where GPS or valid JMA coverage is absent, show the explicit unavailable state instead of a made-up marker.
+- Tsunami warning coasts retain their official colored lines; the map must not simulate wave motion, travel time or inland inundation.
+- On iOS validate native marker size, zoom/gesture interactions, text accessibility, MapKit attribution, long Japanese/Romaji names and dark appearance. On Android validate the WebView region-number badges and map/OSM attribution.

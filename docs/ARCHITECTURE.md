@@ -3,11 +3,12 @@
 ## Frontend
 
 - Expo SDK 58 + React Native 0.88, **JavaScript**.
-- `src/SafetyMap.js`: `react-native-webview` with a local, npm-packaged Leaflet engine. No native map SDK or custom Expo config plugin.
+- `src/SafetyMap.js` dispatches by platform: iOS mounts `src/AppleSafetyMap.js` (native Apple Maps/MapKit via Expo-supported `react-native-maps`), Android retains `react-native-webview` and the locally bundled Leaflet engine. No Google Maps key or MapLibre plugin.
 - `scripts/bundle-leaflet.cjs` runs during `npm install`, reads Leaflet 1.9.4 CSS/JS from `node_modules`, and generates `src/generated/leafletAssets.js` (intentionally gitignored).
 - WebView runs a self-contained map HTML. Raster basemap tiles use OSM Japan's English-label raster service; GSI separately provides designated evacuation-place GeoJSON. Preserve each data provider's attribution and usage terms.
 - Native-to-WebView messages pass serialized JSON into a **restricted update function**, not executable API data. Label popups use `textContent`, not `innerHTML`.
-- `src/mapViewport.cjs` computes verified user + selected-event bounds. Leaflet `fitBounds` updates the zoom when a report is selected. A regional warning without coordinates gets no marker.
+- `src/mapViewport.cjs` computes verified user + selected-event bounds. Leaflet `fitBounds` on Android and MapKit `fitToCoordinates` on iOS keep user, epicenter and JMA-published affected areas visible. A regional warning without verified event coordinates gets no fake event pin.
+- `src/mapFeatures.cjs` converts verified JMA area polygons/coastal lines into both the native overlays and **area-center intensity badges** (e.g. Shindo 1/3/5-). Badge positions are representative coordinates derived from the official area geometry, **not** station measurements. Long boundaries are simplified for display.
 - `src/theme.js` provides semantic iOS and explicit Android Light/Dark colors. The preference uses AsyncStorage and React Native Appearance.
 
 ## Data
@@ -19,7 +20,7 @@
 
 ## Boundaries / risks
 
-- **Expo Go supported**, but requires an Expo Go build matching SDK 58. WebView is included natively in that build.
+- **Expo Go supported**, but requires a version matching SDK 58; `react-native-maps` 1.29.11 and WebView are included there. Validate Apple Maps on a real iOS device, Android Leaflet separately and all CI builds.
 - The Leaflet engine is bundled locally; GSI raster and P2PQuake/JMA data require Internet, so no offline emergency guarantee.
 - GSI map tiles are generally appropriate for Japan and surroundings; using the map from elsewhere may show areas without tile coverage.
 - GSI evacuation facility listings are not live opening-status information.

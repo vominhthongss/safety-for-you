@@ -33,7 +33,16 @@ export default function AppleSafetyMap({
   const coordinates=useMemo(()=>{
     const seen=new Set(),result=[];
     for(const p of [user,selected,...eventPoints.map(p=>p.coordinate),
-      ...mapZones.markers.map(m=>m.coordinate)]) {
+      ...mapZones.markers.map(m=>m.coordinate),
+      ...mapZones.polygons.flatMap(p=>p.coordinates.length ? [
+        p.coordinates.reduce((a,b)=>a.latitude<b.latitude?a:b),
+        p.coordinates.reduce((a,b)=>a.latitude>b.latitude?a:b),
+        p.coordinates.reduce((a,b)=>a.longitude<b.longitude?a:b),
+        p.coordinates.reduce((a,b)=>a.longitude>b.longitude?a:b)
+      ]:[]),
+      ...mapZones.lines.flatMap(p=>p.coordinates.length ? [
+        p.coordinates[0],p.coordinates[p.coordinates.length-1]
+      ]:[])]) {
       if(!p)continue;
       const id=`${p.latitude.toFixed(6)}/${p.longitude.toFixed(6)}`;
       if(!seen.has(id)){seen.add(id);result.push(p);}

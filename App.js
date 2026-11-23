@@ -131,6 +131,17 @@ function AppContent() {
     } catch { setPermission("denied"); }
   }, []);
   useEffect(() => { askLocation(); }, [askLocation]);
+  // Keep the blue location marker current only while the app is foregrounded.
+  useEffect(() => {
+    if (permission !== "granted" || !foreground) return;
+    let active=true, subscription=null;
+    Location.watchPositionAsync({accuracy:Location.Accuracy.Balanced,
+      distanceInterval:50,timeInterval:15000},(next)=>{
+      if(active) setPosition(next.coords);
+    }).then((watch)=>{if(active)subscription=watch;else watch.remove();})
+      .catch(()=>{});
+    return ()=>{active=false;subscription?.remove();};
+  },[permission,foreground]);
 
   const refreshAll = useCallback(() => {
     setQuakeState("loading");
