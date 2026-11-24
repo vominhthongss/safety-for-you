@@ -90,7 +90,7 @@ Before any submission, test both iOS Apple Maps and Android Leaflet on physical 
 
 **Hazard alarm and notifications:** The app requests notification permission only after the user turns on the alarm-sound switch. Disclose on-device location use for the alarm in the privacy answers, verify the alarm screen, vibration and notification sound on physical devices, and state in store metadata that the alarm works only while the app is open and does not replace Japan's official Emergency Alerts.
 
-**Current repository readiness gaps: no configured store artwork/screenshots or privacy-policy URL, no demonstrated signed device builds, and no verified store-review outcome. Complete these outside the documentation change before publishing.**
+**Current repository readiness gaps: no store screenshots (iPhone 6.9" or 6.5", iPad 13", Android phone) or privacy-policy URL; app icons, splash logo, Google Play icon and feature graphic are in `assets/` and `store/` (see `store/README.md`), no demonstrated signed device builds, and no verified store-review outcome. Complete these outside the documentation change before publishing.**
 
 ## 6. Releases and ongoing maintenance
 

@@ -90,7 +90,7 @@ Teste Apple Maps no iOS e Leaflet no Android em aparelhos físicos, 13 idiomas, 
 
 **Alarme de desastres e notificações:** O aplicativo solicita permissão de notificação somente depois que o usuário ativa a chave de som do alarme. Declare nas respostas de privacidade o uso da localização no dispositivo para o alarme, verifique em dispositivos físicos a tela de alarme, a vibração e o som da notificação, e informe nos metadados da loja que o alarme funciona apenas com o aplicativo aberto e não substitui os Alertas de Emergência oficiais do Japão.
 
-**Pendências atuais: imagens e capturas para as lojas, URL da política de privacidade, validação de builds nativos assinados e resultado de revisão das lojas. Esta documentação não conclui essas etapas.**
+**Pendências atuais: capturas de tela para as lojas (iPhone 6,9" ou 6,5", iPad 13", celular Android; ícones e feature graphic estão em `assets/` e `store/`, consulte `store/README.md`), URL da política de privacidade, validação de builds nativos assinados e resultado de revisão das lojas. Esta documentação não conclui essas etapas.**
 
 ## 6. Atualizações e manutenção
 

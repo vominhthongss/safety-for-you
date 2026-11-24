@@ -35,3 +35,25 @@ test("Android release builds disable R8 minification and resource shrinking",()=
   assert.equal(plugin[1].android.enableMinifyInReleaseBuilds,false);
   assert.equal(plugin[1].android.enableShrinkResourcesInReleaseBuilds,false);
 });
+test("App icons, splash logo and Google Play graphics exist and are referenced",()=>{
+  const fs=require("node:fs");
+  const path=require.resolve("../app.config.js");
+  delete require.cache[path];
+  const expo=require(path).expo;
+  // PNG header: width and height at bytes 16-23, color type at byte 25 (2 = RGB, 6 = RGBA).
+  const png=(file)=>{
+    const b=fs.readFileSync(file);
+    assert.equal(b.toString("ascii",1,4),"PNG",file);
+    return {w:b.readUInt32BE(16),h:b.readUInt32BE(20),alpha:b[25]===6||b[25]===4};
+  };
+  const icon=png(expo.icon.replace("./",""));
+  assert.deepEqual([icon.w,icon.h,icon.alpha],[1024,1024,false]); // App Store icon: no alpha
+  assert.equal(png(expo.android.adaptiveIcon.foregroundImage.replace("./","")).w,1024);
+  assert.equal(png(expo.android.adaptiveIcon.monochromeImage.replace("./","")).w,1024);
+  const splash=expo.plugins.find((p)=>Array.isArray(p)&&p[0]==="expo-splash-screen")[1];
+  assert.ok(fs.existsSync(splash.image.replace("./","")));
+  const playIcon=png("store/google-play/icon-512.png");
+  assert.deepEqual([playIcon.w,playIcon.h],[512,512]);
+  const feature=png("store/google-play/feature-graphic.png");
+  assert.deepEqual([feature.w,feature.h,feature.alpha],[1024,500,false]);
+});
