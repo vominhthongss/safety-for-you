@@ -87,3 +87,29 @@ test("Privacy policy exists in three languages and is linked from the app",()=>{
   assert.ok(fs.readFileSync("src/config.js","utf8").includes("privacyPolicyUrl"));
   assert.ok(fs.readFileSync("App.js","utf8").includes("openUrl(CONFIG.privacyPolicyUrl)"));
 });
+test("Notification icon and iOS appearance icons are configured",()=>{
+  const path=require.resolve("../app.config.js");
+  delete require.cache[path];
+  const expo=require(path).expo;
+  const fs=require("node:fs");
+  const notif=expo.plugins.find((p)=>Array.isArray(p)&&p[0]==="expo-notifications")[1];
+  const b=fs.readFileSync(notif.icon.replace("./",""));
+  assert.equal(b.readUInt32BE(16),96); assert.equal(b[25],6); // 96 px RGBA (white on transparency)
+  assert.match(notif.color,/^#[0-9A-F]{6}$/i);
+  for(const k of ["light","dark","tinted"]) assert.ok(fs.existsSync(expo.ios.icon[k].replace("./","")),k);
+  assert.equal(expo.ios.icon.light,expo.icon);
+});
+test("Screenshot checker validates store sizes and alpha",()=>{
+  const fs=require("node:fs"),os=require("node:os"),p=require("node:path");
+  const {checkFile}=require("../scripts/check-store-screenshots.cjs");
+  const dir=fs.mkdtempSync(p.join(os.tmpdir(),"shots-"));
+  const png=(w,h,type)=>{ const b=Buffer.alloc(33); b.write("\x89PNG\r\n\x1a\n",0,"latin1");
+    b.writeUInt32BE(13,8); b.write("IHDR",12); b.writeUInt32BE(w,16); b.writeUInt32BE(h,20); b[24]=8; b[25]=type; return b; };
+  const file=(name,buf)=>{ const f=p.join(dir,name); fs.writeFileSync(f,buf); return f; };
+  assert.deepEqual(checkFile(file("ok.png",png(1320,2868,2)),"iphone-6.9"),[]);
+  assert.equal(checkFile(file("bad.png",png(1170,2532,2)),"iphone-6.9").length,1);
+  assert.deepEqual(checkFile(file("ipad.png",png(2064,2752,2)),"ipad-13"),[]);
+  assert.deepEqual(checkFile(file("a.png",png(1080,2400,2)),"android-phone"),[]);
+  assert.equal(checkFile(file("alpha.png",png(1080,2400,6)),"android-phone").length,1);
+  assert.equal(checkFile(file("tall.png",png(1000,2400,2)),"android-phone").length,1);
+});
