@@ -14,7 +14,7 @@ module.exports = {
     android: {
       package: process.env.ANDROID_PACKAGE || "com.vominhthongss.safetyforyou",
       adaptiveIcon: { backgroundColor: "#E8F5F4" },
-      permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "VIBRATE", "POST_NOTIFICATIONS"],
       userInterfaceStyle: "automatic"
     },
     plugins: [
@@ -23,6 +23,8 @@ module.exports = {
         isAndroidBackgroundLocationEnabled: false,
         isIosBackgroundLocationEnabled: false
       }],
+      // Local notifications only (alarm sound while the app is open); no push token.
+      "expo-notifications",
       ["expo-splash-screen", {
         backgroundColor: "#E8F5F4",
         imageWidth: 160

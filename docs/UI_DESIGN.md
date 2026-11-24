@@ -75,3 +75,37 @@ Verified design targets against [Apple Buttons](https://developer.apple.com/desi
 - Android Leaflet: popup label retains original Japanese and Romaji on separate lines; verified area-intensity badges do not represent exact station coordinates.
 - WanaKana transliterates Kana locally. Kanji relies on the reviewed `src/placeReadings.cjs` dictionary or optional reading service; unknown readings remain Japanese.
 - Language picker keeps plain `日本語`, without the extra Romaji subtitle.
+
+## Map framing, intensity badges, alarm and illustrations (2026-11-24)
+
+### Typography and controls
+
+- `src/theme.js` defines `TYPE`, the Apple HIG Dynamic Type default sizes (Large Title 34pt to Caption 12pt). `App.js` and `src/SafetyGuide.js` use these tokens instead of ad hoc font sizes; React Native scales them with the system text size.
+- The language sheet shows a grabber. The alarm-sound setting uses the native `Switch`. Map controls and alarm buttons are at least 44pt.
+
+### Map
+
+1. Selecting a report with verified coordinates frames the user position, the event and its JMA areas only (`fitToCoordinates` on iOS, `fitBounds` on Android). Other report pins no longer widen the frame.
+2. A 44pt "Show me and the event" control re-frames both positions after the user pans or zooms. A chip shows the straight-line distance between the two positions.
+3. The epicenter marker shows the published maximum Shindo (for example `5+`) or `×` when no intensity is published, with a localized "Epicenter" caption (Japanese includes Romaji).
+4. JMA observed-intensity areas keep their filled polygons and number badges. Badge text is dark or white according to `readableTextOn()` in `src/hazardSeverity.cjs`.
+5. Tsunami forecast coasts keep their graded lines. When a bulletin publishes a numeric forecast height, a badge such as `≋ 3m` is placed on the published coastline. Qualitative heights (巨大, 高い) receive no numeric badge. The legend lists all three tsunami grades on both platforms.
+
+### Alarm
+
+- `src/userAlert.cjs` evaluates fresh bulletins against the consented foreground location. Conditions: inside a JMA area with Shindo 4 or higher; inside an Earthquake Early Warning forecast area; within 50 km of the epicenter when no area geometry matches; within 10 km of a JMA tsunami forecast coast. Earthquake bulletins older than 10 minutes and tsunami bulletins older than 60 minutes are ignored, and each report alarms once.
+- The alarm is a full-screen red sheet with a large pictogram, the reason, the bulletin source and issue time, the protective steps, "View on map" and "I understand". Vibration repeats until dismissed.
+- Sound uses a local notification through `expo-notifications`. Permission is requested only when the user turns on the alarm-sound switch on Home.
+- Limitation: detection runs only while the app is open. The app does not register a push token, so it cannot alarm while closed. The Home card states this and asks users to keep Japan's official Emergency Alerts enabled.
+
+### Illustrations
+
+- `src/safetyGuide.cjs` holds three picture-first protective steps for each hazard and for evacuation, plus a seven-row summary of the JMA Shindo scale description. Each step has a large emoji pictogram, a green "Do" or red "Do not" marker and one short sentence.
+- Texts exist in English, Japanese with Romaji and Vietnamese; other locales show English until reviewed translations exist.
+
+### Manual QA still required
+
+- [ ] iPhone and Android device: alarm sheet, repeating vibration, notification sound with the switch on, denied notification permission.
+- [ ] Earthquake with known epicenter far from the user: both positions framed; re-frame control works after panning.
+- [ ] Tsunami bulletin with numeric and qualitative heights: badges appear only for numeric heights.
+- [ ] Emoji rendering on older Android system fonts; VoiceOver and TalkBack labels on illustrated steps.

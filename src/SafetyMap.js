@@ -7,6 +7,8 @@ import { getColors } from "./theme";
 import { LEAFLET_JS, LEAFLET_CSS } from "./generated/leafletAssets";
 const { valid, boundsForPoints } = require("./mapViewport.cjs");
 const {buildMapZones}=require("./mapFeatures.cjs");
+const {distanceKm}=require("./userAlert.cjs");
+const {TSUNAMI,readableTextOn}=require("./hazardSeverity.cjs");
 
 // Expo Go has react-native-webview built in; no custom native map module.
 // Leaflet JS/CSS are bundled locally at npm install, NOT loaded from a CDN.
@@ -66,12 +68,35 @@ const MAP_RUNTIME = String.raw`
       items.forEach((p) => {
         if (!valid(p.coordinate)) return;
         const severityColor = /^#[0-9A-Fa-f]{6}$/.test(p.color || "") ? p.color : "#82909A";
+        if (event && p.coordinate.latitude===event.latitude &&
+          p.coordinate.longitude===event.longitude) return;
         addPin(p.coordinate,p.title,payload.kind==="shelter"?"#238353":severityColor);
       });
-      if (event && !items.some((p) => valid(p.coordinate) &&
-          p.coordinate.latitude===event.latitude &&
-          p.coordinate.longitude===event.longitude)) {
-        addPin(event,payload.eventLabel,payload.selectedColor || "#82909A");
+      if (event) {
+        // Epicenter badge: published maximum Shindo, or "×" when unknown.
+        const tint = payload.selectedColor || "#82909A";
+        const marker = L.marker(coords(event), {
+          zIndexOffset:1000,
+          icon:L.divIcon({className:"epicenter-badge",
+            html:'<span class="epicenter-dot"></span><span class="epicenter-caption"></span>',
+            iconSize:[44,44],iconAnchor:[22,22]})
+        }).addTo(pinLayer);
+        const el = marker.getElement();
+        if (el) {
+          const dot = el.querySelector(".epicenter-dot");
+          dot.style.backgroundColor = tint;
+          dot.style.color = payload.selectedTextColor || "#FFFFFF";
+          dot.textContent = /^[0-7][+-]?$/.test(String(payload.eventBadge || "")) ?
+            payload.eventBadge : "×";
+          const caption = el.querySelector(".epicenter-caption");
+          caption.textContent = String(payload.eventCaption || "");
+          if (!payload.eventCaption) caption.style.display = "none";
+        }
+        const text = document.createElement("span");
+        const matching = items.find((p) => valid(p.coordinate) &&
+          p.coordinate.latitude===event.latitude && p.coordinate.longitude===event.longitude);
+        text.textContent = String(matching ? matching.title : payload.eventLabel || "");
+        marker.bindPopup(text);
       }
       // Render only officially-defined JMA regions matched to this report.
       const zones = Array.isArray(payload.zones) ? payload.zones.slice(0,60) : [];
@@ -101,19 +126,23 @@ const MAP_RUNTIME = String.raw`
       // Area badges show PUBLISHED JMA region intensities, never assumed sensor points.
       (Array.isArray(payload.zoneMarkers)?payload.zoneMarkers:[]).slice(0,60)
         .forEach((item)=>{
-          if(!valid(item.coordinate) || !/^[0-7](?:[+-])?$|^≥5-/.test(String(item.shortLabel))) return;
+          const wave=item.kind==="tsunami";
+          if(!valid(item.coordinate)) return;
+          if(wave ? !/^[<>]?\d+(?:\.\d+)?m$/.test(String(item.shortLabel)) :
+            !/^[0-7](?:[+-])?$|^≥5-/.test(String(item.shortLabel))) return;
           const tint=/^#[a-fA-F0-9]{6}$/.test(item.color)?item.color:"#82909A";
           const marker=L.marker(coords(item.coordinate),{
             icon:L.divIcon({
-              className:"shindo-badge",
+              className:wave ? "shindo-badge wave-badge" : "shindo-badge",
               html:'<span class="shindo-badge-label"></span>',
-              iconSize:[32,32],iconAnchor:[16,16]
+              iconSize:wave ? [64,28] : [34,34],iconAnchor:wave ? [32,14] : [17,17]
             })
           }).addTo(zonePinLayer);
           const el=marker.getElement();
-          if(el){el.style.borderColor=tint;
+          if(el){el.style.backgroundColor=tint;
+            el.style.color=item.textColor || "#FFFFFF";
             const label=el.querySelector(".shindo-badge-label");
-            if(label)label.textContent=item.shortLabel;}
+            if(label)label.textContent=wave ? "≋ "+item.shortLabel : item.shortLabel;}
           const popup=document.createElement("span");
           popup.textContent=String(item.title||"")+" · "+String(item.value||"");
           marker.bindPopup(popup);
@@ -159,7 +188,11 @@ const MAP_HTML = [
   "html,body,#map{width:100%;height:100%;margin:0;padding:0;overflow:hidden;}",
   ".leaflet-container{background:#F2F2F7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}",
   ".leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;}.leaflet-popup-content{white-space:pre-line;line-height:1.45;}",
-  ".shindo-badge{display:flex!important;align-items:center;justify-content:center;background:#fff;border:3px solid #82909A;border-radius:50%;box-sizing:border-box;box-shadow:0 1px 4px #0007;color:#1c1c1e;font-weight:800;font-size:13px;}",
+  ".shindo-badge{display:flex!important;align-items:center;justify-content:center;background:#82909A;border:2px solid #fff;border-radius:50%;box-sizing:border-box;box-shadow:0 1px 4px #0007;color:#fff;font-weight:900;font-size:15px;}",
+  ".wave-badge{border-radius:14px;font-size:13px;white-space:nowrap;}",
+  ".epicenter-badge{display:flex!important;flex-direction:column;align-items:center;}",
+  ".epicenter-dot{display:flex;align-items:center;justify-content:center;min-width:40px;height:40px;border-radius:20px;border:3px solid #fff;box-sizing:border-box;box-shadow:0 1px 5px #0008;font-weight:900;font-size:17px;}",
+  ".epicenter-caption{margin-top:2px;padding:0 4px;border-radius:6px;background:#ffffffe6;color:#1c1c1e;font-size:11px;font-weight:700;white-space:pre;text-align:center;}",
   "</style></head><body><div id='map'></div>",
   "<script>", LEAFLET_JS.replace(/<\/script/gi,"<\\/script"), "</script>",
   "<script>", MAP_RUNTIME, "</script></body></html>"
@@ -168,7 +201,7 @@ const MAP_HTML = [
 const sanitize = (point) => valid(point) ?
   {latitude:Number(point.latitude),longitude:Number(point.longitude)} : null;
 
-function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}) {
+function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor,selectedLabel,refit}) {
   const user = sanitize(location);
   const event = sanitize(selectedPoint);
   const extent = boundsForPoints([user,event]); // [west,south,east,north]
@@ -177,6 +210,10 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
     selectedPoint:event,
     selectedColor:typeof selectedColor==="string" && /^#[0-9A-Fa-f]{6}$/.test(selectedColor) ?
       selectedColor : "#82909A",
+    selectedTextColor:readableTextOn(typeof selectedColor==="string" ? selectedColor : ""),
+    eventBadge:typeof selectedLabel==="string" ? selectedLabel : null,
+    eventCaption:kind==="earthquake" ? t("epicenter") : "",
+    refit,
     bounds:extent ? [[extent[1],extent[0]],[extent[3],extent[2]]] : null,
     points:points.filter((p)=>valid(p.coordinate)).slice(0,100).map((p)=>({
       coordinate:sanitize(p.coordinate),
@@ -186,7 +223,7 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
     })),
     kind, dark,
     zones:Array.isArray(zones) ? zones : [],
-    zoneMarkers:buildMapZones(zones).markers,
+    zoneMarkers:buildMapZones(zones).markers.map((m)=>({...m,textColor:readableTextOn(m.color)})),
     youLabel:t("you"),
     eventLabel:t("map")
   };
@@ -195,18 +232,19 @@ function buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedC
 /** WebView + bundled Leaflet with OSM Japan English-label raster tiles. */
 function LeafletSafetyMap({
   location, points = [], selectedPoint, t, height = 270, kind = "hazard",
-  zones = [], dark = false, selectedColor = "#82909A"
+  zones = [], dark = false, selectedColor = "#82909A", selectedLabel = null
 }) {
   const ref = useRef(null);
   const [ready,setReady] = useState(false);
   const [mapFailed,setMapFailed] = useState(false);
+  const [refit,setRefit] = useState(0);
   const colors = useMemo(() => getColors(dark),[dark]);
   // Stable content avoids remounting the WebView whenever a report is selected.
   const source = useMemo(() => ({html:MAP_HTML,baseUrl:"https://tile.openstreetmap.jp/"}),[]);
   const payload = useMemo(() =>
-    buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor}),
+    buildPayload({location,points,selectedPoint,kind,dark,t,zones,selectedColor,selectedLabel,refit}),
     [location?.latitude,location?.longitude,selectedPoint?.latitude,
-      selectedPoint?.longitude,points,kind,dark,t,zones,selectedColor]
+      selectedPoint?.longitude,points,kind,dark,t,zones,selectedColor,selectedLabel,refit]
   );
   useEffect(() => {
     if (!ready) return;
@@ -215,6 +253,8 @@ function LeafletSafetyMap({
     const body = JSON.stringify(JSON.stringify(payload));
     ref.current?.injectJavaScript("window.SFY_MAP_UPDATE("+body+");true;");
   },[ready,payload]);
+  const km = valid(location) && valid(selectedPoint) ? distanceKm(location,selectedPoint) : null;
+  const distanceText = km===null ? "" : t("distanceFromYou").replace(/\{km\}/g,String(Math.round(km)));
   const onMessage = (event) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
@@ -239,20 +279,34 @@ function LeafletSafetyMap({
       {!valid(location) && <View style={[styles.gps,{backgroundColor:colors.white}]} pointerEvents="none">
         <Text style={[styles.note,{color:colors.ink}]}>{t("noLocationPin")}</Text>
       </View>}
+      {(km!==null || valid(selectedPoint)) && <View style={styles.controls} pointerEvents="box-none">
+        {km!==null && <View style={[styles.chip,{backgroundColor:colors.white}]}>
+          <Text style={[styles.chipText,{color:colors.ink}]}>{distanceText}</Text>
+        </View>}
+        <Pressable onPress={()=>setRefit((n)=>n+1)} accessibilityRole="button"
+          accessibilityLabel={t("showBoth")}
+          style={({pressed})=>[styles.fitButton,{backgroundColor:colors.white,opacity:pressed?0.7:1}]}>
+          <Text style={{color:colors.teal,fontSize:22,fontWeight:"700"}}>◎</Text>
+        </Pressable>
+      </View>}
       {!!zones.length && kind !== "shelter" && <View style={[styles.legend,{backgroundColor:colors.white}]}>
         <Text style={[styles.legendText,{color:colors.ink}]}>
           {kind === "tsunami" ? t("tsunamiZoneLegend") : t("quakeZoneLegend")}
         </Text>
         <View style={styles.legendSwatches}>
-          {Array.from(new Map(zones.filter((z)=>z.properties?.color)
-            .map((z)=>[String(z.properties.color)+"-"+String(z.properties.value),z.properties])).values())
-            .slice(0,7).map((item,i)=>(
+          {(kind==="tsunami" ?
+            Object.entries(TSUNAMI).map(([grade,item])=>({color:item.color,value:t(grade)})) :
+            Array.from(new Map(zones.filter((z)=>z.properties?.color)
+              .map((z)=>[String(z.properties.color)+"-"+String(z.properties.value),z.properties])).values())
+          ).slice(0,8).map((item,i)=>(
               <View key={i} style={styles.legendItem}>
                 <View style={[styles.swatch,{backgroundColor:item.color}]}/>
                 <Text style={[styles.legendItemText,{color:colors.ink}]}>{item.value}</Text>
               </View>
             ))}
         </View>
+        {kind==="tsunami" && zones.some((z)=>z.properties?.badge) &&
+          <Text style={[styles.legendItemText,{color:colors.muted}]}>{t("tsunamiHeightLegend")}</Text>}
       </View>}
       <Pressable accessibilityRole="link" accessibilityLabel="OpenStreetMap attribution"
         style={[styles.credit,{backgroundColor:colors.white}]}
@@ -278,7 +332,13 @@ const styles = StyleSheet.create({
   legendSwatches:{flexDirection:"row",gap:6,flexWrap:"wrap"},
   legendItem:{flexDirection:"row",alignItems:"center",gap:3},
   legendItemText:{fontSize:10,fontWeight:"700"},
-  swatch:{width:14,height:10,borderRadius:3}
+  swatch:{width:14,height:10,borderRadius:3},
+  controls:{position:"absolute",top:8,right:8,maxWidth:"70%",flexDirection:"row",
+    alignItems:"flex-start",justifyContent:"flex-end",gap:8},
+  chip:{flexShrink:1,paddingHorizontal:10,paddingVertical:7,borderRadius:10},
+  chipText:{fontSize:13,fontWeight:"600"},
+  fitButton:{width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center",
+    elevation:3}
 });
 
 // Apple Maps on iPhone via native MapKit; Android keeps WebView/Leaflet.

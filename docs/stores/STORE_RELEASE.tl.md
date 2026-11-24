@@ -72,6 +72,8 @@ Sa App Store Connect, punan ang App Privacy, gumaganang privacy policy at suppor
 
 Subukan sa tunay na iOS at Android device ang Apple Maps at Leaflet, 13 wika, accessibility, pinayagan o tinanggihang lokasyon, luma o nawawalang bulletin, offline state, at pagkilala sa map provider. Huwag mag-angkin ng opisyal na real-time alert, aktibong babala mula lamang sa JMA headline, tsunami simulation, o garantisadong bukas na evacuation center.
 
+**Alarma sa sakuna at mga notification:** Humihingi lamang ang app ng pahintulot sa notification pagkatapos i-on ng user ang switch ng tunog ng alarma. Ipahayag sa mga sagot sa privacy ang paggamit ng lokasyon sa device para sa alarma, suriin sa pisikal na device ang alarm screen, pag-vibrate at tunog ng notification, at isaad sa store metadata na gumagana lamang ang alarma habang bukas ang app at hindi nito pinapalitan ang opisyal na Emergency Alerts ng Japan.
+
 **Hindi pa kumpleto sa repositoryo ang `eas.json`, store assets at screenshot, privacy policy URL, pagsusuri sa nilagdaang native build, at resulta ng store review. Kailangang kumpletuhin ang mga ito bago maglathala.**
 
 ## 6. Mga update at pagpapanatili

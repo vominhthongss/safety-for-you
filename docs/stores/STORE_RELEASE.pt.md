@@ -72,6 +72,8 @@ No App Store Connect, informe App Privacy, URLs válidas de política de privaci
 
 Teste Apple Maps no iOS e Leaflet no Android em aparelhos físicos, 13 idiomas, acessibilidade, permissão de localização concedida ou negada, boletins antigos ou ausentes, falhas de rede e atribuição dos mapas. Não prometa alertas oficiais em tempo real, avisos ativos derivados apenas de títulos JMA, simulação da propagação de tsunami ou abrigos comprovadamente abertos.
 
+**Alarme de desastres e notificações:** O aplicativo solicita permissão de notificação somente depois que o usuário ativa a chave de som do alarme. Declare nas respostas de privacidade o uso da localização no dispositivo para o alarme, verifique em dispositivos físicos a tela de alarme, a vibração e o som da notificação, e informe nos metadados da loja que o alarme funciona apenas com o aplicativo aberto e não substitui os Alertas de Emergência oficiais do Japão.
+
 **Pendências atuais: `eas.json`, imagens e capturas para as lojas, URL da política de privacidade, validação de builds nativos assinados e resultado de revisão das lojas. Esta documentação não conclui essas etapas.**
 
 ## 6. Atualizações e manutenção
