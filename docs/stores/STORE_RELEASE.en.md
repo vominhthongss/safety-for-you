@@ -72,6 +72,8 @@ In App Store Connect, supply App Privacy answers, a working privacy policy URL, 
 
 Before any submission, test both iOS Apple Maps and Android Leaflet on physical devices; verify all 13 languages, large text and screen readers, foreground location denied/allowed, stale or missing bulletins, offline/error states, and map/data-provider attribution. Do not promise real-time emergency notifications, active warnings derived from JMA headlines, simulated tsunami propagation, or verified shelter opening status.
 
+**Hazard alarm and notifications:** The app requests notification permission only after the user turns on the alarm-sound switch. Disclose on-device location use for the alarm in the privacy answers, verify the alarm screen, vibration and notification sound on physical devices, and state in store metadata that the alarm works only while the app is open and does not replace Japan's official Emergency Alerts.
+
 **Current repository readiness gaps: no committed `eas.json`, no configured store artwork/screenshots or privacy-policy URL, no demonstrated signed device builds, and no verified store-review outcome. Complete these outside the documentation change before publishing.**
 
 ## 6. Releases and ongoing maintenance

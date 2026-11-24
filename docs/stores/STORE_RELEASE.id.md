@@ -72,6 +72,8 @@ Di App Store Connect, isi App Privacy, tautan kebijakan privasi dan dukungan yan
 
 Uji Apple Maps pada iOS dan Leaflet pada Android di perangkat nyata, 13 bahasa, aksesibilitas, izin lokasi diterima atau ditolak, berita lama atau hilang, keadaan offline, dan atribusi peta. Jangan menjanjikan peringatan resmi waktu nyata, status peringatan dari judul JMA saja, simulasi rambatan tsunami, atau jaminan lokasi evakuasi sedang dibuka.
 
+**Alarm bencana dan notifikasi:** Aplikasi hanya meminta izin notifikasi setelah pengguna mengaktifkan sakelar suara alarm. Ungkapkan penggunaan lokasi di perangkat untuk alarm dalam jawaban privasi, verifikasi layar alarm, getaran, dan suara notifikasi pada perangkat fisik, serta nyatakan dalam metadata toko bahwa alarm hanya berfungsi saat aplikasi terbuka dan tidak menggantikan Peringatan Darurat resmi Jepang.
+
 **Hal yang masih kurang: `eas.json`, aset toko dan tangkapan layar, URL kebijakan privasi, validasi build native bertanda tangan, dan hasil peninjauan toko. Dokumen ini tidak menggantikan langkah tersebut.**
 
 ## 6. Pembaruan dan pemeliharaan

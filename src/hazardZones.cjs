@@ -13,15 +13,31 @@ const GRADE_COLORS = Object.fromEntries(
 function norm(value) {
   return String(value == null ? "" : value).normalize("NFKC").replace(/\s+/g,"").trim();
 }
-function regionReports(report) {
+// Short official wave-height badge; qualitative descriptors stay unlabeled.
+function heightBadge(height) {
+  if (!height || typeof height!=="object") return null;
+  if (height.type==="meters" && Number.isFinite(height.meters)) return height.meters+"m";
+  if (height.type==="over" && Number.isFinite(height.meters)) return ">"+height.meters+"m";
+  if (height.type==="under" && Number.isFinite(height.meters)) return "<"+height.meters+"m";
+  return null;
+}
+function regionReports(report,{includeForecast=false}={}) {
   if (!report || report.cancelled) return [];
   if (report.category==="earthquake") {
+    // EEW forecast areas are used for the user's own alarm only, never drawn
+    // as observed shaking on the map.
+    if (includeForecast && Array.isArray(report.forecastAreas) && report.forecastAreas.length) {
+      return report.forecastAreas.filter((a)=>a.name && INTENSITY_COLORS[a.scale])
+        .map((a)=>({name:a.name,code:null,value:a.scaleLabel || String(a.scale),scale:a.scale,
+          color:getAreaSeverity("earthquake",a).color,fill:true,kind:"forecastIntensity"}));
+    }
     const raw = Array.isArray(report.shakingAreas) ? report.shakingAreas : [];
     // Station readings cannot be placed without station coordinates.
     return raw.filter((a) => a.isArea && a.name && INTENSITY_COLORS[a.scale])
       .map((a) => ({
         name:a.name, code:a.code == null ? null : String(a.code),
-        value:a.scaleLabel || String(a.scale), color:getAreaSeverity("earthquake",a).color,
+        value:a.scaleLabel || String(a.scale), scale:a.scale,
+        color:getAreaSeverity("earthquake",a).color,
         fill:true,kind:"observedIntensity"
       }));
   }
@@ -30,13 +46,14 @@ function regionReports(report) {
       .filter((a)=>a.name && GRADE_COLORS[a.grade])
       .map((a)=>({
         name:a.name, code:a.code == null ? null : String(a.code),
-        value:a.grade, color:getAreaSeverity("tsunami",a).color, fill:false,kind:"forecastCoast"
+        value:a.grade, grade:a.grade, badge:heightBadge(a.forecastHeight),
+        color:getAreaSeverity("tsunami",a).color, fill:false,kind:"forecastCoast"
       }));
   }
   return [];
 }
-function matchHazardZones(geojson,report,displayName=(s)=>s) {
-  const requested = regionReports(report);
+function matchHazardZones(geojson,report,displayName=(s)=>s,options={}) {
+  const requested = regionReports(report,options);
   if (!requested.length || geojson?.type!=="FeatureCollection" ||
     !Array.isArray(geojson.features)) return [];
   const byCode = new Map(), byName = new Map();
@@ -62,7 +79,10 @@ function matchHazardZones(geojson,report,displayName=(s)=>s) {
         label:String(displayName(zone.name)).slice(0,280),
         value:String(zone.value).slice(0,64),
         color:zone.color,
-        kind:zone.kind, fill:zone.fill
+        kind:zone.kind, fill:zone.fill,
+        ...(zone.scale!=null ? {scale:zone.scale} : {}),
+        ...(zone.grade ? {grade:zone.grade} : {}),
+        ...(zone.badge ? {badge:zone.badge} : {})
       }
     });
     if (matched.length>=60) break;
@@ -70,4 +90,4 @@ function matchHazardZones(geojson,report,displayName=(s)=>s) {
   return matched;
 }
 module.exports={EARTHQUAKE_GEOJSON,TSUNAMI_GEOJSON,INTENSITY_COLORS,GRADE_COLORS,
-  regionReports,matchHazardZones};
+  regionReports,matchHazardZones,heightBadge};

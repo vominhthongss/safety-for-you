@@ -31,6 +31,11 @@ export function normalizeQuake(raw) {
       .map((p)=>({name:String(p.addr),code:p.code || null,
         scale:Number(p.scale),scaleLabel:scaleLabel(p.scale),isArea:true})) : [];
 
+  // EEW (556) forecast areas: used only to check the user's own area.
+  const forecastAreas = raw.code === 556 && Array.isArray(raw.areas) ?
+    raw.areas.filter((a)=>a?.name && scaleLabel(a.scaleFrom))
+      .map((a)=>({name:String(a.name),scale:Number(a.scaleFrom),
+        scaleLabel:scaleLabel(a.scaleFrom)})).slice(0,200) : [];
   const area = tsunamiAreas.slice(0, 5).map((a) => a.name).join(" · ");
   const detail = tsunami ? null : earthquakeDetails(raw);
   const cancelled = tsunami ? raw.cancelled === true : detail.cancelled;
@@ -54,6 +59,7 @@ export function normalizeQuake(raw) {
     tsunamiRisk: detail?.domesticTsunami ?? null,
     tsunamiAreas,
     shakingAreas,
+    forecastAreas,
     tsunamiStatus: tsunamiStatus(tsunamiAreas, cancelled),
     cancelled,
     urgent: raw.code === 556 && !cancelled,

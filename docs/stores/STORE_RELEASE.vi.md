@@ -72,6 +72,8 @@ Trong App Store Connect, cung cấp khai báo App Privacy, URL chính sách riê
 
 Kiểm thử Apple Maps trên iOS và Leaflet trên Android bằng thiết bị thực; rà soát đủ 13 ngôn ngữ, chữ lớn và trình đọc màn hình, cấp hoặc từ chối vị trí khi sử dụng ứng dụng, bản tin cũ/thiếu, chế độ mất mạng và ghi công nguồn bản đồ. Không quảng bá ứng dụng như hệ thống thông báo khẩn cấp thời gian thực, không suy diễn cảnh báo đang có hiệu lực từ tiêu đề JMA, không mô phỏng phạm vi lan truyền sóng thần và không xác nhận nơi sơ tán đang mở nếu thiếu nguồn đáng tin cậy.
 
+**Cảnh báo thiên tai và thông báo:** Ứng dụng chỉ yêu cầu quyền thông báo sau khi người dùng bật công tắc âm thanh báo động. Cần khai báo việc sử dụng vị trí trên thiết bị cho chức năng báo động trong phần trả lời về quyền riêng tư, kiểm tra màn hình báo động, rung và âm thanh thông báo trên thiết bị thật, và ghi rõ trong thông tin cửa hàng rằng báo động chỉ hoạt động khi ứng dụng đang mở và không thay thế Cảnh báo khẩn cấp chính thức của Nhật Bản.
+
 **Các hạng mục hiện còn thiếu trong kho mã nguồn: chưa có `eas.json`, chưa có bộ tài nguyên và ảnh chụp cho cửa hàng hoặc URL chính sách riêng tư đã thiết lập, chưa có bằng chứng kiểm thử bản dựng đã ký trên thiết bị thật và chưa có kết quả xét duyệt của cửa hàng. Phải hoàn tất các hạng mục này trước khi phát hành.**
 
 ## 6. Cập nhật và bảo trì

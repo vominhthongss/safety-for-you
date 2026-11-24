@@ -71,7 +71,7 @@ function buildMapZones(features) {
   for(const [index,feature] of (Array.isArray(features)?features:[]).slice(0,60).entries()) {
     const geom=feature?.geometry||{},props=feature?.properties||{};
     const tint=color(props.color);
-    const polygonsInFeature=[];
+    const polygonsInFeature=[],linesInFeature=[];
     const emitPolygon=(raw)=> {
       const polygon=asPolygon(raw);
       if(!polygon)return;
@@ -81,6 +81,7 @@ function buildMapZones(features) {
     };
     const emitLine=(raw)=>{
       const coordinates=downsample(raw,700);
+      if(coordinates.length>1) linesInFeature.push(coordinates);
       if(coordinates.length>1) lines.push({key:`line-${index}-${lines.length}`,
         coordinates,color:tint,label:String(props.label||"").slice(0,180),
         value:String(props.value||"").slice(0,64)});
@@ -91,13 +92,24 @@ function buildMapZones(features) {
     if(geom.type==="LineString")emitLine(geom.coordinates);
     if(geom.type==="MultiLineString" && Array.isArray(geom.coordinates))
       geom.coordinates.slice(0,30).forEach(emitLine);
+    // Tsunami coast badge: the official forecast wave height, placed on the
+    // published coastline itself (middle vertex of its longest segment).
+    if(props.kind==="forecastCoast" && linesInFeature.length &&
+      /^[<>]?\d+(?:\.\d+)?m$/.test(String(props.badge||""))) {
+      const longest=linesInFeature.reduce((a,b)=>b.length>a.length?b:a);
+      markers.push({key:`coast-${index}`,kind:"tsunami",
+        coordinate:longest[Math.floor(longest.length/2)],color:tint,
+        shortLabel:String(props.badge),value:String(props.value||"").slice(0,64),
+        title:String(props.label||"").slice(0,180)});
+      continue;
+    }
     if(props.kind!=="observedIntensity" || !polygonsInFeature.length)continue;
     const outer=polygonsInFeature.reduce((best,ring)=>
       !best || Math.abs(ringArea(ring))>Math.abs(ringArea(best))?ring:best,null);
     const anchor=polygonAnchor(outer);
     const match=String(props.value||"").match(/^Shindo\s+([0-7](?:[+-])?|≥5- \(estimated\))$/);
     if(anchor && match)markers.push({
-      key:`zone-${index}`,coordinate:anchor,color:tint,shortLabel:match[1],
+      key:`zone-${index}`,kind:"shindo",coordinate:anchor,color:tint,shortLabel:match[1],
       value:String(props.value),title:String(props.label||"").slice(0,180)
     });
   }

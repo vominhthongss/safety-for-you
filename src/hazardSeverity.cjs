@@ -70,4 +70,13 @@ function getAreaSeverity(category, report) {
   }
   return NEUTRAL;
 }
-module.exports={INTENSITY,TSUNAMI,METEO_GRADES,NEUTRAL,validShindo,shindoFromLabel,getReportSeverity,getAreaSeverity};
+// Picks dark or white text for a severity color by WCAG relative luminance,
+// so a Shindo/tsunami badge number stays readable on every palette color.
+function readableTextOn(hex) {
+  const m=/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex||""));
+  if(!m)return "#FFFFFF";
+  const [r,g,b]=m.slice(1).map((x)=>parseInt(x,16)/255)
+    .map((c)=>c<=0.03928?c/12.92:((c+0.055)/1.055)**2.4);
+  return 0.2126*r+0.7152*g+0.0722*b>0.19 ? "#1C1C1E" : "#FFFFFF";
+}
+module.exports={readableTextOn,INTENSITY,TSUNAMI,METEO_GRADES,NEUTRAL,validShindo,shindoFromLabel,getReportSeverity,getAreaSeverity};
