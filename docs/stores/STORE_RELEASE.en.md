@@ -4,7 +4,7 @@ This guide applies to Safety For You (Expo SDK 58). The application is independe
 
 ## 1. Prerequisites and verification
 
-Use Node.js 22+, a compatible Expo environment, an Expo account, and separate developer accounts for Google Play and Apple. The repository currently has no npm lockfile or `eas.json`. The commands below first validate the JavaScript project; they do not validate native store builds.
+Use Node.js 22+, a compatible Expo environment, an Expo account, and separate developer accounts for Google Play and Apple. The repository includes `package-lock.json` and `eas.json` (profiles `preview` and `production`). The commands below first validate the JavaScript project; they do not validate native store builds.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS project ID:** `app.config.js` is a dynamic configuration, so `eas init` cannot write `extra.eas.projectId` into it and stops with "Cannot automatically write to dynamic config". Run `npx eas-cli init`, copy the project ID it prints, and set `"env": { "EAS_PROJECT_ID": "<project-id>" }` in the `base` profile of `eas.json`. `app.config.js` copies this value to `extra.eas.projectId`. The project ID is an identifier, not a secret; never put credentials in `eas.json`.
 
 The sample uses EAS-managed build numbers and automatic incrementing. Keep `expo.version` in `app.config.js` aligned with the marketed release. Never reuse an Android version code or an iOS build number for the same app version. Verify credentials and ownership in EAS; keep Android upload credentials and Apple signing keys private.
 
@@ -74,7 +90,7 @@ Before any submission, test both iOS Apple Maps and Android Leaflet on physical 
 
 **Hazard alarm and notifications:** The app requests notification permission only after the user turns on the alarm-sound switch. Disclose on-device location use for the alarm in the privacy answers, verify the alarm screen, vibration and notification sound on physical devices, and state in store metadata that the alarm works only while the app is open and does not replace Japan's official Emergency Alerts.
 
-**Current repository readiness gaps: no committed `eas.json`, no configured store artwork/screenshots or privacy-policy URL, no demonstrated signed device builds, and no verified store-review outcome. Complete these outside the documentation change before publishing.**
+**Current repository readiness gaps: no configured store artwork/screenshots or privacy-policy URL, no demonstrated signed device builds, and no verified store-review outcome. Complete these outside the documentation change before publishing.**
 
 ## 6. Releases and ongoing maintenance
 

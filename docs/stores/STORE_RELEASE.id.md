@@ -4,7 +4,7 @@ Panduan ini berlaku untuk Safety For You (Expo SDK 58), aplikasi informasi benca
 
 ## 1. Prasyarat dan pemeriksaan
 
-Siapkan Node.js 22+, lingkungan Expo yang sesuai, akun Expo, serta akun pengembang Google Play dan Apple. Repositori ini belum mempunyai npm lockfile maupun `eas.json`. Perintah berikut hanya memeriksa JavaScript, bukan membuktikan kesiapan build native.
+Siapkan Node.js 22+, lingkungan Expo yang sesuai, akun Expo, serta akun pengembang Google Play dan Apple. Repositori ini menyertakan `package-lock.json` dan `eas.json` (profil `preview` dan `production`). Perintah berikut hanya memeriksa JavaScript, bukan membuktikan kesiapan build native.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**ID proyek EAS:** `app.config.js` adalah konfigurasi dinamis sehingga `eas init` tidak dapat menulis `extra.eas.projectId` ke dalamnya dan berhenti dengan pesan "Cannot automatically write to dynamic config". Jalankan `npx eas-cli init`, salin ID proyek yang ditampilkan, lalu tetapkan `"env": { "EAS_PROJECT_ID": "<project-id>" }` pada profil `base` di `eas.json`. `app.config.js` menyalin nilai ini ke `extra.eas.projectId`. ID proyek adalah pengenal, bukan rahasia; jangan menaruh kredensial di `eas.json`.
 
 Contoh menggunakan nomor build yang dikelola dan dinaikkan otomatis oleh EAS. Sesuaikan `expo.version` dalam `app.config.js` dengan versi rilis. Jangan menggunakan ulang Android versionCode atau iOS buildNumber. Simpan kredensial penandatanganan dan kunci unggah secara aman, bukan di Git.
 
@@ -74,7 +90,7 @@ Uji Apple Maps pada iOS dan Leaflet pada Android di perangkat nyata, 13 bahasa, 
 
 **Alarm bencana dan notifikasi:** Aplikasi hanya meminta izin notifikasi setelah pengguna mengaktifkan sakelar suara alarm. Ungkapkan penggunaan lokasi di perangkat untuk alarm dalam jawaban privasi, verifikasi layar alarm, getaran, dan suara notifikasi pada perangkat fisik, serta nyatakan dalam metadata toko bahwa alarm hanya berfungsi saat aplikasi terbuka dan tidak menggantikan Peringatan Darurat resmi Jepang.
 
-**Hal yang masih kurang: `eas.json`, aset toko dan tangkapan layar, URL kebijakan privasi, validasi build native bertanda tangan, dan hasil peninjauan toko. Dokumen ini tidak menggantikan langkah tersebut.**
+**Hal yang masih kurang: aset toko dan tangkapan layar, URL kebijakan privasi, validasi build native bertanda tangan, dan hasil peninjauan toko. Dokumen ini tidak menggantikan langkah tersebut.**
 
 ## 6. Pembaruan dan pemeliharaan
 

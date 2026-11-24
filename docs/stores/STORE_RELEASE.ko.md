@@ -4,7 +4,7 @@
 
 ## 1. 준비 사항과 검증
 
-Node.js 22 이상, 호환 Expo 환경, Expo 계정 및 Google Play·Apple 개발자 계정이 필요합니다. 현재 저장소에는 npm 잠금 파일과 `eas.json`이 없습니다. 아래 명령은 JavaScript만 검증하므로 네이티브 빌드 테스트를 대신하지 않습니다.
+Node.js 22 이상, 호환 Expo 환경, Expo 계정 및 Google Play·Apple 개발자 계정이 필요합니다. 저장소에는 `package-lock.json`과 `eas.json`(`preview`, `production` 프로필)이 포함되어 있습니다. 아래 명령은 JavaScript만 검증하므로 네이티브 빌드 테스트를 대신하지 않습니다.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS 프로젝트 ID:** `app.config.js`는 동적 설정이므로 `eas init`이 `extra.eas.projectId`를 기록하지 못하고 "Cannot automatically write to dynamic config" 오류로 중단됩니다. `npx eas-cli init`을 실행하고 출력된 프로젝트 ID를 `eas.json`의 `base` 프로필에 `"env": { "EAS_PROJECT_ID": "<project-id>" }`로 설정하십시오. `app.config.js`가 이 값을 `extra.eas.projectId`에 반영합니다. 프로젝트 ID는 식별자이며 비밀 정보가 아니지만, 자격 증명은 `eas.json`에 넣지 마십시오.
 
 예시는 EAS가 빌드 번호를 관리하며 자동 증가시킵니다. `app.config.js`의 `expo.version`도 출시 버전에 맞춥니다. Android versionCode와 iOS buildNumber를 재사용하지 마세요. 업로드 키와 Apple 서명 정보를 비공개로 보관합니다.
 
@@ -74,7 +90,7 @@ App Store Connect에서 App Privacy, 유효한 개인정보처리방침 및 지�
 
 **재해 경보와 알림:** 앱은 사용자가 경보음 스위치를 켠 후에만 알림 권한을 요청합니다. 개인정보 답변에 경보를 위한 기기 내 위치 사용을 공개하고, 실제 기기에서 경보 화면, 진동, 알림음을 확인하며, 경보는 앱이 열려 있을 때만 작동하고 일본의 공식 긴급 경보를 대체하지 않는다는 점을 스토어 정보에 명시하십시오.
 
-**현재 미완료 항목: `eas.json`, 스토어용 이미지·스크린샷과 개인정보처리방침 URL, 서명된 실기기 빌드 검증, 스토어 심사 결과. 문서만으로 배포 준비가 완료되지 않습니다.**
+**현재 미완료 항목: 스토어용 이미지·스크린샷과 개인정보처리방침 URL, 서명된 실기기 빌드 검증, 스토어 심사 결과. 문서만으로 배포 준비가 완료되지 않습니다.**
 
 ## 6. 업데이트와 유지 관리
 

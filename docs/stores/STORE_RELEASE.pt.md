@@ -4,7 +4,7 @@ Este guia aplica-se ao Safety For You (Expo SDK 58), aplicativo gratuito, sem fi
 
 ## 1. Pré-requisitos e verificação
 
-Prepare Node.js 22+, ambiente Expo compatível, conta Expo e contas de desenvolvedor do Google Play e da Apple. O repositório ainda não possui lockfile do npm nem `eas.json`. Os comandos abaixo verificam o JavaScript, mas não validam os builds nativos.
+Prepare Node.js 22+, ambiente Expo compatível, conta Expo e contas de desenvolvedor do Google Play e da Apple. O repositório inclui `package-lock.json` e `eas.json` (perfis `preview` e `production`). Os comandos abaixo verificam o JavaScript, mas não validam os builds nativos.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**ID do projeto EAS:** `app.config.js` é uma configuração dinâmica; por isso, `eas init` não consegue gravar `extra.eas.projectId` nele e interrompe com "Cannot automatically write to dynamic config". Execute `npx eas-cli init`, copie o ID do projeto exibido e defina `"env": { "EAS_PROJECT_ID": "<project-id>" }` no perfil `base` do `eas.json`. `app.config.js` copia esse valor para `extra.eas.projectId`. O ID do projeto é um identificador, não um segredo; nunca coloque credenciais no `eas.json`.
 
 O exemplo utiliza números de build gerenciados e incrementados automaticamente pelo EAS. Atualize também `expo.version` em `app.config.js`. Não reutilize Android versionCode ou iOS buildNumber. Proteja as credenciais de assinatura e a chave de upload, sem incluí-las no Git.
 
@@ -74,7 +90,7 @@ Teste Apple Maps no iOS e Leaflet no Android em aparelhos físicos, 13 idiomas, 
 
 **Alarme de desastres e notificações:** O aplicativo solicita permissão de notificação somente depois que o usuário ativa a chave de som do alarme. Declare nas respostas de privacidade o uso da localização no dispositivo para o alarme, verifique em dispositivos físicos a tela de alarme, a vibração e o som da notificação, e informe nos metadados da loja que o alarme funciona apenas com o aplicativo aberto e não substitui os Alertas de Emergência oficiais do Japão.
 
-**Pendências atuais: `eas.json`, imagens e capturas para as lojas, URL da política de privacidade, validação de builds nativos assinados e resultado de revisão das lojas. Esta documentação não conclui essas etapas.**
+**Pendências atuais: imagens e capturas para as lojas, URL da política de privacidade, validação de builds nativos assinados e resultado de revisão das lojas. Esta documentação não conclui essas etapas.**
 
 ## 6. Atualizações e manutenção
 

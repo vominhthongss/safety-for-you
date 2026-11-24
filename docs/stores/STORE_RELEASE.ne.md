@@ -4,7 +4,7 @@
 
 ## 1. पूर्वतयारी र परीक्षण
 
-Node.js 22+, उपयुक्त Expo वातावरण, Expo खाता र Google Play तथा Apple का छुट्टाछुट्टै विकासकर्ता खाता तयार गर्नुहोस्। हाल रिपोजिटरीमा npm lockfile वा `eas.json` छैन। तलका आदेशले JavaScript मात्र जाँच्छन्; तिनले native build प्रमाणित गर्दैनन्।
+Node.js 22+, उपयुक्त Expo वातावरण, Expo खाता र Google Play तथा Apple का छुट्टाछुट्टै विकासकर्ता खाता तयार गर्नुहोस्। रिपोजिटरीमा `package-lock.json` र `eas.json` (`preview` र `production` प्रोफाइल) समावेश छन्। तलका आदेशले JavaScript मात्र जाँच्छन्; तिनले native build प्रमाणित गर्दैनन्।
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS परियोजना ID:** `app.config.js` गतिशील कन्फिगरेसन भएकाले `eas init` ले यसमा `extra.eas.projectId` लेख्न सक्दैन र "Cannot automatically write to dynamic config" सन्देशसहित रोकिन्छ। `npx eas-cli init` चलाउनुहोस्, देखाइएको परियोजना ID प्रतिलिपि गर्नुहोस् र `eas.json` को `base` प्रोफाइलमा `"env": { "EAS_PROJECT_ID": "<project-id>" }` राख्नुहोस्। `app.config.js` ले यो मान `extra.eas.projectId` मा राख्छ। परियोजना ID पहिचानकर्ता हो, गोप्य जानकारी होइन; `eas.json` मा प्रमाणपत्र वा पासवर्ड नराख्नुहोस्।
 
 उदाहरणमा EAS ले build number व्यवस्थापन र स्वचालित वृद्धि गर्छ। `app.config.js` को `expo.version` पनि मिलाउनुहोस्। Android versionCode वा iOS buildNumber फेरि प्रयोग नगर्नुहोस्। हस्ताक्षर प्रमाणपत्र र upload key गोप्य राख्नुहोस्।
 
@@ -74,7 +90,7 @@ App Store Connect मा App Privacy, चल्ने गोपनीयता �
 
 **विपद् अलार्म र सूचना:** प्रयोगकर्ताले अलार्म ध्वनि स्विच अन गरेपछि मात्र एपले सूचना अनुमति माग्छ। गोपनीयता उत्तरहरूमा अलार्मका लागि उपकरणभित्र स्थान प्रयोग खुलाउनुहोस्, भौतिक उपकरणमा अलार्म स्क्रिन, कम्पन र सूचना ध्वनि जाँच गर्नुहोस्, र अलार्म एप खुला हुँदा मात्र काम गर्छ तथा जापानको आधिकारिक आपतकालीन चेतावनीको विकल्प होइन भनी स्टोर विवरणमा उल्लेख गर्नुहोस्।
 
-**अहिले `eas.json`, स्टोर चित्र/स्क्रिनसट, गोपनीयता नीति URL, हस्ताक्षरित उपकरण build परीक्षण र स्टोर स्वीकृति बाँकी छन्। कागजात मात्र थपेर एप प्रकाशनका लागि तयार हुँदैन।**
+**अहिले स्टोर चित्र/स्क्रिनसट, गोपनीयता नीति URL, हस्ताक्षरित उपकरण build परीक्षण र स्टोर स्वीकृति बाँकी छन्। कागजात मात्र थपेर एप प्रकाशनका लागि तयार हुँदैन।**
 
 ## 6. अद्यावधिक र मर्मत
 

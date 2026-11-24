@@ -4,7 +4,7 @@ Tài liệu áp dụng cho Safety For You (Expo SDK 58), ứng dụng thông tin
 
 ## 1. Điều kiện và kiểm tra ban đầu
 
-Chuẩn bị Node.js 22 trở lên, môi trường Expo phù hợp, tài khoản Expo và tài khoản nhà phát triển riêng cho Google Play và Apple. Kho mã nguồn hiện chưa có tệp khóa phụ thuộc npm hoặc `eas.json`. Các lệnh kiểm tra sau chỉ xác minh dự án JavaScript, không thay thế kiểm thử bản dựng gốc.
+Chuẩn bị Node.js 22 trở lên, môi trường Expo phù hợp, tài khoản Expo và tài khoản nhà phát triển riêng cho Google Play và Apple. Kho mã nguồn đã có `package-lock.json` và `eas.json` (hồ sơ `preview` và `production`). Các lệnh kiểm tra sau chỉ xác minh dự án JavaScript, không thay thế kiểm thử bản dựng gốc.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**Mã dự án EAS:** `app.config.js` là cấu hình động, vì vậy `eas init` không thể ghi `extra.eas.projectId` vào tệp này và dừng với thông báo "Cannot automatically write to dynamic config". Chạy `npx eas-cli init`, sao chép mã dự án được hiển thị và đặt `"env": { "EAS_PROJECT_ID": "<project-id>" }` trong hồ sơ `base` của `eas.json`. `app.config.js` sẽ chép giá trị này vào `extra.eas.projectId`. Mã dự án là định danh, không phải thông tin bí mật; không đưa thông tin xác thực vào `eas.json`.
 
 Ví dụ sử dụng số bản dựng do EAS quản lý và tự động tăng. Cập nhật `expo.version` trong `app.config.js` theo phiên bản phát hành. Không tái sử dụng Android version code hoặc iOS build number. Xác minh quyền sở hữu thông tin ký; bảo mật khóa tải lên Android và thông tin ký của Apple.
 
@@ -74,7 +90,7 @@ Kiểm thử Apple Maps trên iOS và Leaflet trên Android bằng thiết bị 
 
 **Cảnh báo thiên tai và thông báo:** Ứng dụng chỉ yêu cầu quyền thông báo sau khi người dùng bật công tắc âm thanh báo động. Cần khai báo việc sử dụng vị trí trên thiết bị cho chức năng báo động trong phần trả lời về quyền riêng tư, kiểm tra màn hình báo động, rung và âm thanh thông báo trên thiết bị thật, và ghi rõ trong thông tin cửa hàng rằng báo động chỉ hoạt động khi ứng dụng đang mở và không thay thế Cảnh báo khẩn cấp chính thức của Nhật Bản.
 
-**Các hạng mục hiện còn thiếu trong kho mã nguồn: chưa có `eas.json`, chưa có bộ tài nguyên và ảnh chụp cho cửa hàng hoặc URL chính sách riêng tư đã thiết lập, chưa có bằng chứng kiểm thử bản dựng đã ký trên thiết bị thật và chưa có kết quả xét duyệt của cửa hàng. Phải hoàn tất các hạng mục này trước khi phát hành.**
+**Các hạng mục hiện còn thiếu trong kho mã nguồn: chưa có bộ tài nguyên và ảnh chụp cho cửa hàng hoặc URL chính sách riêng tư đã thiết lập, chưa có bằng chứng kiểm thử bản dựng đã ký trên thiết bị thật và chưa có kết quả xét duyệt của cửa hàng. Phải hoàn tất các hạng mục này trước khi phát hành.**
 
 ## 6. Cập nhật và bảo trì
 
