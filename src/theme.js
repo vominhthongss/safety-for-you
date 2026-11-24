@@ -18,6 +18,9 @@ export function getColors(dark = false) {
     alert: ios("systemRed", "#D92D20", "#FF8174"),
     alertBg: ios("secondarySystemGroupedBackground", "#FFF2EF", "#352523"),
     yellow: "#FDECC9",
+    // Cell highlight, chevrons and tertiary text as in UITableView.
+    highlight: ios("systemGray4", "#D1D1D6", "#3A3A3C"),
+    tertiary: ios("tertiaryLabel", "#8E8E93", "#6E6E73"),
     success: ios("systemGreen", "#248A3D", "#30D158"),
     onAlert: "#FFFFFF",
     // Fixed emergency red: white text keeps >= 4.5:1 contrast in both themes.
@@ -43,3 +46,16 @@ export const TYPE = {
   footnote:{ fontSize:13, lineHeight:18 },
   caption1:{ fontSize:12, lineHeight:16 }
 };
+
+// Plain hex palette for React Navigation (its theme needs string colors).
+// Matches UIKit grouped backgrounds so the large title blends with the list.
+export function navigationColors(dark = false) {
+  return dark ? {
+    primary:"#0A84FF", background:Platform.OS==="ios" ? "#000000" : "#101114",
+    card:Platform.OS==="ios" ? "#000000" : "#1C1C20", text:"#FFFFFF",
+    border:"#38383A", notification:"#FF453A"
+  } : {
+    primary:"#007AFF", background:"#F2F2F7", card:Platform.OS==="ios" ? "#F2F2F7" : "#FFFFFF",
+    text:"#000000", border:"#C6C6C8", notification:"#FF3B30"
+  };
+}

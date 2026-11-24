@@ -109,3 +109,19 @@ Verified design targets against [Apple Buttons](https://developer.apple.com/desi
 - [ ] Earthquake with known epicenter far from the user: both positions framed; re-frame control works after panning.
 - [ ] Tsunami bulletin with numeric and qualitative heights: badges appear only for numeric heights.
 - [ ] Emoji rendering on older Android system fonts; VoiceOver and TalkBack labels on illustrated steps.
+
+## Native iOS structure (2026-11-24)
+
+The interface now relies on system components instead of custom cards and emoji.
+
+| Area | Implementation |
+|---|---|
+| Navigation | `@react-navigation/native-stack` with `react-native-screens`: UINavigationController, large titles that collapse on scroll, native back button and edge-swipe back. |
+| Header actions (iOS) | `unstable_headerRightItems`: a native `UIMenu` (globe symbol) lists the 13 languages with a check mark on the current one; a bar button switches Light/Dark. Android keeps 44pt header buttons and a bottom sheet. |
+| Lists | `src/ui.js` provides `Section`, `Row`, `IconTile` and `Notice`: inset-grouped sections with uppercase footnote headers, footers for explanations, 44pt rows, separators inset to the text column, Settings-style colored symbol tiles (`CATEGORY_TINTS`) and `chevron.right`. |
+| Selection | Shelter hazard and language choices use rows with a check mark (inline picker pattern) instead of chips. |
+| Refresh | Native `RefreshControl` (pull to refresh) on Home and hazard screens; a text button in the section header remains for VoiceOver users. |
+| Pictograms | Protective steps use SF Symbols on iOS and Material Symbols on Android. All symbol names were checked against `sf-symbols-typescript` (SF Symbols 4.1 or earlier, within the iOS 16.4 deployment target) and the `expo-symbols` Android list. |
+| Romaji | `Bilingual` renders Japanese on the first line and the reading as secondary text; one-line places (navigation titles, buttons, accessibility labels) use the form `地震 (Jishin)`. |
+
+Manual QA still required on a physical iPhone: large-title collapse, native menu, edge-swipe back, Dynamic Type at accessibility sizes, VoiceOver order in expanded report rows.

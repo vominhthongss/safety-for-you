@@ -27,7 +27,16 @@ export const CATEGORY_SYMBOLS = {
   refresh: { ios:"arrow.clockwise", android:"refresh", web:"refresh" },
   pin: { ios:"location.fill", android:"location_on", web:"location_on" },
   moon: { ios:"moon.fill", android:"dark_mode", web:"dark_mode" },
-  sun: { ios:"sun.max.fill", android:"light_mode", web:"light_mode" }
+  sun: { ios:"sun.max.fill", android:"light_mode", web:"light_mode" },
+  bell: { ios:"bell.badge.fill", android:"notifications_active", web:"notifications_active" },
+  locate: { ios:"scope", android:"my_location", web:"my_location" },
+  warning: { ios:"exclamationmark.triangle.fill", android:"warning", web:"warning" }
+};
+// Settings-style icon tile colors (UIKit system color names).
+export const CATEGORY_TINTS = {
+  earthquake:"systemOrange", tsunami:"systemBlue", typhoon:"systemIndigo", rain:"systemTeal",
+  flood:"systemCyan", landslide:"systemBrown", volcano:"systemRed", snow:"systemMint",
+  heat:"systemPink", shelter:"systemGreen"
 };
 export const CATEGORIES = [
   { id: "earthquake", icon: "🌎", color: "#F9DFCC" },

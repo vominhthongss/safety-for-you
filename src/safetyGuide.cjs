@@ -1,8 +1,23 @@
-// Picture-first protective actions. One short sentence per step, a large
-// pictogram and an explicit "do" / "do not" marker so the guidance can be
-// understood without reading long text. Japanese always carries Romaji.
+// Picture-first protective actions. One short sentence per step, a native
+// SF Symbol (iOS) / Material Symbol (Android) pictogram and an explicit
+// "do" / "do not" marker. Japanese always carries Romaji.
 // Locales without a reviewed translation fall back to English.
-const S=(icon,dont,en,ja,jaRomaji,vi)=>({icon,dont,text:{en,ja,jaRomaji,vi}});
+const SYMBOLS={
+  "🧎":["shield.fill","shield"], "🪑":["table.furniture","table_restaurant"],
+  "🏃":["figure.run","directions_run"], "⛰️":["mountain.2.fill","landscape"],
+  "🌊":["water.waves","waves"], "🏠":["house.fill","home"],
+  "🪟":["window.vertical.closed","window"], "🔦":["flashlight.on.fill","flashlight_on"],
+  "🏢":["building.2.fill","apartment"], "🚗":["car.fill","directions_car"],
+  "📻":["antenna.radiowaves.left.and.right","cell_tower"], "🏞️":["water.waves","waves"],
+  "👂":["exclamationmark.triangle.fill","warning"], "😷":["lungs.fill","masks"],
+  "🧣":["snowflake","ac_unit"], "💧":["drop.fill","water_drop"],
+  "❄️":["snowflake","ac_unit"], "☀️":["sun.max.fill","sunny"],
+  "🎒":["cross.case.fill","medical_services"], "🚶":["figure.walk","directions_walk"],
+  "✅":["checkmark.shield.fill","verified_user"]
+};
+const S=(key,dont,en,ja,jaRomaji,vi)=>({
+  icon:{ios:SYMBOLS[key][0],android:SYMBOLS[key][1],web:SYMBOLS[key][1]},
+  dont,text:{en,ja,jaRomaji,vi}});
 const GUIDES={
   earthquake:[
     S("🧎",false,"Get low. Protect your head.","姿勢を低くして頭を守る","Shisei o hikuku shite atama o mamoru","Cúi thấp người, che đầu."),
@@ -57,7 +72,7 @@ const GUIDES={
 };
 // Paraphrase of JMA's 震度階級関連解説表 (Shindo scale description table).
 // Source: https://www.jma.go.jp/jma/kishou/know/shindo/kaisetsu.html
-const R=(label,codes,icon,en,ja,jaRomaji,vi)=>({label,codes,icon,text:{en,ja,jaRomaji,vi}});
+const R=(label,codes,_legacyIcon,en,ja,jaRomaji,vi)=>({label,codes,text:{en,ja,jaRomaji,vi}});
 const SHINDO_GUIDE=[
   R("1–2",[10,20],"🙂","Some people indoors notice it.","屋内の一部の人が揺れを感じる","Okunai no ichibu no hito ga yure o kanjiru","Một số người trong nhà nhận thấy rung."),
   R("3",[30],"🍽️","Most people indoors feel it. Dishes may rattle.","屋内のほとんどの人が感じる。食器が音を立てることがある","Okunai no hotondo no hito ga kanjiru. Shokki ga oto o tateru koto ga aru","Hầu hết người trong nhà cảm thấy. Chén bát có thể kêu lách cách."),
