@@ -1,6 +1,7 @@
 // Reviewed Hepburn-style readings for all Japanese interface strings.
 // Dynamic JMA/GSI/P2PQuake data uses the optional morphological analyzer service.
 export const JA_ROMAJI = {
+  "privacyPolicy":"Puraibashī porishī",
   "epicenter":"Shin'ō",
   "showBoth":"Jibun to hassei chiten o hyōji",
   "distanceFromYou":"Genzai-chi kara yaku {km} km",

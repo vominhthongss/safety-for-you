@@ -2,6 +2,12 @@
 // The ID below is the linked EAS project @vominhthongss/safety-for-you; a fork
 // can override it with EAS_PROJECT_ID (shell or eas.json build env).
 // It is an identifier, not a secret.
+const LOCATION_WHEN_IN_USE = "Show your location on hazard maps and find nearby evacuation places.";
+// expo-location's native code references the "Always" APIs, so App Store
+// upload checks expect these keys. The app never requests Always access;
+// the text states that plainly instead of Expo's generic default.
+const LOCATION_NOT_IN_BACKGROUND = "Safety For You uses your location only while the app is open, to show your position on hazard maps and find nearby evacuation places. It does not track your location in the background.";
+const LOCATION_PRECISE = "Precise location shows the evacuation places nearest to you and your exact position relative to a reported epicenter.";
 const DEFAULT_EAS_PROJECT_ID = "c112d170-b9c9-46ee-9368-084cd57158b3";
 const easProjectId = (process.env.EAS_PROJECT_ID || "").trim() || DEFAULT_EAS_PROJECT_ID;
 
@@ -10,7 +16,6 @@ module.exports = {
     name: "Safety For You",
     slug: "safety-for-you",
     owner: process.env.EXPO_OWNER || "vominhthongss",
-    scheme: "safetyforyou",
     version: "0.1.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
@@ -19,7 +24,29 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.vominhthongss.safetyforyou",
-      infoPlist: { NSLocationWhenInUseUsageDescription: "Show your position and nearby emergency evacuation places." }
+      // Only HTTPS (exempt encryption) is used; avoids the export-compliance
+      // prompt on every App Store Connect upload.
+      config: { usesNonExemptEncryption: false },
+      infoPlist: { NSLocationWhenInUseUsageDescription: LOCATION_WHEN_IN_USE },
+      // App-level privacy manifest. Reasons mirror the manifests bundled by the
+      // native modules in use (AsyncStorage, expo-*, react-native, maps).
+      // Coarse location: map tile and shelter tile requests reveal the
+      // approximate area to GSI / OSM Japan servers. Not linked, no tracking.
+      privacyManifests: {
+        NSPrivacyTracking: false,
+        NSPrivacyTrackingDomains: [],
+        NSPrivacyAccessedAPITypes: [
+          { NSPrivacyAccessedAPIType:"NSPrivacyAccessedAPICategoryUserDefaults", NSPrivacyAccessedAPITypeReasons:["CA92.1"] },
+          { NSPrivacyAccessedAPIType:"NSPrivacyAccessedAPICategoryFileTimestamp", NSPrivacyAccessedAPITypeReasons:["C617.1","0A2A.1","3B52.1"] },
+          { NSPrivacyAccessedAPIType:"NSPrivacyAccessedAPICategorySystemBootTime", NSPrivacyAccessedAPITypeReasons:["35F9.1"] },
+          { NSPrivacyAccessedAPIType:"NSPrivacyAccessedAPICategoryDiskSpace", NSPrivacyAccessedAPITypeReasons:["E174.1","85F4.1"] }
+        ],
+        NSPrivacyCollectedDataTypes: [
+          { NSPrivacyCollectedDataType:"NSPrivacyCollectedDataTypeCoarseLocation",
+            NSPrivacyCollectedDataTypeLinked:false, NSPrivacyCollectedDataTypeTracking:false,
+            NSPrivacyCollectedDataTypePurposes:["NSPrivacyCollectedDataTypePurposeAppFunctionality"] }
+        ]
+      }
     },
     android: {
       package: process.env.ANDROID_PACKAGE || "com.vominhthongss.safetyforyou",
@@ -29,11 +56,22 @@ module.exports = {
         backgroundColor: "#0057D9"
       },
       permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "VIBRATE", "POST_NOTIFICATIONS"],
+      // Template defaults the app does not use; keep them out of release builds.
+      blockedPermissions: [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      // Only language/theme preferences are stored; no cloud backup needed.
+      allowBackup: false,
       userInterfaceStyle: "automatic"
     },
     plugins: [
       ["expo-location", {
-        locationWhenInUsePermission: "Show your location on hazard maps and find nearby evacuation places.",
+        locationWhenInUsePermission: LOCATION_WHEN_IN_USE,
+        locationAlwaysAndWhenInUsePermission: LOCATION_NOT_IN_BACKGROUND,
+        locationAlwaysPermission: LOCATION_NOT_IN_BACKGROUND,
+        locationFullAccuracyPermission: LOCATION_PRECISE,
         isAndroidBackgroundLocationEnabled: false,
         isIosBackgroundLocationEnabled: false
       }],

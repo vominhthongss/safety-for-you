@@ -8,6 +8,7 @@ export const LANGUAGE_NAMES = {
   id: "Bahasa Indonesia", pt: "Português", my: "မြန်မာ", th: "ไทย", hi: "हिन्दी"
 };
 const en = {
+  privacyPolicy:"Privacy policy",
   epicenter:"Epicenter", showBoth:"Show me and the event", distanceFromYou:"About {km} km from you",
   shindoScaleLegend:"Shindo colors", tsunamiHeightLegend:"Number = forecast wave height",
   alarmTitleQuake:"Strong shaking in your area", alarmTitleEew:"Earthquake Early Warning for your area",
@@ -78,6 +79,7 @@ const en = {
   tsunamiMove: "Tsunami risk? Move to high ground immediately. Do not wait for this app.",
 };
 const ja = {
+  privacyPolicy:"プライバシーポリシー",
   epicenter:"震央",showBoth:"自分と発生地点を表示",distanceFromYou:"現在地から約{km} km",
   shindoScaleLegend:"震度の色",tsunamiHeightLegend:"数字は予想される津波の高さ",
   alarmTitleQuake:"あなたの地域で強い揺れ",alarmTitleEew:"緊急地震速報：あなたの地域",
@@ -143,6 +145,7 @@ const ja = {
   tsunamiMove:"津波の危険があるときは、アプリを待たずに高台へ避難してください。"
 };
 const vi = {
+  privacyPolicy:"Chính sách quyền riêng tư",
   epicenter:"Tâm chấn",showBoth:"Hiện vị trí của tôi và sự kiện",distanceFromYou:"Cách bạn khoảng {km} km",
   shindoScaleLegend:"Màu cường độ Shindo",tsunamiHeightLegend:"Con số = độ cao sóng dự báo",
   alarmTitleQuake:"Rung lắc mạnh tại khu vực của bạn",alarmTitleEew:"Cảnh báo sớm động đất cho khu vực của bạn",

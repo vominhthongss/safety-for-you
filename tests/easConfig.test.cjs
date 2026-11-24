@@ -57,3 +57,33 @@ test("App icons, splash logo and Google Play graphics exist and are referenced",
   const feature=png("store/google-play/feature-graphic.png");
   assert.deepEqual([feature.w,feature.h,feature.alpha],[1024,500,false]);
 });
+test("Store compliance settings: privacy manifest, encryption, permissions, backup",()=>{
+  const path=require.resolve("../app.config.js");
+  delete require.cache[path];
+  const expo=require(path).expo;
+  assert.equal(expo.scheme,undefined,"no unused custom URL scheme");
+  assert.equal(expo.ios.config.usesNonExemptEncryption,false);
+  const pm=expo.ios.privacyManifests;
+  assert.equal(pm.NSPrivacyTracking,false);
+  const apis=pm.NSPrivacyAccessedAPITypes.map((a)=>a.NSPrivacyAccessedAPIType);
+  for(const api of ["UserDefaults","FileTimestamp","SystemBootTime","DiskSpace"])
+    assert.ok(apis.includes("NSPrivacyAccessedAPICategory"+api),api);
+  assert.deepEqual(pm.NSPrivacyCollectedDataTypes.map((d)=>d.NSPrivacyCollectedDataType),
+    ["NSPrivacyCollectedDataTypeCoarseLocation"]);
+  assert.equal(expo.android.allowBackup,false);
+  for(const p of ["SYSTEM_ALERT_WINDOW","READ_EXTERNAL_STORAGE","WRITE_EXTERNAL_STORAGE"])
+    assert.ok(expo.android.blockedPermissions.includes("android.permission."+p),p);
+  const loc=expo.plugins.find((p)=>Array.isArray(p)&&p[0]==="expo-location")[1];
+  for(const key of ["locationAlwaysAndWhenInUsePermission","locationAlwaysPermission","locationFullAccuracyPermission"]) {
+    assert.ok(loc[key] && !/\$\(PRODUCT_NAME\)/.test(loc[key]),key+" must be specific");
+  }
+  assert.ok(/background/i.test(loc.locationAlwaysPermission));
+});
+test("Privacy policy exists in three languages and is linked from the app",()=>{
+  const fs=require("node:fs");
+  for(const f of ["index.md","ja.md","vi.md"]) assert.ok(fs.existsSync("docs/privacy/"+f),f);
+  const policy=fs.readFileSync("docs/privacy/index.md","utf8");
+  for(const host of ["GSI","OpenStreetMap","P2PQuake","Romaji"]) assert.ok(policy.includes(host),host);
+  assert.ok(fs.readFileSync("src/config.js","utf8").includes("privacyPolicyUrl"));
+  assert.ok(fs.readFileSync("App.js","utf8").includes("openUrl(CONFIG.privacyPolicyUrl)"));
+});

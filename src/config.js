@@ -4,6 +4,9 @@ export const CONFIG = {
   splashMinMs: Math.min(600, Math.max(0, Number(process.env.EXPO_PUBLIC_SPLASH_MIN_MS) || 0)),
   refreshMs: Math.max(60000, (Number(process.env.EXPO_PUBLIC_REFRESH_SECONDS) || 120) * 1000),
   jmaProxy: (process.env.EXPO_PUBLIC_JMA_PROXY_URL || "").replace(/\/$/, ""),
+  // Public privacy policy (docs/privacy/ published with GitHub Pages).
+  privacyPolicyUrl: (process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ||
+    "https://vominhthongss.github.io/safety-for-you/privacy/").trim(),
   romajiService: (process.env.EXPO_PUBLIC_ROMAJI_API_URL || "").replace(new RegExp("/$"), ""),
   p2pApi: "https://api.p2pquake.net/v2",
   p2pWs: "wss://api.p2pquake.net/v2/ws",

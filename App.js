@@ -471,6 +471,11 @@ function AppContent() {
         quakeState === "error" ? <Notice key="err" text={t("unavailable")}/> :
         <Row key="loading" title={quakeState === "loading" ? t("loading") : t("unavailable")}/>}
     </Section>
+    <Section>
+      <Row title={t("privacyPolicy")} titleColor={COLORS.teal}
+        onPress={()=>openUrl(CONFIG.privacyPolicyUrl)} accessibilityLabel={inline(t("privacyPolicy"))}
+        accessory={<Icon name={{ ios:"arrow.up.right.square", android:"open_in_new", web:"open_in_new" }} size={17}/>}/>
+    </Section>
     <Bilingual text={t("about")} style={styles.about} secondaryStyle={styles.aboutSecondary}/>
   </ScrollView>;
 
