@@ -1,3 +1,8 @@
+// app.config.js is dynamic, so `eas init` cannot write the EAS project ID here.
+// Put the ID printed by `npx eas-cli init` in eas.json (build.base.env) or in the
+// shell environment as EAS_PROJECT_ID. It is an identifier, not a secret.
+const easProjectId = (process.env.EAS_PROJECT_ID || "").trim();
+
 module.exports = {
   expo: {
     name: "Safety For You",
@@ -30,6 +35,9 @@ module.exports = {
         imageWidth: 160
       }]
     ],
-    extra: { nonprofit: true }
+    extra: {
+      nonprofit: true,
+      ...(easProjectId ? { eas: { projectId: easProjectId } } : {})
+    }
   }
 };

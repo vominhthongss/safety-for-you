@@ -4,7 +4,7 @@
 
 ## 1. ကြိုတင်လိုအပ်ချက်နှင့် စစ်ဆေးခြင်း
 
-Node.js 22+၊ ကိုက်ညီသော Expo environment၊ Expo account နှင့် Google Play/Apple developer account များ ပြင်ဆင်ပါ။ Repository တွင် npm lockfile နှင့် `eas.json` မရှိသေးပါ။ အောက်ပါ command များသည် JavaScript ကိုသာ စစ်ဆေးပြီး native build စမ်းသပ်မှုအစား မဖြစ်နိုင်ပါ။
+Node.js 22+၊ ကိုက်ညီသော Expo environment၊ Expo account နှင့် Google Play/Apple developer account များ ပြင်ဆင်ပါ။ Repository တွင် `package-lock.json` နှင့် `eas.json` (`preview` နှင့် `production` profile) ပါဝင်သည်။ အောက်ပါ command များသည် JavaScript ကိုသာ စစ်ဆေးပြီး native build စမ်းသပ်မှုအစား မဖြစ်နိုင်ပါ။
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS project ID:** `app.config.js` သည် dynamic configuration ဖြစ်သောကြောင့် `eas init` က `extra.eas.projectId` ကို ရေးထည့်၍မရဘဲ "Cannot automatically write to dynamic config" ဖြင့် ရပ်သွားသည်။ `npx eas-cli init` ကို run ပြီး ပြသသော project ID ကို ကူးယူကာ `eas.json` ၏ `base` profile တွင် `"env": { "EAS_PROJECT_ID": "<project-id>" }` အဖြစ် သတ်မှတ်ပါ။ `app.config.js` က ထိုတန်ဖိုးကို `extra.eas.projectId` သို့ ကူးထည့်သည်။ project ID သည် identifier ဖြစ်ပြီး လျှို့ဝှက်ချက်မဟုတ်ပါ၊ `eas.json` တွင် credential များ မထည့်ပါနှင့်။
 
 ဥပမာတွင် build number များကို EAS က စီမံ၍ အလိုအလျောက်တိုးပေးသည်။ `app.config.js` ရှိ `expo.version` ကိုလည်း ပြင်ဆင်ပါ။ Android versionCode နှင့် iOS buildNumber အဟောင်းကို ပြန်မသုံးပါနှင့်။ Signing credential နှင့် upload key များကို Git တွင် မသိမ်းပါနှင့်။
 
@@ -74,7 +90,7 @@ App Store Connect တွင် App Privacy၊ အသုံးပြုနို�
 
 **ဘေးအန္တရာယ် သတိပေးချက်နှင့် အသိပေးချက်များ:** အသုံးပြုသူက သတိပေးသံ ခလုတ်ကို ဖွင့်ပြီးမှသာ အက်ပ်သည် notification ခွင့်ပြုချက် တောင်းသည်။ ကိုယ်ရေးအချက်အလက် အဖြေများတွင် သတိပေးချက်အတွက် စက်ပေါ်တည်နေရာ အသုံးပြုမှုကို ဖော်ပြပါ၊ သတိပေးမျက်နှာပြင်၊ တုန်ခါမှုနှင့် notification အသံကို စက်အစစ်ပေါ်တွင် စစ်ဆေးပါ၊ သတိပေးချက်သည် အက်ပ်ဖွင့်ထားစဉ်သာ အလုပ်လုပ်ပြီး ဂျပန်၏ တရားဝင် အရေးပေါ်သတိပေးချက်ကို အစားမထိုးကြောင်း store အချက်အလက်တွင် ဖော်ပြပါ။
 
-**လက်ရှိလိုအပ်ချက်များမှာ `eas.json`၊ Store ပုံများနှင့် screenshot၊ privacy policy URL၊ လက်မှတ်ထိုးထားသော native build စမ်းသပ်ချက်နှင့် store review ရလဒ်တို့ ဖြစ်သည်။ စာရွက်စာတမ်းထည့်ခြင်းတစ်ခုတည်း မလုံလောက်ပါ။**
+**လက်ရှိလိုအပ်ချက်များမှာ Store ပုံများနှင့် screenshot၊ privacy policy URL၊ လက်မှတ်ထိုးထားသော native build စမ်းသပ်ချက်နှင့် store review ရလဒ်တို့ ဖြစ်သည်။ စာရွက်စာတမ်းထည့်ခြင်းတစ်ခုတည်း မလုံလောက်ပါ။**
 
 ## 6. အပ်ဒိတ်နှင့် ထိန်းသိမ်းခြင်း
 

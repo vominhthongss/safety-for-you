@@ -4,7 +4,7 @@
 
 ## 1. 準備與檢查
 
-準備 Node.js 22+、相容的 Expo 環境、Expo 帳戶以及 Google Play 與 Apple 開發者帳戶。目前儲存庫沒有 npm 鎖定檔或 `eas.json`。以下指令只檢查 JavaScript 專案，不代表原生版本已驗證。
+準備 Node.js 22+、相容的 Expo 環境、Expo 帳戶以及 Google Play 與 Apple 開發者帳戶。儲存庫已包含 `package-lock.json` 與 `eas.json`（`preview` 與 `production` 設定檔）。以下指令只檢查 JavaScript 專案，不代表原生版本已驗證。
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS 專案 ID：** `app.config.js` 為動態設定，`eas init` 無法寫入 `extra.eas.projectId`，並會以 "Cannot automatically write to dynamic config" 停止。請執行 `npx eas-cli init`，複製輸出的專案 ID，並在 `eas.json` 的 `base` 設定檔中設定 `"env": { "EAS_PROJECT_ID": "<project-id>" }`。`app.config.js` 會將此值寫入 `extra.eas.projectId`。專案 ID 是識別碼而非機密；請勿在 `eas.json` 中放置憑證。
 
 範例由 EAS 管理並自動遞增建置編號。同步更新 `app.config.js` 的 `expo.version`，不可重複使用 Android versionCode 或 iOS buildNumber。妥善保護上傳金鑰與簽章憑證，切勿提交至 Git。
 
@@ -74,7 +90,7 @@ npx eas-cli submit --platform ios --latest
 
 **災害警報與通知：** 應用程式僅在使用者開啟警報聲開關後才要求通知權限。請在隱私問卷中揭露為警報在裝置端使用位置資訊，在實體裝置上驗證警報畫面、震動與通知聲音，並在商店資訊中說明警報僅在應用程式開啟時有效，不能取代日本官方的緊急警報。
 
-**目前尚待完成：建立 `eas.json`、準備商店圖示及截圖與隱私權政策網址、驗證已簽署實機版本，以及完成商店審核。文件更新無法取代上述事項。**
+**目前尚待完成：準備商店圖示及截圖與隱私權政策網址、驗證已簽署實機版本，以及完成商店審核。文件更新無法取代上述事項。**
 
 ## 6. 更新與維護
 

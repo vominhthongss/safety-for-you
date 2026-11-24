@@ -4,7 +4,7 @@
 
 ## 1. 前提条件と事前確認
 
-Node.js 22以上、対応するExpo環境、Expoアカウント、Google PlayとAppleの各開発者アカウントを準備します。現時点でリポジトリにnpmロックファイルと`eas.json`はありません。以下の検証コマンドはJavaScript側の確認であり、ネイティブアプリの実機検証ではありません。
+Node.js 22以上、対応するExpo環境、Expoアカウント、Google PlayとAppleの各開発者アカウントを準備します。リポジトリには`package-lock.json`と`eas.json`（`preview`と`production`のプロファイル）が含まれます。以下の検証コマンドはJavaScript側の確認であり、ネイティブアプリの実機検証ではありません。
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EASプロジェクトID:** `app.config.js`は動的設定のため、`eas init`は`extra.eas.projectId`を書き込めず、"Cannot automatically write to dynamic config"で停止します。`npx eas-cli init`を実行し、表示されたプロジェクトIDを`eas.json`の`base`プロファイルに`"env": { "EAS_PROJECT_ID": "<project-id>" }`として設定してください。`app.config.js`がこの値を`extra.eas.projectId`に反映します。プロジェクトIDは識別子であり秘密情報ではありませんが、認証情報は`eas.json`に記載しないでください。
 
 例ではEAS側でビルド番号を管理し、自動更新します。`app.config.js`の`expo.version`も公開バージョンに合わせます。同一アプリでAndroidのversionCodeまたはiOSのbuildNumberを再利用しないでください。署名情報とアップロード鍵は安全に保管し、Gitに登録しません。
 
@@ -74,7 +90,7 @@ iOSのApple MapsとAndroidのLeafletを実機で検証します。13言語、文
 
 **災害警報と通知:** 通知の許可は、利用者が警報音のスイッチをオンにした後にのみ要求します。プライバシーに関する回答で警報のための端末内での位置情報利用を開示し、警報画面・振動・通知音を実機で確認し、警報はアプリを開いている間のみ動作し国の緊急速報の代わりにならないことをストア情報に明記してください。
 
-**現状の未完了事項：`eas.json`、ストア掲載用画像・スクリーンショットとプライバシーポリシーURLの整備、署名済み実機ビルドの検証、ストア審査結果。公開前に別途対応してください。**
+**現状の未完了事項：ストア掲載用画像・スクリーンショットとプライバシーポリシーURLの整備、署名済み実機ビルドの検証、ストア審査結果。公開前に別途対応してください。**
 
 ## 6. 更新と運用
 

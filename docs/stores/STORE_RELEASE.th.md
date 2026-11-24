@@ -4,7 +4,7 @@
 
 ## 1. ข้อกำหนดและการตรวจสอบ
 
-เตรียม Node.js 22+, สภาพแวดล้อม Expo ที่เข้ากันได้, บัญชี Expo และบัญชีนักพัฒนาของ Google Play และ Apple ปัจจุบัน repository ยังไม่มี npm lockfile หรือ `eas.json` คำสั่งต่อไปนี้ตรวจสอบ JavaScript เท่านั้น ไม่ใช่การทดสอบ native build
+เตรียม Node.js 22+, สภาพแวดล้อม Expo ที่เข้ากันได้, บัญชี Expo และบัญชีนักพัฒนาของ Google Play และ Apple repository มี `package-lock.json` และ `eas.json` (โปรไฟล์ `preview` และ `production`) แล้ว คำสั่งต่อไปนี้ตรวจสอบ JavaScript เท่านั้น ไม่ใช่การทดสอบ native build
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS project ID:** `app.config.js` เป็นการกำหนดค่าแบบไดนามิก `eas init` จึงเขียน `extra.eas.projectId` ลงไปไม่ได้และหยุดพร้อมข้อความ "Cannot automatically write to dynamic config" ให้รัน `npx eas-cli init` คัดลอก project ID ที่แสดง แล้วกำหนด `"env": { "EAS_PROJECT_ID": "<project-id>" }` ในโปรไฟล์ `base` ของ `eas.json` จากนั้น `app.config.js` จะคัดลอกค่านี้ไปยัง `extra.eas.projectId` project ID เป็นตัวระบุ ไม่ใช่ข้อมูลลับ และห้ามใส่ข้อมูลรับรองใน `eas.json`
 
 ตัวอย่างให้ EAS จัดการและเพิ่มหมายเลข build อัตโนมัติ ปรับ `expo.version` ใน `app.config.js` ให้ตรงกับรุ่น ห้ามใช้ Android versionCode หรือ iOS buildNumber ซ้ำ เก็บคีย์อัปโหลดและข้อมูลลงนามเป็นความลับ ไม่เพิ่มลง Git
 
@@ -74,7 +90,7 @@ npx eas-cli submit --platform ios --latest
 
 **การเตือนภัยพิบัติและการแจ้งเตือน:** แอปขอสิทธิ์การแจ้งเตือนหลังจากผู้ใช้เปิดสวิตช์เสียงเตือนเท่านั้น ให้เปิดเผยการใช้ตำแหน่งภายในอุปกรณ์สำหรับการเตือนในคำตอบด้านความเป็นส่วนตัว ตรวจสอบหน้าจอเตือน การสั่น และเสียงแจ้งเตือนบนอุปกรณ์จริง และระบุในข้อมูลร้านค้าว่าการเตือนทำงานเฉพาะเมื่อเปิดแอปอยู่และไม่ใช้แทนการเตือนเหตุฉุกเฉินอย่างเป็นทางการของญี่ปุ่น
 
-**สิ่งที่ยังขาดใน repository ได้แก่ `eas.json`, ภาพและภาพหน้าจอสำหรับร้าน, URL นโยบายความเป็นส่วนตัว, การตรวจ native build ที่ลงนามบนอุปกรณ์จริง และผลการตรวจของร้าน เอกสารนี้ไม่ได้ทำให้ทุกขั้นตอนสำเร็จโดยอัตโนมัติ**
+**สิ่งที่ยังขาดใน repository ได้แก่ ภาพและภาพหน้าจอสำหรับร้าน, URL นโยบายความเป็นส่วนตัว, การตรวจ native build ที่ลงนามบนอุปกรณ์จริง และผลการตรวจของร้าน เอกสารนี้ไม่ได้ทำให้ทุกขั้นตอนสำเร็จโดยอัตโนมัติ**
 
 ## 6. การอัปเดตและดูแลระบบ
 

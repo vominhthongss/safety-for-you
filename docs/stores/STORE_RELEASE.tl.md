@@ -4,7 +4,7 @@ Para sa Safety For You (Expo SDK 58) ang gabay na ito. Libre, hindi pangkalakal,
 
 ## 1. Mga kinakailangan at pagsusuri
 
-Ihanda ang Node.js 22+, katugmang Expo environment, Expo account, at magkahiwalay na Google Play at Apple developer account. Wala pang npm lockfile o `eas.json` sa repositoryo. Sinusuri lang ng mga sumusunod na command ang JavaScript, hindi ang native release.
+Ihanda ang Node.js 22+, katugmang Expo environment, Expo account, at magkahiwalay na Google Play at Apple developer account. Kasama na sa repositoryo ang `package-lock.json` at `eas.json` (mga profile na `preview` at `production`). Sinusuri lang ng mga sumusunod na command ang JavaScript, hindi ang native release.
 
 ```bash
 npm install
@@ -28,13 +28,29 @@ npx eas-cli build:configure
 
 ```json
 {
-  "cli": { "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
-    "production": { "autoIncrement": true, "android": { "buildType": "app-bundle" } }
+    "base": {
+      "env": {}
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
   }
 }
 ```
+
+**EAS project ID:** Dynamic configuration ang `app.config.js`, kaya hindi maisusulat ng `eas init` ang `extra.eas.projectId` dito at hihinto ito sa "Cannot automatically write to dynamic config". Patakbuhin ang `npx eas-cli init`, kopyahin ang ipinakitang project ID, at itakda ang `"env": { "EAS_PROJECT_ID": "<project-id>" }` sa `base` profile ng `eas.json`. Kinokopya ng `app.config.js` ang value na ito sa `extra.eas.projectId`. Identifier ang project ID at hindi lihim; huwag maglagay ng credentials sa `eas.json`.
 
 Pinamamahalaan ng EAS ang build number at awtomatikong itinataas ito sa halimbawa. I-update rin ang `expo.version` sa `app.config.js`. Huwag muling gamitin ang Android versionCode o iOS buildNumber. Panatilihing pribado ang mga signing credential at upload key.
 
@@ -74,7 +90,7 @@ Subukan sa tunay na iOS at Android device ang Apple Maps at Leaflet, 13 wika, ac
 
 **Alarma sa sakuna at mga notification:** Humihingi lamang ang app ng pahintulot sa notification pagkatapos i-on ng user ang switch ng tunog ng alarma. Ipahayag sa mga sagot sa privacy ang paggamit ng lokasyon sa device para sa alarma, suriin sa pisikal na device ang alarm screen, pag-vibrate at tunog ng notification, at isaad sa store metadata na gumagana lamang ang alarma habang bukas ang app at hindi nito pinapalitan ang opisyal na Emergency Alerts ng Japan.
 
-**Hindi pa kumpleto sa repositoryo ang `eas.json`, store assets at screenshot, privacy policy URL, pagsusuri sa nilagdaang native build, at resulta ng store review. Kailangang kumpletuhin ang mga ito bago maglathala.**
+**Hindi pa kumpleto sa repositoryo ang store assets at screenshot, privacy policy URL, pagsusuri sa nilagdaang native build, at resulta ng store review. Kailangang kumpletuhin ang mga ito bago maglathala.**
 
 ## 6. Mga update at pagpapanatili
 
