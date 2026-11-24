@@ -31,6 +31,15 @@ module.exports = {
         isAndroidBackgroundLocationEnabled: false,
         isIosBackgroundLocationEnabled: false
       }],
+      // R8 code shrinking/obfuscation is turned off for Android release builds
+      // (SDK 58 template enables it). Resource shrinking depends on R8, so it
+      // is off as well. APK/AAB size is larger as a result.
+      ["expo-build-properties", {
+        android: {
+          enableMinifyInReleaseBuilds: false,
+          enableShrinkResourcesInReleaseBuilds: false
+        }
+      }],
       // Local notifications only (alarm sound while the app is open); no push token.
       "expo-notifications",
       ["expo-splash-screen", {
