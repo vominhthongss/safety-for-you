@@ -1,24 +1,29 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView,
-  StatusBar, StyleSheet, Switch, Text, View, useWindowDimensions, useColorScheme, Appearance
+  ActivityIndicator, AppState, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView,
+  StatusBar, StyleSheet, Switch, Text, View, useColorScheme, Appearance
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  DarkTheme, DefaultTheme, NavigationContainer, StackActions, createNavigationContainerRef
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import * as Localization from "expo-localization";
 import * as SplashScreen from "expo-splash-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SymbolView } from "expo-symbols";
 import SafetyMap from "./src/SafetyMap";
 import { loadAlertZones, loadHazardZones } from "./src/hazardGeo";
-import { getColors, TYPE } from "./src/theme";
+import { getColors, navigationColors, TYPE } from "./src/theme";
 import { SafetySteps, ShindoGuide } from "./src/SafetyGuide";
+import { Bilingual, Icon, Notice, Row, Section, SectionFooter, ThemeContext, systemColor } from "./src/ui";
 import {
   getAlarmPermission, presentAlarm, requestAlarmPermission,
   startAlarmVibration, stopAlarmVibration
 } from "./src/alarmNotify";
-import { SymbolView } from "expo-symbols";
 import { showJapaneseWithRomaji, useJapaneseReadings } from "./src/romanization";
-import { CATEGORIES, COLORS, CONFIG, SHELTER_LAYERS, CATEGORY_SYMBOLS } from "./src/config";
+import { CATEGORIES, CATEGORY_SYMBOLS, CATEGORY_TINTS, CONFIG, SHELTER_LAYERS } from "./src/config";
 import { LANGUAGE_NAMES, deviceLanguage, translate, translatePlain } from "./src/i18n";
 import {
   getQuakeReports, getWeatherReports, getShelters,
@@ -30,36 +35,29 @@ const {formatReportDate} = require("./src/dateTime.cjs");
 const {alertCandidate,evaluateUserImpact} = require("./src/userAlert.cjs");
 const fill = (text, values) => String(text).replace(/\{(\w+)\}/g,
   (match,key) => values[key] == null ? match : String(values[key]));
+// "震度\nShindo" + "5+" -> "震度: 5+\nShindo: 5+" so both lines carry the value.
+const withValue = (label, value) => String(label).split("\n").map((line) => line+": "+value).join("\n");
+const firstLine = (text) => String(text ?? "").split("\n")[0];
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const ThemeContext = React.createContext(null);
-function TextLabel({ children, style, ...rest }) {
-  const { colors } = React.useContext(ThemeContext);
-  return <Text {...rest} style={[TYPE.body,{ color:colors.ink },style]}>{children}</Text>;
-}
-function Heading({ children }) {
-  return <TextLabel accessibilityRole="header" style={[TYPE.title2,{ marginBottom:10 }]}>{children}</TextLabel>;
-}
-function AppSymbol({ id, size = 24, color }) {
-  const { colors } = React.useContext(ThemeContext);
-  return <SymbolView name={CATEGORY_SYMBOLS[id] || CATEGORY_SYMBOLS.shelter} size={size}
-    tintColor={color || colors.teal} type="hierarchical"
-    fallback={<TextLabel style={{ fontSize:size*0.85,lineHeight:size*1.1 }}>{CATEGORIES.find((item)=>item.id===id)?.icon || "●"}</TextLabel>} />;
-}
-function Action({ label, onPress, subtle, disabled }) {
-  const { colors: COLORS,styles } = React.useContext(ThemeContext);
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
-    onPress={onPress} style={[styles.action, subtle && styles.subtle, disabled && { opacity:.5 }]}>
-    <TextLabel style={[TYPE.headline,{ color:subtle ? COLORS.teal : COLORS.white }]}>{label}</TextLabel>
-  </Pressable>;
-}
-function Message({ text, warning=false }) {
-  const { styles } = React.useContext(ThemeContext);
-  return <View style={[styles.message, warning && styles.warning]}><TextLabel style={TYPE.subhead}>{text}</TextLabel></View>;
-}
+const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
+const AppContext = React.createContext(null);
+// Stable screen components; content comes from AppContent through context so
+// screens re-render with app state without being re-created.
+function HomeScreen() { return React.useContext(AppContext).renderHome(); }
+function HazardScreen({ route }) { return React.useContext(AppContext).renderHazard(route.params?.id); }
+function ShelterScreen() { return React.useContext(AppContext).renderShelter(); }
+
 function formatDate(time, locale) {
   return formatReportDate(time,locale,translatePlain(locale,"today"));
+}
+function currentScreenId() {
+  const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : null;
+  if (route?.name === "Hazard") return route.params?.id || "home";
+  if (route?.name === "Shelter") return "shelter";
+  return "home";
 }
 function AppContent() {
   const detected = deviceLanguage(Localization.getLocales()?.[0]?.languageTag || "en");
@@ -83,7 +81,7 @@ function AppContent() {
   const [selectedReportId,setSelectedReportId] = useState(null);
   const [hazardZones,setHazardZones] = useState([]);
   const [hazardZoneState,setHazardZoneState] = useState("idle");
-  const reportsScroll = useRef(null);
+  const scrollRefs = useRef({});
   const [alarm,setAlarm] = useState(null);
   const [alarmSound,setAlarmSound] = useState(false);
   const [alarmPermission,setAlarmPermission] = useState("undetermined");
@@ -92,18 +90,19 @@ function AppContent() {
   const alarmRef = useRef(null);
   const [friendlySplash,setFriendlySplash] = useState(CONFIG.splashMinMs > 0);
   const t = useMemo(() => translate(locale), [locale]);
-  const { width, height, fontScale } = useWindowDimensions();
+  const plain = useCallback((key) => translatePlain(locale,key), [locale]);
+  const insets = useSafeAreaInsets();
   const systemScheme = useColorScheme();
   const [themeOverride,setThemeOverride] = useState(null);
   const effectiveScheme = themeOverride || systemScheme || "light";
-  const COLORS = useMemo(() => getColors(effectiveScheme === "dark"), [effectiveScheme]);
+  const dark = effectiveScheme === "dark";
+  const COLORS = useMemo(() => getColors(dark), [dark]);
   const styles = useMemo(() => createStyles(COLORS), [COLORS]);
-  const SMALL_TEXT = useMemo(() => ({ ...TYPE.subhead,color:COLORS.muted }), [COLORS]);
   const themeContext = useMemo(() => ({ colors:COLORS, styles }), [COLORS,styles]);
-  const gridWidth = Math.min(Math.max(240, width - 36), 550);
-  const columns = fontScale > 1.8 ? 2 : fontScale > 1.25 ? 3 : gridWidth >= 330 ? 5 : 4;
-  const categoryWidth = (gridWidth - (columns - 1) * 8) / columns;
-  const categoryHeight = (locale === "ja" ? 118 : 104) + (fontScale > 1.25 ? 28 : 0);
+  const navTheme = useMemo(() => {
+    const base = dark ? DarkTheme : DefaultTheme;
+    return {...base,dark,colors:{...base.colors,...navigationColors(dark)}};
+  }, [dark]);
 
   useEffect(() => {
     let live = true;
@@ -240,7 +239,6 @@ function AppContent() {
   ].filter(Boolean), [place, reports, shelters]);
   const readings = useJapaneseReadings(dynamicJapanese);
   const displayDynamic = (value) => showJapaneseWithRomaji(value, readings);
-  const category = CATEGORIES.find((c)=>c.id===screen);
   const detailReports = reports.filter((r)=>r.category===screen);
   const selectedReport = selectedReportId ?
     detailReports.find((report) => report.id === selectedReportId) : null;
@@ -312,6 +310,7 @@ function AppContent() {
   };
   const isQuakeCategory = ["earthquake","tsunami"].includes(screen);
   const currentState = isQuakeCategory ? quakeState : weatherState;
+  const openLanguagePicker = () => setLanguageOpen(true);
   const chooseLanguage = (lang) => {
     setLocale(lang);
     setLanguageOpen(false);
@@ -323,17 +322,22 @@ function AppContent() {
     Appearance.setColorScheme(next);
     AsyncStorage.setItem("sfy_color_scheme",next).catch(()=>{});
   };
+  // Native stack navigation (UINavigationController on iOS).
   const navigate = (id) => {
     setSelectedPoint(null);
     setSelectedReportId(null);
-    setScreen(id);
+    if (!navigationRef.isReady()) return;
+    if (id === "home") navigationRef.dispatch(StackActions.popToTop());
+    else if (id === "shelter") navigationRef.navigate("Shelter");
+    else navigationRef.navigate("Hazard",{id});
   };
   const selectReport = (report) => {
     setSelectedReportId(report.id);
     setSelectedPoint(report.coordinate || null);
-    setScreen(report.category);
     if (screen === report.category) {
-      reportsScroll.current?.scrollTo({y:0,animated:true});
+      scrollRefs.current[report.category]?.scrollTo({y:0,animated:true});
+    } else if (navigationRef.isReady()) {
+      navigationRef.navigate("Hazard",{id:report.category});
     }
   };
   const openUrl = async (url) => {
@@ -341,331 +345,309 @@ function AppContent() {
     try { await Linking.openURL(url); } catch { /* offline */ }
   };
 
-  const renderCard = (report, inHome=false) => {
-    const actionable = isVeryRecentUrgent(report);
+  // Inline form for one-line places (titles, labels): "地震 (Jishin)".
+  const inline = (text) => {
+    const [main, ...rest] = String(text ?? "").split("\n");
+    return rest.length ? main + " (" + rest.join(" ") + ")" : main;
+  };
+  const severityText = (report) => {
     const severity = getReportSeverity(report);
-    const severityLabel = severity.source === "observedShindo" ?
-      t("intensity") + ": " + severity.label :
-      severity.source === "predictedShindo" ?
-        t("predictedIntensity") + ": " + severity.label :
+    return severity.source === "observedShindo" ? withValue(t("intensity"),severity.label) :
+      severity.source === "predictedShindo" ? withValue(t("predictedIntensity"),severity.label) :
       severity.source === "issuedTsunami" || severity.source === "verifiedJmaGrade" ? t(severity.label) :
       severity.source === "cancelled" ? t("cancelled") : null;
-    const metrics = reportMetrics(report,t);
-    const expanded = selectedReportId === report.id;
-    const tsunamiAreas = (report.tsunamiAreas || []).slice(0,
-      inHome ? 1 : expanded ? 30 : 3);
+  };
+  const [pulling,setPulling] = useState(false);
+  useEffect(() => { if (quakeState !== "loading") setPulling(false); }, [quakeState]);
+  const pullToRefresh = () => { setPulling(true); refreshAll(); };
+  const refreshControl = <RefreshControl refreshing={pulling} onRefresh={pullToRefresh}/>;
+  const refreshAction = { label:inline(t("refresh")), onPress:refreshAll };
+  const counts = useMemo(() => reports.reduce((acc,r) => {
+    acc[r.category] = (acc[r.category] || 0) + 1; return acc;
+  }, {}), [reports]);
+  const scrollProps = {
+    contentInsetAdjustmentBehavior:"automatic", style:styles.screen,
+    contentContainerStyle:[styles.body,{ paddingBottom:insets.bottom + 32 }]
+  };
+  const Caption = ({ text }) => <View style={styles.caption}>
+    <Bilingual text={text} style={[TYPE.subhead,{ color:COLORS.muted }]}/>
+  </View>;
+
+  // One report = one list row; the selected report expands in place and is
+  // followed by plain action rows (no nested buttons inside the row).
+  const renderReport = (report, compact=false) => {
+    const actionable = isVeryRecentUrgent(report);
+    const severity = getReportSeverity(report);
+    const severityLabel = severityText(report);
+    const expanded = !compact && selectedReportId === report.id;
+    const metrics = expanded ? reportMetrics(report,t) : [];
+    const tsunamiAreas = (report.tsunamiAreas || []).slice(0, expanded ? 30 : compact ? 1 : 3);
     const remaining = Math.max(0,(report.tsunamiAreas?.length || 0)-tsunamiAreas.length);
-    return (
-      <View key={report.id} style={[styles.report,
-          {borderLeftColor:severity.color,borderLeftWidth:4},
-          expanded && {borderColor:COLORS.teal,borderLeftColor:severity.color}]}>
-        <Pressable onPress={()=>selectReport(report)} style={styles.reportMain}
-          accessibilityRole="button"
-          accessibilityLabel={t(report.category)+": "+report.title}>
-        <View style={styles.reportTop}>
-          <View style={{flexDirection:"row",alignItems:"center",flex:1,gap:8}}>
-            <AppSymbol id={report.category} size={19}/>
-            <TextLabel style={{fontWeight:"600",...TYPE.subhead,flexShrink:1}}>
-              {t(report.category)}
-            </TextLabel>
-          </View>
-          <TextLabel style={[styles.timestamp,{flexShrink:1,textAlign:"right"}]}>
-            {formatDate(report.time,locale)}
-          </TextLabel>
-        </View>
+    const rows = [
+      <Row key={report.id} icon={CATEGORY_SYMBOLS[report.category]}
+        iconColor={systemColor(CATEGORY_TINTS[report.category] || "systemGray")}
+        chevron={compact} onPress={()=>selectReport(report)}
+        accessibilityLabel={inline(t(report.category))+": "+report.title}
+        accessibilityState={{ expanded }}>
+        <Bilingual text={displayDynamic(report.title)} style={TYPE.headline}/>
         {!!severityLabel && <View style={styles.severityRow}>
-          <View style={[styles.severityDot,{backgroundColor:severity.color}]}/>
-          <TextLabel style={{fontWeight:"700",...TYPE.subhead,color:COLORS.ink}}>
-            {severityLabel}
-          </TextLabel>
+          <View style={[styles.severityDot,{ backgroundColor:severity.color }]}/>
+          <View style={{ flex:1 }}><Bilingual text={severityLabel} style={TYPE.subhead}/></View>
         </View>}
-        <TextLabel style={{fontWeight:"600"}}>{displayDynamic(report.title)}</TextLabel>
-        {!!report.description && report.description !== report.title &&
-          <TextLabel style={SMALL_TEXT}>{displayDynamic(report.description)}</TextLabel>}
+        <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>
+          {inline(t(report.category))} · {formatDate(report.time,locale)}
+        </Text>
+        {expanded && !!report.description && report.description !== report.title &&
+          <Bilingual text={displayDynamic(report.description)} style={[TYPE.subhead,{ color:COLORS.muted }]}/>}
         {metrics.length > 0 && <View style={styles.metricRow}>
           {metrics.map((metric)=>(
             <View key={metric.key} style={styles.metricCell}>
-              <TextLabel style={{...SMALL_TEXT,...TYPE.caption1}}>{metric.label}</TextLabel>
-              <TextLabel style={styles.metricValue}>{metric.value}</TextLabel>
-              {!!metric.area && <TextLabel style={{...SMALL_TEXT,...TYPE.caption1}}>
-                {displayDynamic(metric.area)}
-              </TextLabel>}
+              <Bilingual text={metric.label} style={[TYPE.caption1,{ color:COLORS.muted }]}/>
+              <Text style={styles.metricValue}>{metric.value}</Text>
+              {!!metric.area && <Bilingual text={displayDynamic(metric.area)} style={[TYPE.caption1,{ color:COLORS.muted }]}/>}
             </View>
           ))}
         </View>}
         {report.category === "tsunami" && tsunamiAreas.map((area,index)=>(
-          <View key={area.name+"-"+index}
-            style={[styles.tsunamiArea,{borderLeftColor:getAreaSeverity("tsunami",area).color,
-              borderLeftWidth:4,paddingLeft:10}]}>
-            <TextLabel style={{...TYPE.subhead,fontWeight:"600"}}>
-              {displayDynamic(area.name)}
-            </TextLabel>
-            <TextLabel style={SMALL_TEXT}>{t("status")}: {t(area.grade)}</TextLabel>
-            {!report.cancelled && <TextLabel style={SMALL_TEXT}>
-              {t("forecastHeight")}: {heightText(area.forecastHeight,t) || t("notPublished")}
-            </TextLabel>}
-            {!inHome && !!area.arrivalTime && <View style={styles.reportMeta}>
-              <TextLabel style={SMALL_TEXT}>{t("estimatedArrival")}:</TextLabel>
-              <TextLabel style={styles.timestamp}>{formatDate(area.arrivalTime,locale)}</TextLabel>
-            </View>}
-            {!inHome && !!area.arrivalCondition && <TextLabel style={SMALL_TEXT}>
-              {displayDynamic(area.arrivalCondition)}
-            </TextLabel>}
+          <View key={area.name+"-"+index} style={styles.tsunamiArea}>
+            <View style={styles.severityRow}>
+              <View style={[styles.severityDot,{ backgroundColor:getAreaSeverity("tsunami",area).color }]}/>
+              <View style={{ flex:1 }}><Bilingual text={displayDynamic(area.name)} style={TYPE.subhead}/></View>
+            </View>
+            <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>{inline(t("status"))}: {inline(t(area.grade))}</Text>
+            {!report.cancelled && <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>
+              {inline(t("forecastHeight"))}: {heightText(area.forecastHeight,t) ? inline(heightText(area.forecastHeight,t)) : inline(t("notPublished"))}
+            </Text>}
+            {expanded && !!area.arrivalTime && <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>
+              {inline(t("estimatedArrival"))}: <Text style={styles.timestamp}>{formatDate(area.arrivalTime,locale)}</Text>
+            </Text>}
+            {expanded && !!area.arrivalCondition && <Bilingual text={displayDynamic(area.arrivalCondition)} style={TYPE.footnote}/>}
           </View>
         ))}
-        {remaining > 0 && <TextLabel style={SMALL_TEXT}>
-          {t("moreRegions")}: {remaining}
-        </TextLabel>}
-        {!inHome && report.category !== "earthquake" &&
-          report.category !== "tsunami" && metrics.length === 0 &&
-          <TextLabel style={SMALL_TEXT}>{t("notPublished")}</TextLabel>}
-        <View style={[styles.reportMeta,{marginTop:3}]}>
-          <TextLabel style={{...SMALL_TEXT,...TYPE.footnote}}>
-            {t("sources")}: {report.source} · {t("issuedAt")}:
-          </TextLabel>
-          <TextLabel style={styles.timestamp}>{formatDate(report.issuedAt || report.time,locale)}</TextLabel>
-        </View>
-        {report.category === "tsunami" && <TextLabel style={{...SMALL_TEXT,...TYPE.caption1}}>
-          {t("asIssued")}
-        </TextLabel>}
-        {actionable && <TextLabel style={{color:COLORS.alert,fontWeight:"700",...TYPE.footnote}}>
-          {t("active")}
-        </TextLabel>}
-        </Pressable>
-        {!inHome && <View style={styles.rowButtons}>
-          {report.coordinate && <Action label={t("openMap")} subtle onPress={()=>selectReport(report)}/>}
-          {report.url && <Action label={t("openOfficial")} subtle onPress={()=>openUrl(report.url)}/>}
-        </View>}
+        {remaining > 0 && <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>{inline(t("moreRegions"))}: {remaining}</Text>}
+        {expanded && <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>
+          {inline(t("sources"))}: {report.source} · {inline(t("issuedAt"))}: <Text style={styles.timestamp}>{formatDate(report.issuedAt || report.time,locale)}</Text>
+        </Text>}
+        {expanded && report.category === "tsunami" && <Bilingual text={t("asIssued")} style={[TYPE.footnote,{ color:COLORS.muted }]}/>}
+        {actionable && <Bilingual text={t("active")} style={[TYPE.footnote,{ color:COLORS.alert,fontWeight:"600" }]}/>}
+      </Row>
+    ];
+    if (expanded && report.url) rows.push(<Row key={report.id+"-official"} title={t("openOfficial")}
+      titleColor={COLORS.teal} onPress={()=>openUrl(report.url)}
+      accessory={<Icon name={{ ios:"arrow.up.right.square", android:"open_in_new", web:"open_in_new" }} size={17}/>}/>);
+    return rows;
+  };
+
+  const renderHome = () => <ScrollView {...scrollProps} refreshControl={refreshControl}>
+    <View style={styles.caption}>
+      <Text style={[TYPE.subhead,{ color:COLORS.muted }]}>
+        {new Intl.DateTimeFormat(locale === "ja" ? "en-US" : locale,
+          {timeZone:"Asia/Tokyo",year:"numeric",month:"long",day:"numeric",weekday:"long"}).format(new Date())}
+      </Text>
+    </View>
+    <Section footer={!position ? t("permissionInfo") : null}>
+      <Row icon={CATEGORY_SYMBOLS.pin} iconColor={systemColor("systemBlue")}
+        title={place ? displayDynamic(place) : (position ?
+          position.latitude.toFixed(3) + ", " + position.longitude.toFixed(3) : t("locationDenied"))}
+        subtitle={inline(t("location"))}/>
+      {!position && <Row title={t("allowLocation")} titleColor={COLORS.teal} onPress={askLocation}/>}
+    </Section>
+    <Section footer={[t("alarmToggleInfo"), alarmPermission === "denied" && t("alarmDenied"), t("alarmLimit")]}>
+      <Row icon={CATEGORY_SYMBOLS.bell} iconColor={systemColor("systemRed")} title={t("alarmToggle")}
+        accessory={<Switch value={alarmSound} onValueChange={toggleAlarmSound}
+          accessibilityLabel={inline(t("alarmToggle"))} accessibilityHint={inline(t("alarmToggleInfo"))}/>}/>
+    </Section>
+    <Section header={t("categories")}>
+      {CATEGORIES.map((item)=>
+        <Row key={item.id} icon={CATEGORY_SYMBOLS[item.id]}
+          iconColor={systemColor(CATEGORY_TINTS[item.id] || "systemGray")}
+          title={t(item.id)} detail={item.id !== "shelter" && counts[item.id] ? String(counts[item.id]) : null}
+          chevron onPress={()=>navigate(item.id)} accessibilityLabel={inline(t(item.id))}/>)}
+    </Section>
+    <Section header={t("latest")} headerAction={refreshAction}
+      footer={[t("recent"), latest.length > 0 && t("noGuarantee"), t("online"),
+        inline(t("allSources"))+" · "+inline(t(liveState === "live" ? "live" : "reconnecting"))]}>
+      {latest.length ? latest.map((r)=>renderReport(r,true)) :
+        quakeState === "error" ? <Notice key="err" text={t("unavailable")}/> :
+        <Row key="loading" title={quakeState === "loading" ? t("loading") : t("unavailable")}/>}
+    </Section>
+    <Bilingual text={t("about")} style={styles.about} secondaryStyle={styles.aboutSecondary}/>
+  </ScrollView>;
+
+  const renderHazard = (id) => {
+    const items = reports.filter((r)=>r.category===id);
+    const isQuake = ["earthquake","tsunami"].includes(id);
+    const state = isQuake ? quakeState : weatherState;
+    const focused = screen === id;
+    const selectedReport = focused && selectedReportId ? items.find((r)=>r.id===selectedReportId) : null;
+    return <ScrollView ref={(el)=>{ scrollRefs.current[id]=el; }} {...scrollProps} refreshControl={refreshControl}>
+      <Caption text={t("recent")}/>
+      {id === "tsunami" && <Section><Notice tone="critical" text={t("tsunamiMove")}/></Section>}
+      <View style={styles.mapWrap}>
+        <SafetyMap t={t} location={position}
+          points={(selectedReport ? [selectedReport] : items).map((item)=>({...item,
+            title:[displayDynamic(item.title),severityText(item)].filter(Boolean).join("\n"),
+            color:getReportSeverity(item).color}))}
+          selectedPoint={selectedReport ? selectedReport.coordinate : null}
+          zones={focused ? hazardZones : []} kind={id}
+          selectedColor={getReportSeverity(selectedReport).color}
+          selectedLabel={["observedShindo","predictedShindo"].includes(getReportSeverity(selectedReport).source) ?
+            getReportSeverity(selectedReport).label : null}
+          height={340} dark={dark}/>
+        <SectionFooter>
+          {selectedReport && isQuake && hazardZoneState==="loading" && t("zoneLoading")}
+          {selectedReport && isQuake && hazardZoneState==="error" && t("zoneError")}
+          {selectedReport && isQuake && hazardZoneState==="unavailable" && t("zoneNoData")}
+          {focused && !!hazardZones.length && t("zoneNote")}
+          {selectedReport && !selectedReport.coordinate && t("unknownPoint")}
+        </SectionFooter>
       </View>
-    );
+      <Section header={t("list")} headerAction={refreshAction}
+        footer={[t("noGuarantee"), !isQuake && t("jmaNote"), t("refreshTime")]}>
+        {state==="loading" && !items.length && <Row key="spin"><ActivityIndicator color={COLORS.teal}/></Row>}
+        {state==="unconfigured" && <Notice key="cfg" text={t("notConfigured")}/>}
+        {state==="error" && <Notice key="err" text={t("unavailable")}/>}
+        {state==="ready" && !items.length && <Row key="empty" title={t("empty")}/>}
+        {items.map((r)=>renderReport(r))}
+      </Section>
+      <SafetySteps hazard={id} locale={locale} t={t} colors={COLORS}/>
+      {id==="earthquake" && <ShindoGuide locale={locale} t={t} colors={COLORS}
+        highlight={selectedReport?.shindoCode ?? null}/>}
+      <Bilingual text={t("about")} style={styles.about} secondaryStyle={styles.aboutSecondary}/>
+    </ScrollView>;
+  };
+
+  const renderShelter = () => <ScrollView ref={(el)=>{ scrollRefs.current.shelter=el; }} {...scrollProps}>
+    <Section header={t("chooseHazard")}>
+      {Object.keys(SHELTER_LAYERS).map((hazard)=>
+        <Row key={hazard} title={t(hazard)} selected={shelterHazard===hazard}
+          onPress={()=>setShelterHazard(hazard)} accessibilityLabel={inline(t(hazard))}
+          accessibilityState={{ selected:shelterHazard===hazard }}/>)}
+    </Section>
+    {!position && <Section><Notice text={t("permission")}/></Section>}
+    <View style={styles.mapWrap}>
+      <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))}
+        selectedPoint={selectedPoint} t={t} height={300} dark={dark} kind="shelter"/>
+    </View>
+    <Section header={t("shelter")} footer={[t("notOpen"),"© Geospatial Information Authority of Japan (GSI)"]}>
+      {shelterState==="loading" && <Row key="spin"><ActivityIndicator color={COLORS.teal}/></Row>}
+      {shelterState==="error" && <Notice key="err" text={t("unavailable")}/>}
+      {shelterState==="ready" && !shelters.length && <Row key="none" title={t("noPlace")}/>}
+      {shelters.map((p)=><Row key={p.id} onPress={()=>setSelectedPoint(p.coordinate)}
+        selected={selectedPoint?.latitude===p.coordinate.latitude && selectedPoint?.longitude===p.coordinate.longitude}
+        accessibilityLabel={inline(t("viewSite"))+": "+p.name}>
+        <Bilingual text={displayDynamic(p.name)} style={TYPE.headline}/>
+        {!!p.address && <Bilingual text={displayDynamic(p.address)} style={[TYPE.subhead,{ color:COLORS.muted }]}/>}
+        <Text style={[TYPE.footnote,{ color:COLORS.muted }]}>
+          {inline(t("shelterType"))}: {p.suitable.map((s)=>inline(t(s))).join(" · ")}
+        </Text>
+        {!!p.remarks && <Bilingual text={displayDynamic(p.remarks)} style={[TYPE.footnote,{ color:COLORS.muted }]}/>}
+      </Row>)}
+    </Section>
+    <SafetySteps hazard="shelter" locale={locale} t={t} colors={COLORS}/>
+    <SectionFooter>{t("notes")}</SectionFooter>
+  </ScrollView>;
+
+  const appContext = { renderHome, renderHazard, renderShelter };
+  // iOS: native UIBarButtonItems (UIMenu for languages, SF Symbols).
+  const homeOptions = Platform.OS === "ios" ? {
+    unstable_headerRightItems:() => [
+      { type:"menu", label:plain("language"), accessibilityLabel:inline(t("language")),
+        icon:{ type:"sfSymbol", name:"globe" },
+        menu:{ title:inline(t("language")), items:Object.entries(LANGUAGE_NAMES).map(([code,name])=>({
+          type:"action", label:name, state:code===locale ? "on" : "off", onPress:()=>chooseLanguage(code)
+        })) } },
+      { type:"button", label:plain(dark ? "switchLight" : "switchDark"),
+        accessibilityLabel:inline(t(dark ? "switchLight" : "switchDark")),
+        icon:{ type:"sfSymbol", name:dark ? "sun.max" : "moon" }, onPress:toggleTheme }
+    ]
+  } : {
+    headerRight:() => <View style={styles.headerActions}>
+      <Pressable onPress={toggleTheme} style={styles.themeButton} accessibilityRole="button"
+        accessibilityLabel={inline(t(dark ? "switchLight" : "switchDark"))}>
+        <Icon name={CATEGORY_SYMBOLS[dark ? "sun" : "moon"]} size={22}/>
+      </Pressable>
+      <Pressable onPress={openLanguagePicker} style={styles.langButton} accessibilityRole="button"
+        accessibilityLabel={inline(t("language"))}>
+        <Icon name={CATEGORY_SYMBOLS.language} size={22}/>
+      </Pressable>
+    </View>
   };
 
   return (
     <ThemeContext.Provider value={themeContext}>
-      <SafeAreaView style={styles.root} edges={["top","bottom"]}>
-      <StatusBar barStyle={effectiveScheme==="dark" ? "light-content" : "dark-content"} backgroundColor={COLORS.bg}/>
+    <AppContext.Provider value={appContext}>
+      <StatusBar barStyle={dark ? "light-content" : "dark-content"}/>
       {friendlySplash ? <View style={styles.boot}>
-        <TextLabel style={{ fontSize:58,lineHeight:70 }}>🛟</TextLabel>
-        <TextLabel style={{ ...TYPE.title1,fontWeight:"900" }}>Safety For You</TextLabel>
+        <Icon name={{ ios:"shield.lefthalf.filled", android:"shield", web:"shield" }} size={64}/>
+        <Text style={[TYPE.title1,{ color:COLORS.ink }]}>Safety For You</Text>
       </View> :
-      <>
-        <View style={styles.header}>
-          {screen === "home" ?
-            <TextLabel style={styles.brand} accessibilityRole="header">Safety For You</TextLabel> :
-            <Pressable onPress={()=>navigate("home")} style={styles.backButton}
-              accessibilityRole="button" accessibilityLabel={t("home")}>
-              <AppSymbol id="back" size={18}/>
-              <TextLabel style={{ color:COLORS.teal }}>{t("home")}</TextLabel>
-            </Pressable>}
-          <View style={styles.headerActions}>
-            <Pressable onPress={toggleTheme} style={styles.themeButton}
-              accessibilityRole="button" accessibilityLabel={t(effectiveScheme==="dark" ? "switchLight" : "switchDark")}
-              accessibilityHint={t(effectiveScheme==="dark" ? "switchLight" : "switchDark")}>
-              <AppSymbol id={effectiveScheme==="dark" ? "sun" : "moon"} size={21}/>
-            </Pressable>
-            <Pressable onPress={()=>setLanguageOpen(true)} style={styles.langButton}
-              accessibilityRole="button" accessibilityLabel={t("language")}>
-              <AppSymbol id="language" size={18}/>
-              <TextLabel style={{ color:COLORS.teal,fontWeight:"600",...TYPE.footnote,flexShrink:1 }}>{LANGUAGE_NAMES[locale]}</TextLabel>
-            </Pressable>
-          </View>
-        </View>
-        <ScrollView key={screen} ref={reportsScroll} style={{ flex:1 }} contentContainerStyle={styles.body}>
-          {screen === "home" ? <>
-            <View style={styles.intro}>
-              <TextLabel style={styles.date} accessibilityRole="header">
-                {new Intl.DateTimeFormat(locale === "ja" ? "en-US" : locale,
-                  {timeZone:"Asia/Tokyo",year:"numeric",month:"long",day:"numeric",weekday:"long"}).format(new Date())}
-              </TextLabel>
-              <View style={styles.locationRow}>
-                <AppSymbol id="pin" size={17} color={COLORS.muted}/>
-                <TextLabel style={SMALL_TEXT}>{place ? displayDynamic(place) : (position ?
-                  position.latitude.toFixed(3) + ", " + position.longitude.toFixed(3) : t("locationDenied"))}</TextLabel>
-              </View>
-              {!position && <Action label={t("allowLocation")} onPress={askLocation} subtle />}
-            </View>
-            <View style={styles.settingCard}>
-              <View style={styles.settingRow}>
-                <View style={[styles.settingIcon,{backgroundColor:COLORS.alarmBg}]}>
-                  <TextLabel style={{fontSize:20,lineHeight:26}} accessible={false}>🚨</TextLabel>
-                </View>
-                <TextLabel style={[TYPE.headline,{flex:1}]}>{t("alarmToggle")}</TextLabel>
-                <Switch value={alarmSound} onValueChange={toggleAlarmSound}
-                  accessibilityLabel={t("alarmToggle")} accessibilityHint={t("alarmToggleInfo")}/>
-              </View>
-              <TextLabel style={SMALL_TEXT}>{t("alarmToggleInfo")}</TextLabel>
-              {alarmPermission === "denied" && <TextLabel style={[SMALL_TEXT,{color:COLORS.alert}]}>
-                {t("alarmDenied")}
-              </TextLabel>}
-              <TextLabel style={[TYPE.footnote,{color:COLORS.muted}]}>{t("alarmLimit")}</TextLabel>
-            </View>
-            <Heading>{t("categories")}</Heading>
-            <View style={[styles.categoryGrid,{ width:gridWidth }]}>
-              {CATEGORIES.map((item)=>
-                <Pressable key={item.id} onPress={()=>navigate(item.id)} accessibilityRole="button"
-                  accessibilityLabel={t(item.id)} style={[styles.category,{ width:categoryWidth,minHeight:categoryHeight }]}>
-                  <AppSymbol id={item.id} size={26}/>
-                  <TextLabel style={styles.categoryLabel}>{t(item.id)}</TextLabel>
-                </Pressable>)}
-            </View>
-            <View style={styles.sectionTop}>
-              <Heading>{t("latest")}</Heading>
-              <Pressable onPress={refreshAll} accessibilityRole="button" accessibilityLabel={t("refresh")} style={styles.refresh}>
-                <AppSymbol id="refresh" size={17}/>
-                <TextLabel style={{color:COLORS.teal,fontWeight:"600",...TYPE.subhead}}>{t("refresh")}</TextLabel>
-              </Pressable>
-            </View>
-            <TextLabel style={{ ...SMALL_TEXT,marginBottom:10 }}>{t("recent")}</TextLabel>
-            {latest.length ? latest.map((r)=>renderCard(r,true)) :
-              <Message text={quakeState==="loading" ? t("loading") : t("unavailable")} warning={quakeState==="error"}/>}
-            {latest.length > 0 && <Message text={t("noGuarantee")} />}
-            <Message text={t("online")}/>
-            <TextLabel style={{ ...SMALL_TEXT,marginTop:12,textAlign:"center" }}>
-              {t("allSources")} · {liveState==="live" ? t("live") : t("reconnecting")}
-            </TextLabel>
-          </> : screen==="shelter" ? <>
-            <View style={styles.pageTitle}><AppSymbol id="shelter" size={32}/>
-              <View style={{ flex:1 }}><Heading>{t("shelter")}</Heading><TextLabel style={SMALL_TEXT}>{t("chooseHazard")}</TextLabel></View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap:8,marginBottom:14 }}>
-              {Object.keys(SHELTER_LAYERS).map((hazard)=>
-                <Pressable key={hazard} onPress={()=>setShelterHazard(hazard)}
-                  accessibilityRole="button" accessibilityLabel={t(hazard)} accessibilityState={{selected:shelterHazard===hazard}} style={[styles.chip,shelterHazard===hazard && styles.chipActive]}>
-                  <TextLabel style={{...TYPE.footnote,fontWeight:"800",color:shelterHazard===hazard?COLORS.white:COLORS.teal}}>{t(hazard)}</TextLabel>
-                </Pressable>)}
-            </ScrollView>
-            {!position && <Message text={t("permission")} warning/>}
-            <SafetyMap location={position} points={shelters.map((item)=>({...item,name:displayDynamic(item.name)}))} selectedPoint={selectedPoint} t={t} height={300} dark={effectiveScheme==="dark"} kind="shelter"/>
-            <SafetySteps hazard="shelter" locale={locale} t={t} colors={COLORS}/>
-            <Message text={"🎒 " + t("notes")}/>
-            <Message text={t("notOpen")} warning/>
-            {shelterState==="loading" && <ActivityIndicator color={COLORS.teal} style={{ margin:20 }}/>}
-            {shelterState==="error" && <Message warning text={t("unavailable")}/>}
-            {shelterState==="ready" && !shelters.length && <Message text={t("noPlace")}/>}
-            {shelters.map((p)=><Pressable key={p.id} style={styles.report} onPress={()=>setSelectedPoint(p.coordinate)}
-              accessibilityRole="button" accessibilityLabel={t("viewSite")+": "+p.name}>
-              <TextLabel style={{fontWeight:"600"}}>{displayDynamic(p.name)}</TextLabel>
-              <TextLabel style={SMALL_TEXT}>{displayDynamic(p.address)}</TextLabel>
-              <TextLabel style={{...SMALL_TEXT,color:COLORS.teal,fontWeight:"700"}}>{t("shelterType")}: {p.suitable.map(t).join(" · ")}</TextLabel>
-              {!!p.remarks && <TextLabel style={SMALL_TEXT}>{displayDynamic(p.remarks)}</TextLabel>}
-            </Pressable>)}
-            <TextLabel style={{...SMALL_TEXT,marginTop:14}}>© Geospatial Information Authority of Japan (GSI)</TextLabel>
-          </> : category ? <>
-            <View style={styles.pageTitle}><AppSymbol id={category.id} size={32}/>
-              <View style={{flex:1}}><Heading>{t(screen)}</Heading>
-                <TextLabel style={SMALL_TEXT}>{t("recent")}</TextLabel>
-              </View>
-            </View>
-            {screen==="tsunami" && <Message text={t("tsunamiMove")} warning/>}
-            <SafetyMap t={t} location={position}
-              points={(selectedReport ? [selectedReport] : detailReports).map((item)=>{
-                const severity=getReportSeverity(item);
-                const severityText=severity.source==="observedShindo" ?
-                  t("intensity")+": "+severity.label : severity.source==="predictedShindo" ?
-                  t("predictedIntensity")+": "+severity.label : severity.source==="issuedTsunami" ?
-                  t(severity.label) : null;
-                return {...item,
-                  title:[displayDynamic(item.title),severityText].filter(Boolean).join("\n"),
-                  color:severity.color};
-              })}
-              selectedPoint={selectedReport ? selectedReport.coordinate : null}
-              zones={hazardZones} kind={screen}
-              selectedColor={getReportSeverity(selectedReport).color}
-              selectedLabel={["observedShindo","predictedShindo"].includes(getReportSeverity(selectedReport).source) ?
-                getReportSeverity(selectedReport).label : null}
-              height={340} dark={effectiveScheme==="dark"}/>
-            {selectedReport && isQuakeCategory && hazardZoneState==="loading" &&
-              <TextLabel style={SMALL_TEXT}>{t("zoneLoading")}</TextLabel>}
-            {selectedReport && isQuakeCategory && hazardZoneState==="error" &&
-              <Message warning text={t("zoneError")}/>}
-            {selectedReport && isQuakeCategory && hazardZoneState==="unavailable" &&
-              <Message text={t("zoneNoData")}/>}
-            {!!hazardZones.length && <TextLabel style={{...SMALL_TEXT,marginTop:8}}>
-              {t("zoneNote")}
-            </TextLabel>}
-            {selectedReport && !selectedReport.coordinate && <Message text={t("unknownPoint")}/>}
-            <SafetySteps hazard={screen} locale={locale} t={t} colors={COLORS}/>
-            {screen==="earthquake" && <ShindoGuide locale={locale} t={t} colors={COLORS}
-              highlight={selectedReport?.shindoCode ?? null}/>}
-            <View style={[styles.sectionTop,{marginTop:18}]}>
-              <Heading>{t("list")}</Heading>
-              <Pressable onPress={refreshAll} accessibilityRole="button" accessibilityLabel={t("refresh")} style={styles.refresh}>
-                <AppSymbol id="refresh" size={17}/>
-                <TextLabel style={{color:COLORS.teal,fontWeight:"600",...TYPE.subhead}}>{t("refresh")}</TextLabel>
-              </Pressable>
-            </View>
-            {currentState==="loading" && !detailReports.length && <ActivityIndicator style={{margin:12}} color={COLORS.teal}/>}
-            {currentState==="unconfigured" && <Message warning text={t("notConfigured")}/>}
-            {currentState==="error" && <Message warning text={t("unavailable")}/>}
-            {currentState==="ready" && !detailReports.length && <Message text={t("empty")}/>}
-            {detailReports.map((r)=>renderCard(r))}
-            <Message text={t("noGuarantee")}/>
-            {!isQuakeCategory && <Message text={t("jmaNote")}/>}
-            <TextLabel style={{...SMALL_TEXT,marginTop:12}}>{t("refreshTime")}</TextLabel>
-          </> : null}
-          <TextLabel style={{...SMALL_TEXT,textAlign:"center",marginVertical:22}}>{t("about")}</TextLabel>
-        </ScrollView>
-      </>}
+      <NavigationContainer ref={navigationRef} theme={navTheme}
+        onReady={()=>setScreen(currentScreenId())} onStateChange={()=>setScreen(currentScreenId())}>
+        <Stack.Navigator screenOptions={{
+          headerLargeTitleEnabled:Platform.OS === "ios",
+          headerLargeTitleShadowVisible:false,
+          contentStyle:{ backgroundColor:navigationColors(dark).background }
+        }}>
+          <Stack.Screen name="Home" component={HomeScreen}
+            options={{ title:"Safety For You", ...homeOptions }}/>
+          <Stack.Screen name="Hazard" component={HazardScreen} getId={({ params })=>params?.id}
+            options={({ route })=>({ title:inline(t(route.params?.id)) })}/>
+          <Stack.Screen name="Shelter" component={ShelterScreen} options={{ title:inline(t("shelter")) }}/>
+        </Stack.Navigator>
+      </NavigationContainer>}
       <Modal visible={!!alarm} animationType="fade" presentationStyle="fullScreen"
         onRequestClose={dismissAlarm}>
         {/* A Modal is a separate native window; it needs its own safe-area provider. */}
-        {alarm && <SafeAreaProvider><SafeAreaView style={[styles.alarmRoot,{backgroundColor:COLORS.alarmBg}]}
+        {alarm && <SafeAreaProvider><SafeAreaView style={[styles.alarmRoot,{ backgroundColor:COLORS.alarmBg }]}
           edges={["top","bottom"]}>
           <ScrollView contentContainerStyle={styles.alarmBody}>
-            <TextLabel style={{fontSize:72,lineHeight:86,textAlign:"center"}} accessible={false}>
-              {alarm.report.category==="tsunami" ? "🌊" : "⚠️"}
-            </TextLabel>
-            <TextLabel accessibilityRole="header" style={[TYPE.largeTitle,styles.alarmText]}>
-              {t(alarmTitleKey(alarm.report,alarm.impact))}
-            </TextLabel>
-            <TextLabel style={[TYPE.title3,styles.alarmText]}>
-              {fill(t(alarmReasonKey(alarm.impact)),alarm.impact)}
-            </TextLabel>
-            <TextLabel style={[TYPE.body,styles.alarmText]}>
-              {displayDynamic(alarm.report.title)}
-            </TextLabel>
-            <TextLabel style={[TYPE.footnote,styles.alarmText]}>
-              {t("sources")}: {alarm.report.source} · {formatDate(alarm.report.issuedAt || alarm.report.time,locale)}
-            </TextLabel>
-            <SafetySteps hazard={alarm.report.category} locale={locale} t={t} colors={COLORS} compact onDark/>
-            <Pressable onPress={()=>{const report=alarm.report;dismissAlarm();selectReport(report);}}
-              accessibilityRole="button" accessibilityLabel={t("openMap")}
-              style={({pressed})=>[styles.alarmButton,styles.alarmSecondary,pressed && {opacity:.75}]}>
-              <TextLabel style={[TYPE.headline,{color:COLORS.onAlert}]}>{t("openMap")}</TextLabel>
+            <View style={{ alignItems:"center" }}>
+              <Icon name={alarm.report.category === "tsunami" ? CATEGORY_SYMBOLS.tsunami : CATEGORY_SYMBOLS.warning}
+                size={64} color={COLORS.onAlert}/>
+            </View>
+            <Bilingual text={t(alarmTitleKey(alarm.report,alarm.impact))}
+              style={[TYPE.largeTitle,styles.alarmText]} secondaryStyle={[TYPE.headline,styles.alarmText]}/>
+            <Bilingual text={fill(t(alarmReasonKey(alarm.impact)),alarm.impact)}
+              style={[TYPE.title3,styles.alarmText]} secondaryStyle={[TYPE.subhead,styles.alarmText]}/>
+            <Bilingual text={displayDynamic(alarm.report.title)}
+              style={[TYPE.body,styles.alarmText]} secondaryStyle={[TYPE.footnote,styles.alarmText]}/>
+            <Text style={[TYPE.footnote,styles.alarmText]}>
+              {inline(t("sources"))}: {alarm.report.source} · {formatDate(alarm.report.issuedAt || alarm.report.time,locale)}
+            </Text>
+            <SafetySteps hazard={alarm.report.category} locale={locale} t={t} colors={COLORS} onDark/>
+            <Pressable onPress={dismissAlarm} accessibilityRole="button" accessibilityLabel={inline(t("alarmDismiss"))}
+              style={({ pressed })=>[styles.alarmButton,{ backgroundColor:"#FFFFFF" },pressed && { opacity:.75 }]}>
+              <Text style={[TYPE.headline,{ color:COLORS.alarmBg }]}>{inline(t("alarmDismiss"))}</Text>
             </Pressable>
-            <Pressable onPress={dismissAlarm} accessibilityRole="button"
-              accessibilityLabel={t("alarmDismiss")}
-              style={({pressed})=>[styles.alarmButton,{backgroundColor:"#FFFFFF"},pressed && {opacity:.75}]}>
-              <TextLabel style={[TYPE.headline,{color:COLORS.alarmBg}]}>{t("alarmDismiss")}</TextLabel>
+            <Pressable onPress={()=>{ const report=alarm.report; dismissAlarm(); selectReport(report); }}
+              accessibilityRole="button" accessibilityLabel={inline(t("openMap"))}
+              style={({ pressed })=>[styles.alarmButton,styles.alarmSecondary,pressed && { opacity:.75 }]}>
+              <Text style={[TYPE.headline,{ color:COLORS.onAlert }]}>{inline(t("openMap"))}</Text>
             </Pressable>
-            <TextLabel style={[TYPE.footnote,styles.alarmText]}>{t("alarmLimit")}</TextLabel>
+            <Bilingual text={t("alarmLimit")} style={[TYPE.footnote,styles.alarmText]}
+              secondaryStyle={[TYPE.caption1,styles.alarmText]}/>
           </ScrollView>
         </SafeAreaView></SafeAreaProvider>}
       </Modal>
+      {/* Android language sheet (iOS uses the native menu in the navigation bar). */}
       <Modal visible={languageOpen} transparent animationType="slide" onRequestClose={()=>setLanguageOpen(false)}>
         <View style={styles.backdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={()=>setLanguageOpen(false)}
-            accessibilityRole="button" accessibilityLabel={t("close")}/>
-          <View style={styles.languageSheet} accessibilityViewIsModal>
+            accessibilityRole="button" accessibilityLabel={plain("close")}/>
+          <View style={[styles.languageSheet,{ paddingBottom:insets.bottom + 16 }]} accessibilityViewIsModal>
             <View style={styles.grabber} accessible={false}/>
-            <View style={styles.sheetHeader}>
-              <Heading>{t("language")}</Heading>
-              <Pressable onPress={()=>setLanguageOpen(false)} accessibilityRole="button"
-                accessibilityLabel={t("close")} style={styles.sheetClose}>
-                <TextLabel style={{color:COLORS.teal,fontWeight:"600"}}>✕</TextLabel>
-              </Pressable>
-            </View>
-            <ScrollView style={{maxHeight:Math.min(520,Math.max(220,height*0.6))}}>
-              {Object.entries(LANGUAGE_NAMES).map(([code,name])=><Pressable key={code} style={styles.languageItem}
-                accessibilityRole="button" accessibilityState={{selected:code===locale}}
-                onPress={()=>chooseLanguage(code)}>
-                <TextLabel style={{fontWeight:code===locale?"700":"400"}}>{name} {code===locale?"✓":""}</TextLabel>
-              </Pressable>)}
+            <ScrollView style={{ maxHeight:520 }}>
+              <Section header={t("language")}>
+                {Object.entries(LANGUAGE_NAMES).map(([code,name])=>
+                  <Row key={code} title={name} selected={code===locale} onPress={()=>chooseLanguage(code)}
+                    accessibilityState={{ selected:code===locale }}/>)}
+              </Section>
             </ScrollView>
           </View>
         </View>
       </Modal>
-      </SafeAreaView>
+    </AppContext.Provider>
     </ThemeContext.Provider>
   );
 }
@@ -678,70 +660,34 @@ function alarmReasonKey(impact) {
     nearEpicenter:"alarmNear",nearTsunamiCoast:"alarmCoast"}[impact.reason] || "alarmNear";
 }
 export default function App() { return <SafeAreaProvider><AppContent/></SafeAreaProvider>; }
-// Apple HIG-inspired hierarchy: native symbols, dynamic system colors, dynamic
-// type and >=44pt touch targets. Grouped lists preserve content readability.
+// UIKit inset-grouped layout: 16pt margins, system grouped backgrounds,
+// 44pt minimum rows and Dynamic Type sizes from src/theme.js.
 const createStyles = (COLORS) => StyleSheet.create({
-  root:{ flex:1, backgroundColor:COLORS.bg },
-  body:{ paddingHorizontal:18, paddingTop:18, paddingBottom:36, alignItems:"stretch" },
-  header:{ minHeight:56, paddingHorizontal:18, paddingVertical:6, flexDirection:"row",
-    alignItems:"center",justifyContent:"space-between",backgroundColor:COLORS.white,
-    borderBottomWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:12 },
-  brand:{ ...TYPE.headline,flexShrink:1 },
-  backButton:{ minHeight:44,minWidth:60,flexDirection:"row",alignItems:"center",gap:5 },
-  headerActions:{ flexDirection:"row",alignItems:"center",justifyContent:"flex-end",gap:8,flexShrink:1 },
+  screen:{ flex:1 },
+  body:{ paddingHorizontal:16, paddingTop:8 },
+  caption:{ paddingHorizontal:16, marginBottom:16 },
+  headerActions:{ flexDirection:"row",alignItems:"center",gap:4 },
   themeButton:{ minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center" },
-  langButton:{ minHeight:44,flexDirection:"row",alignItems:"center",gap:7,justifyContent:"flex-end",maxWidth:"76%" },
-  intro:{ paddingVertical:5,marginBottom:19,gap:6 },
-  date:{ ...TYPE.title1,color:COLORS.timestamp },
-  locationRow:{ flexDirection:"row",gap:6,alignItems:"center",flexWrap:"wrap" },
-  categoryGrid:{ flexDirection:"row", flexWrap:"wrap",columnGap:8,rowGap:8,alignSelf:"center",marginBottom:16 },
-  category:{ borderRadius:12,paddingHorizontal:3,paddingVertical:9,backgroundColor:COLORS.white,
-    justifyContent:"center",alignItems:"center",gap:5,
-    borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  categoryLabel:{ ...TYPE.footnote,textAlign:"center",fontWeight:"600",maxWidth:"100%" },
-  sectionTop:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:2 },
-  refresh:{ minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:5 },
-  severityRow:{flexDirection:"row",alignItems:"center",gap:8,marginVertical:3,flexWrap:"wrap"},
-  severityDot:{width:13,height:13,borderRadius:4,borderWidth:1,borderColor:"#00000020"},
-  metricRow:{ flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:7 },
-  metricCell:{ backgroundColor:COLORS.bg,borderRadius:10,paddingVertical:8,paddingHorizontal:11,
-    minWidth:95,flexGrow:1,maxWidth:"100%" },
-  metricValue:{ ...TYPE.headline,fontWeight:"700",color:COLORS.ink },
-  tsunamiArea:{ borderTopWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,
-    marginTop:5,paddingTop:9,gap:2 },
-  report:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginBottom:9,
-    borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,gap:6 },
-  reportMain:{minHeight:44,gap:6},
-  reportTop:{ flexDirection:"row",alignItems:"center",gap:8,justifyContent:"space-between",marginBottom:3 },
-  reportMeta:{flexDirection:"row",alignItems:"baseline",gap:5,flexWrap:"wrap"},
-  timestamp:{...TYPE.subhead,color:COLORS.timestamp,fontWeight:"700"},
-  message:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginVertical:6,
-    borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  warning:{ borderLeftWidth:3,borderLeftColor:COLORS.alert },
-  action:{ backgroundColor:COLORS.teal,alignSelf:"flex-start",minHeight:44,marginTop:8,
-    borderRadius:11,paddingVertical:10,paddingHorizontal:15,justifyContent:"center" },
-  subtle:{ backgroundColor:COLORS.tealLight },
-  rowButtons:{ flexDirection:"row",gap:8,flexWrap:"wrap",marginTop:5 },
-  pageTitle:{ flexDirection:"row",alignItems:"center",gap:14,marginBottom:16 },
-  chip:{ backgroundColor:COLORS.white,borderRadius:20,paddingVertical:11,paddingHorizontal:15,minHeight:44,
-    borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  chipActive:{ backgroundColor:COLORS.teal },
+  langButton:{ minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center" },
+  mapWrap:{ marginBottom:24 },
+  severityRow:{ flexDirection:"row",alignItems:"center",gap:8 },
+  severityDot:{ width:10,height:10,borderRadius:5 },
+  metricRow:{ flexDirection:"row",flexWrap:"wrap",gap:8,marginTop:4 },
+  metricCell:{ backgroundColor:COLORS.bg,borderRadius:10,paddingVertical:8,paddingHorizontal:12,
+    minWidth:96,flexGrow:1,maxWidth:"100%" },
+  metricValue:{ ...TYPE.headline,color:COLORS.ink },
+  tsunamiArea:{ borderTopWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border,marginTop:6,paddingTop:8,gap:2 },
+  timestamp:{ ...TYPE.footnote,color:COLORS.timestamp,fontWeight:"600" },
+  about:{ ...TYPE.footnote,color:COLORS.muted,textAlign:"center",marginTop:8 },
+  aboutSecondary:{ ...TYPE.caption1,textAlign:"center" },
   boot:{ flex:1,alignItems:"center",justifyContent:"center",gap:16,backgroundColor:COLORS.bg },
   backdrop:{ flex:1,justifyContent:"flex-end",backgroundColor:"#0007" },
-  languageSheet:{ backgroundColor:COLORS.white,borderTopLeftRadius:18,borderTopRightRadius:18,
-    paddingHorizontal:20,paddingTop:14,paddingBottom:25 },
-  sheetHeader:{ flexDirection:"row",alignItems:"center",justifyContent:"space-between" },
-  sheetClose:{ minWidth:44,minHeight:44,justifyContent:"center",alignItems:"center" },
-  languageItem:{ minHeight:50,paddingVertical:12,justifyContent:"center",
-    borderBottomWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  grabber:{ alignSelf:"center",width:36,height:5,borderRadius:3,backgroundColor:COLORS.border,marginBottom:8 },
-  settingCard:{ backgroundColor:COLORS.white,borderRadius:12,padding:14,marginBottom:19,gap:6,
-    borderWidth:StyleSheet.hairlineWidth,borderColor:COLORS.border },
-  settingRow:{ flexDirection:"row",alignItems:"center",gap:12,minHeight:44 },
-  settingIcon:{ width:32,height:32,borderRadius:8,alignItems:"center",justifyContent:"center" },
+  languageSheet:{ backgroundColor:COLORS.bg,borderTopLeftRadius:12,borderTopRightRadius:12,
+    paddingHorizontal:16,paddingTop:8 },
+  grabber:{ alignSelf:"center",width:36,height:5,borderRadius:3,backgroundColor:COLORS.tertiary,marginBottom:12 },
   alarmRoot:{ flex:1 },
   alarmBody:{ padding:20,gap:14,paddingBottom:36 },
   alarmText:{ color:COLORS.onAlert,textAlign:"center" },
-  alarmButton:{ minHeight:54,borderRadius:14,alignItems:"center",justifyContent:"center",paddingHorizontal:16 },
+  alarmButton:{ minHeight:50,borderRadius:12,alignItems:"center",justifyContent:"center",paddingHorizontal:16 },
   alarmSecondary:{ borderWidth:2,borderColor:COLORS.onAlert }
 });

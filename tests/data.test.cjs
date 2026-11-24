@@ -30,15 +30,22 @@ test("Shelter layers only claim the officially matched hazard", () => {
   assert.ok(!config.includes('typhoon: { tile: "skhb03"'));
 });
 
-test("Apple HIG home does not require horizontal hazard scrolling or redundant greeting", () => {
+test("Apple HIG home uses native navigation and an inset-grouped hazard list", () => {
   const app = read("App.js");
+  const ui = read("src/ui.js");
   assert.ok(app.includes('CATEGORIES.map((item)'));
-  assert.ok(app.includes("categoryWidth"));
-  assert.ok(app.includes("useWindowDimensions"));
+  assert.ok(app.includes("createNativeStackNavigator"));
+  assert.ok(app.includes("headerLargeTitleEnabled"));
+  assert.ok(app.includes("unstable_headerRightItems"));
+  assert.ok(app.includes('contentInsetAdjustmentBehavior:"automatic"'));
+  assert.ok(app.includes("RefreshControl"));
   assert.ok(!app.includes("styles.gridScroller"));
   assert.ok(!app.includes('t("today")'));
-  assert.ok(app.includes("SymbolView"));
-  assert.ok(app.includes("fontScale"));
+  assert.ok(ui.includes("SymbolView"));
+  assert.ok(ui.includes("chevron.right"));
+  // No emoji pictograms in the interface code.
+  const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+  for (const file of ["App.js","src/ui.js","src/SafetyGuide.js"]) assert.ok(!EMOJI.test(read(file)), file);
 });
 test("Japanese content keeps Romaji, while language picker shows only 日本語", () => {
   const i18n = read("src/i18n.js");

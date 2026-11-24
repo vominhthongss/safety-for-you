@@ -1,77 +1,80 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { TYPE } from "./theme";
+import { Bilingual, Icon, IconTile, Row, Section, systemColor } from "./ui";
 const {guideFor,localText,SHINDO_GUIDE}=require("./safetyGuide.cjs");
-const {INTENSITY,readableTextOn:badgeTextColor}=require("./hazardSeverity.cjs");
+const {INTENSITY,readableTextOn}=require("./hazardSeverity.cjs");
 
-// Large pictogram + one short sentence per step. Emoji render as full-color
-// pictures on both iOS and Android without bundling image assets.
-function Pictogram({icon,dont,colors,size}) {
-  return <View style={[styles.picture,{width:size,height:size,borderRadius:size*0.24,
-      backgroundColor:dont ? "#FDE7E5" : "#E3F4E8"}]}
-    accessible={false} importantForAccessibility="no-hide-descendants">
-    <Text style={{fontSize:size*0.52}}>{icon}</Text>
-    <View style={[styles.mark,{backgroundColor:dont ? colors.alarmBg : "#1E7B3A"}]}>
-      <Text style={styles.markText}>{dont ? "✕" : "✓"}</Text>
-    </View>
-  </View>;
-}
-export function SafetySteps({hazard,locale,t,colors,compact=false,onDark=false}) {
+const XMARK={ios:"xmark.circle.fill",android:"cancel",web:"cancel"};
+
+// Protective actions as an inset-grouped list: one native symbol and one
+// short sentence per row. "Do not" rows use a red tile and a red label.
+export function SafetySteps({hazard,locale,t,colors,onDark=false}) {
   const steps=guideFor(hazard);
   if(!steps.length)return null;
-  const ink=onDark ? colors.onAlert : colors.ink;
-  return <View style={[styles.card,!onDark && {backgroundColor:colors.white,borderColor:colors.border,
-      borderWidth:StyleSheet.hairlineWidth}]}>
-    <Text accessibilityRole="header" style={[TYPE.headline,{color:ink,marginBottom:4}]}>
-      {t("whatToDo")}
-    </Text>
+  if(onDark) {
+    return <View style={styles.darkList}>
+      <Text accessibilityRole="header" style={[TYPE.headline,{color:colors.onAlert}]}>
+        {t("whatToDo").split("\n").join(" · ")}
+      </Text>
+      {steps.map((step,index)=>{
+        const label=localText(step.text,locale);
+        return <View key={index} style={styles.darkRow} accessible
+          accessibilityLabel={(step.dont ? t("guideDont")+": " : "")+label.replace(/\n/g," ")}>
+          <View style={styles.darkTile}>
+            <Icon name={step.icon} size={22} color={colors.onAlert}/>
+          </View>
+          <View style={{flex:1}}>
+            {step.dont && <Text style={[TYPE.footnote,{color:colors.onAlert,fontWeight:"700"}]}>
+              {t("guideDont").split("\n")[0]}
+            </Text>}
+            <Bilingual text={label} style={[TYPE.headline,{color:colors.onAlert}]}
+              secondaryStyle={{color:colors.onAlert,opacity:0.85}}/>
+          </View>
+        </View>;
+      })}
+    </View>;
+  }
+  return <Section header={t("whatToDo")}>
     {steps.map((step,index)=>{
       const label=localText(step.text,locale);
-      return <View key={index} style={styles.step} accessible
-        accessibilityLabel={(index+1)+". "+(step.dont ? t("guideDont")+": " : "")+label}>
-        <Pictogram icon={step.icon} dont={step.dont} colors={colors} size={compact ? 52 : 64}/>
-        <View style={{flex:1,gap:2}}>
-          <Text style={[TYPE.footnote,{fontWeight:"700",
-            color:onDark ? colors.onAlert : step.dont ? colors.alert : colors.success}]}>
-            {index+1} · {step.dont ? t("guideDont") : t("guideDo")}
-          </Text>
-          <Text style={[compact ? TYPE.callout : TYPE.body,{color:ink,fontWeight:"600"}]}>{label}</Text>
-        </View>
-      </View>;
+      return <Row key={index} icon={step.icon}
+        iconColor={systemColor(step.dont ? "systemRed" : "systemBlue")}
+        accessibilityLabel={(step.dont ? t("guideDont")+": " : "")+label.replace(/\n/g," ")}
+        accessory={step.dont ? <Icon name={XMARK} size={20} color={systemColor("systemRed")}/> : null}>
+        {step.dont && <Text style={[TYPE.footnote,{color:colors.alert,fontWeight:"600"}]}>
+          {t("guideDont").split("\n")[0]}
+        </Text>}
+        <Bilingual text={label}/>
+      </Row>;
     })}
-  </View>;
+  </Section>;
 }
+// JMA Shindo scale summary: colored intensity capsule + one sentence.
 export function ShindoGuide({locale,t,colors,highlight=null}) {
-  return <View style={[styles.card,{backgroundColor:colors.white,borderColor:colors.border,
-      borderWidth:StyleSheet.hairlineWidth}]}>
-    <Text accessibilityRole="header" style={[TYPE.headline,{color:colors.ink,marginBottom:4}]}>
-      {t("shindoGuide")}
-    </Text>
+  return <Section header={t("shindoGuide")} footer={t("shindoSource")}>
     {SHINDO_GUIDE.map((row)=>{
       const color=INTENSITY[row.codes[row.codes.length-1]].color;
       const active=highlight!==null && row.codes.includes(Number(highlight));
       const text=localText(row.text,locale);
-      return <View key={row.label} accessible
-        accessibilityLabel={"Shindo "+row.label+". "+text}
-        style={[styles.shindoRow,active && {backgroundColor:colors.tealLight,borderRadius:12}]}>
-        <View style={[styles.shindoBadge,{backgroundColor:color}]}>
-          <Text style={[styles.shindoBadgeText,{color:badgeTextColor(color)}]}>{row.label}</Text>
+      return <Row key={row.label} selected={active}
+        accessibilityLabel={"Shindo "+row.label+". "+text.replace(/\n/g," ")}
+        accessory={null}>
+        <View style={styles.shindoLine}>
+          <View style={[styles.capsule,{backgroundColor:color}]}>
+            <Text style={[TYPE.subhead,{fontWeight:"700",color:readableTextOn(color)}]}>{row.label}</Text>
+          </View>
+          <View style={{flex:1}}><Bilingual text={text} style={TYPE.subhead}/></View>
         </View>
-        <Text style={{fontSize:30}} accessible={false}>{row.icon}</Text>
-        <Text style={[TYPE.subhead,{color:colors.ink,flex:1}]}>{text}</Text>
-      </View>;
+      </Row>;
     })}
-    <Text style={[TYPE.caption1,{color:colors.muted,marginTop:6}]}>{t("shindoSource")}</Text>
-  </View>;
+  </Section>;
 }
 const styles=StyleSheet.create({
-  card:{borderRadius:12,padding:14,marginVertical:6,gap:10},
-  step:{flexDirection:"row",alignItems:"center",gap:12,minHeight:56},
-  picture:{alignItems:"center",justifyContent:"center"},
-  mark:{position:"absolute",right:-4,bottom:-4,width:24,height:24,borderRadius:12,
-    alignItems:"center",justifyContent:"center",borderWidth:2,borderColor:"#FFFFFF"},
-  markText:{color:"#FFFFFF",fontSize:13,fontWeight:"900"},
-  shindoRow:{flexDirection:"row",alignItems:"center",gap:10,minHeight:48,paddingHorizontal:4,paddingVertical:4},
-  shindoBadge:{minWidth:54,minHeight:34,borderRadius:10,alignItems:"center",justifyContent:"center",paddingHorizontal:6},
-  shindoBadgeText:{color:"#FFFFFF",fontSize:16,fontWeight:"800"}
+  shindoLine:{flexDirection:"row",alignItems:"center",gap:12},
+  capsule:{minWidth:52,minHeight:28,borderRadius:14,alignItems:"center",justifyContent:"center",paddingHorizontal:8},
+  darkList:{gap:12,paddingVertical:4},
+  darkRow:{flexDirection:"row",alignItems:"center",gap:12,minHeight:44},
+  darkTile:{width:40,height:40,borderRadius:10,alignItems:"center",justifyContent:"center",
+    backgroundColor:"#FFFFFF33"}
 });
