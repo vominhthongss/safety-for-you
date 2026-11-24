@@ -90,7 +90,7 @@ iOSのApple MapsとAndroidのLeafletを実機で検証します。13言語、文
 
 **災害警報と通知:** 通知の許可は、利用者が警報音のスイッチをオンにした後にのみ要求します。プライバシーに関する回答で警報のための端末内での位置情報利用を開示し、警報画面・振動・通知音を実機で確認し、警報はアプリを開いている間のみ動作し国の緊急速報の代わりにならないことをストア情報に明記してください。
 
-**プライバシーと権限:** `app.config.js`で、アプリ単位のプライバシーマニフェスト（`ios.privacyManifests`、アプリ機能のためのおおよその位置情報、トラッキングなし）、`ITSAppUsesNonExemptEncryption = false`、具体的な位置情報の利用目的文、`android.allowBackup: false`を設定し、`SYSTEM_ALERT_WINDOW`と旧ストレージ権限を除外しています。プライバシーポリシーは`docs/privacy/`（英語・日本語・ベトナム語）にあり、申請前に公開する必要があります（例：`/docs`からのGitHub Pages）。各質問票の回答案は`store/REVIEW-ANSWERS.md`にあります。 スクリーンショットは`scripts/capture-store-screenshot.sh`で撮影し、`npm run check:screenshots`で検証してください（`store/screenshots/README.md`参照）。
+**プライバシーと権限:** `app.config.js`で、アプリ単位のプライバシーマニフェスト（`ios.privacyManifests`、アプリ機能のためのおおよその位置情報、トラッキングなし）、`ITSAppUsesNonExemptEncryption = false`、具体的な位置情報の利用目的文、`android.allowBackup: false`を設定し、`SYSTEM_ALERT_WINDOW`と旧ストレージ権限を除外しています。プライバシーポリシーは`docs/privacy/`（英語・日本語・ベトナム語）にあり、申請前に公開する必要があります（例：`/docs`からのGitHub Pages）。各質問票の回答案は`docs/PRIVACY-DECLARATIONS.md`, `docs/REVIEW-NOTES.md`にあります。 スクリーンショットは`scripts/capture-store-screenshot.sh`で撮影し、`npm run check:screenshots`で検証してください（`store/screenshots/README.md`参照）。
 
 **現状の未完了事項：ストア用スクリーンショット（iPhone 6.9インチまたは6.5インチ、iPad 13インチ、Androidスマートフォン）とプライバシーポリシーURLの整備（アイコンとフィーチャーグラフィックは`assets/`と`store/`に収録、`store/README.md`参照）、署名済み実機ビルドの検証、ストア審査結果。公開前に別途対応してください。**
 

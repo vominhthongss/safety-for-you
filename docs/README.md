@@ -28,10 +28,24 @@ Each supported locale has an architecture decision record (ADR), a development/d
 - Historical or missing bulletins do not establish a current warning state. Do not imply official affiliation, tsunami propagation forecasts, live shelter availability, or verified real-time alerting.
 - Avoid committing certificates, upload keystores, service-account files, API tokens or other credentials. Public `EXPO_PUBLIC_*` values are not secrets.
 
+## Release working documents (English)
+
+Practical, English-only checklists for the publisher. They complement the localized store guides above and must stay consistent with them.
+
+| Document | Content |
+| --- | --- |
+| [RELEASE.md](RELEASE.md) | Ordered steps from configuration to Google Play and App Store release |
+| [RELEASE-AUDIT.md](RELEASE-AUDIT.md) | app-store-compliance audit results, verdicts and the publisher checklist |
+| [PRIVACY-DECLARATIONS.md](PRIVACY-DECLARATIONS.md) | Data safety, App Privacy, age rating and other console answers |
+| [REVIEW-NOTES.md](REVIEW-NOTES.md) | Notes for App Review and Play app access |
+| [ADS-A-Z.md](ADS-A-Z.md) | Statement that the app has no ads, related store answers, rules if that ever changes |
+| [store_image.md](store_image.md) | Store image status |
+| [privacy/](privacy/index.md) | Public privacy policy (English, Japanese, Vietnamese) |
+
 ## Maintenance references
 
 - [Documentation style guide](STYLE_GUIDE.md): formal technical writing, 13-language consistency, and review criteria.
 - [AI contributor instructions](../AGENTS.md) and [ChatGPT entry point](../CHATGPT.md).
-- [Store graphics and remaining publisher tasks](../store/README.md), [questionnaire answers](../store/REVIEW-ANSWERS.md), [privacy policy](privacy/index.md).
+- [Store graphics and remaining publisher tasks](../store/README.md), [privacy declarations](PRIVACY-DECLARATIONS.md), [privacy policy](privacy/index.md).
 - [Architecture overview](ARCHITECTURE.md), [iOS UI guidance](UI_DESIGN.md), [MIT License](../LICENSE).
 - [Expo deployment documentation](https://docs.expo.dev/deploy/submit-to-app-stores/), [Google Play Console Help](https://support.google.com/googleplay/android-developer/), [Apple App Store Connect Help](https://developer.apple.com/help/app-store-connect/).
