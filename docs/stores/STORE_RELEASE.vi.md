@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**Mã dự án EAS:** `app.config.js` là cấu hình động, vì vậy `eas init` không thể ghi `extra.eas.projectId` vào tệp này và dừng với thông báo "Cannot automatically write to dynamic config". Chạy `npx eas-cli init`, sao chép mã dự án được hiển thị và đặt `"env": { "EAS_PROJECT_ID": "<project-id>" }` trong hồ sơ `base` của `eas.json`. `app.config.js` sẽ chép giá trị này vào `extra.eas.projectId`. Mã dự án là định danh, không phải thông tin bí mật; không đưa thông tin xác thực vào `eas.json`.
+**Mã dự án EAS:** `app.config.js` là cấu hình động, vì vậy `eas init` không thể ghi `extra.eas.projectId` vào tệp này và dừng với thông báo "Cannot automatically write to dynamic config". Chạy `npx eas-cli init`, sao chép mã dự án được hiển thị và đặt `"env": { "EAS_PROJECT_ID": "<project-id>" }` trong hồ sơ `base` của `eas.json`. `app.config.js` sẽ chép giá trị này vào `extra.eas.projectId`. Mã dự án là định danh, không phải thông tin bí mật; không đưa thông tin xác thực vào `eas.json`. Trong kho mã nguồn này, `app.config.js` đã chứa mã dự án của `@vominhthongss/safety-for-you` và thiết lập `owner`; bước cấu hình trong `eas.json` chỉ cần thiết với bản fork liên kết tới một dự án EAS khác.
 
 Ví dụ sử dụng số bản dựng do EAS quản lý và tự động tăng. Cập nhật `expo.version` trong `app.config.js` theo phiên bản phát hành. Không tái sử dụng Android version code hoặc iOS build number. Xác minh quyền sở hữu thông tin ký; bảo mật khóa tải lên Android và thông tin ký của Apple.
 

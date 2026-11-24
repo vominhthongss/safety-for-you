@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS project ID:** `app.config.js` is a dynamic configuration, so `eas init` cannot write `extra.eas.projectId` into it and stops with "Cannot automatically write to dynamic config". Run `npx eas-cli init`, copy the project ID it prints, and set `"env": { "EAS_PROJECT_ID": "<project-id>" }` in the `base` profile of `eas.json`. `app.config.js` copies this value to `extra.eas.projectId`. The project ID is an identifier, not a secret; never put credentials in `eas.json`.
+**EAS project ID:** `app.config.js` is a dynamic configuration, so `eas init` cannot write `extra.eas.projectId` into it and stops with "Cannot automatically write to dynamic config". Run `npx eas-cli init`, copy the project ID it prints, and set `"env": { "EAS_PROJECT_ID": "<project-id>" }` in the `base` profile of `eas.json`. `app.config.js` copies this value to `extra.eas.projectId`. The project ID is an identifier, not a secret; never put credentials in `eas.json`. In this repository, `app.config.js` already contains the project ID of `@vominhthongss/safety-for-you` and sets `owner`; the `eas.json` step is needed only for a fork linked to a different EAS project.
 
 The sample uses EAS-managed build numbers and automatic incrementing. Keep `expo.version` in `app.config.js` aligned with the marketed release. Never reuse an Android version code or an iOS build number for the same app version. Verify credentials and ownership in EAS; keep Android upload credentials and Apple signing keys private.
 

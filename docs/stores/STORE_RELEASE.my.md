@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS project ID:** `app.config.js` သည် dynamic configuration ဖြစ်သောကြောင့် `eas init` က `extra.eas.projectId` ကို ရေးထည့်၍မရဘဲ "Cannot automatically write to dynamic config" ဖြင့် ရပ်သွားသည်။ `npx eas-cli init` ကို run ပြီး ပြသသော project ID ကို ကူးယူကာ `eas.json` ၏ `base` profile တွင် `"env": { "EAS_PROJECT_ID": "<project-id>" }` အဖြစ် သတ်မှတ်ပါ။ `app.config.js` က ထိုတန်ဖိုးကို `extra.eas.projectId` သို့ ကူးထည့်သည်။ project ID သည် identifier ဖြစ်ပြီး လျှို့ဝှက်ချက်မဟုတ်ပါ၊ `eas.json` တွင် credential များ မထည့်ပါနှင့်။
+**EAS project ID:** `app.config.js` သည် dynamic configuration ဖြစ်သောကြောင့် `eas init` က `extra.eas.projectId` ကို ရေးထည့်၍မရဘဲ "Cannot automatically write to dynamic config" ဖြင့် ရပ်သွားသည်။ `npx eas-cli init` ကို run ပြီး ပြသသော project ID ကို ကူးယူကာ `eas.json` ၏ `base` profile တွင် `"env": { "EAS_PROJECT_ID": "<project-id>" }` အဖြစ် သတ်မှတ်ပါ။ `app.config.js` က ထိုတန်ဖိုးကို `extra.eas.projectId` သို့ ကူးထည့်သည်။ project ID သည် identifier ဖြစ်ပြီး လျှို့ဝှက်ချက်မဟုတ်ပါ၊ `eas.json` တွင် credential များ မထည့်ပါနှင့်။ ဤ repository ၏ `app.config.js` တွင် `@vominhthongss/safety-for-you` ၏ project ID နှင့် `owner` ကို သတ်မှတ်ပြီးဖြစ်သည်။ `eas.json` အဆင့်သည် အခြား EAS project နှင့် ချိတ်ထားသော fork အတွက်သာ လိုအပ်သည်။
 
 ဥပမာတွင် build number များကို EAS က စီမံ၍ အလိုအလျောက်တိုးပေးသည်။ `app.config.js` ရှိ `expo.version` ကိုလည်း ပြင်ဆင်ပါ။ Android versionCode နှင့် iOS buildNumber အဟောင်းကို ပြန်မသုံးပါနှင့်။ Signing credential နှင့် upload key များကို Git တွင် မသိမ်းပါနှင့်။
 

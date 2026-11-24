@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS 프로젝트 ID:** `app.config.js`는 동적 설정이므로 `eas init`이 `extra.eas.projectId`를 기록하지 못하고 "Cannot automatically write to dynamic config" 오류로 중단됩니다. `npx eas-cli init`을 실행하고 출력된 프로젝트 ID를 `eas.json`의 `base` 프로필에 `"env": { "EAS_PROJECT_ID": "<project-id>" }`로 설정하십시오. `app.config.js`가 이 값을 `extra.eas.projectId`에 반영합니다. 프로젝트 ID는 식별자이며 비밀 정보가 아니지만, 자격 증명은 `eas.json`에 넣지 마십시오.
+**EAS 프로젝트 ID:** `app.config.js`는 동적 설정이므로 `eas init`이 `extra.eas.projectId`를 기록하지 못하고 "Cannot automatically write to dynamic config" 오류로 중단됩니다. `npx eas-cli init`을 실행하고 출력된 프로젝트 ID를 `eas.json`의 `base` 프로필에 `"env": { "EAS_PROJECT_ID": "<project-id>" }`로 설정하십시오. `app.config.js`가 이 값을 `extra.eas.projectId`에 반영합니다. 프로젝트 ID는 식별자이며 비밀 정보가 아니지만, 자격 증명은 `eas.json`에 넣지 마십시오. 이 저장소의 `app.config.js`에는 `@vominhthongss/safety-for-you`의 프로젝트 ID와 `owner`가 이미 설정되어 있습니다. `eas.json` 설정은 다른 EAS 프로젝트에 연결된 포크에서만 필요합니다.
 
 예시는 EAS가 빌드 번호를 관리하며 자동 증가시킵니다. `app.config.js`의 `expo.version`도 출시 버전에 맞춥니다. Android versionCode와 iOS buildNumber를 재사용하지 마세요. 업로드 키와 Apple 서명 정보를 비공개로 보관합니다.
 

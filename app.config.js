@@ -1,12 +1,15 @@
 // app.config.js is dynamic, so `eas init` cannot write the EAS project ID here.
-// Put the ID printed by `npx eas-cli init` in eas.json (build.base.env) or in the
-// shell environment as EAS_PROJECT_ID. It is an identifier, not a secret.
-const easProjectId = (process.env.EAS_PROJECT_ID || "").trim();
+// The ID below is the linked EAS project @vominhthongss/safety-for-you; a fork
+// can override it with EAS_PROJECT_ID (shell or eas.json build env).
+// It is an identifier, not a secret.
+const DEFAULT_EAS_PROJECT_ID = "c112d170-b9c9-46ee-9368-084cd57158b3";
+const easProjectId = (process.env.EAS_PROJECT_ID || "").trim() || DEFAULT_EAS_PROJECT_ID;
 
 module.exports = {
   expo: {
     name: "Safety For You",
     slug: "safety-for-you",
+    owner: process.env.EXPO_OWNER || "vominhthongss",
     scheme: "safetyforyou",
     version: "0.1.0",
     orientation: "portrait",
@@ -37,7 +40,7 @@ module.exports = {
     ],
     extra: {
       nonprofit: true,
-      ...(easProjectId ? { eas: { projectId: easProjectId } } : {})
+      eas: { projectId: easProjectId }
     }
   }
 };
