@@ -24,7 +24,7 @@ Each supported locale has an architecture decision record (ADR), a development/d
 
 - The application source of truth is `App.js`, `src/`, `server/`, `app.config.js`, `package.json`, and `.env.example`.
 - Native map providers differ: Apple Maps on iOS; Leaflet/OSM Japan in WebView on Android. Neither a JS export nor an Expo Go test proves signed-store-build compatibility.
-- Store guides provide procedures, not proof of successful signing, approval, or a production release. This repository does not yet contain `eas.json` or completed store assets and privacy-policy URL.
+- Store guides provide procedures, not proof of successful signing, approval, or a production release. The repository contains `eas.json`, app icons, the splash logo and Google Play listing graphics ([store/README.md](../store/README.md)); store screenshots and a privacy-policy URL are still missing.
 - Historical or missing bulletins do not establish a current warning state. Do not imply official affiliation, tsunami propagation forecasts, live shelter availability, or verified real-time alerting.
 - Avoid committing certificates, upload keystores, service-account files, API tokens or other credentials. Public `EXPO_PUBLIC_*` values are not secrets.
 
@@ -32,5 +32,6 @@ Each supported locale has an architecture decision record (ADR), a development/d
 
 - [Documentation style guide](STYLE_GUIDE.md): formal technical writing, 13-language consistency, and review criteria.
 - [AI contributor instructions](../AGENTS.md) and [ChatGPT entry point](../CHATGPT.md).
+- [Store graphics and remaining publisher tasks](../store/README.md).
 - [Architecture overview](ARCHITECTURE.md), [iOS UI guidance](UI_DESIGN.md), [MIT License](../LICENSE).
 - [Expo deployment documentation](https://docs.expo.dev/deploy/submit-to-app-stores/), [Google Play Console Help](https://support.google.com/googleplay/android-developer/), [Apple App Store Connect Help](https://developer.apple.com/help/app-store-connect/).

@@ -90,7 +90,7 @@ Uji Apple Maps pada iOS dan Leaflet pada Android di perangkat nyata, 13 bahasa, 
 
 **Alarm bencana dan notifikasi:** Aplikasi hanya meminta izin notifikasi setelah pengguna mengaktifkan sakelar suara alarm. Ungkapkan penggunaan lokasi di perangkat untuk alarm dalam jawaban privasi, verifikasi layar alarm, getaran, dan suara notifikasi pada perangkat fisik, serta nyatakan dalam metadata toko bahwa alarm hanya berfungsi saat aplikasi terbuka dan tidak menggantikan Peringatan Darurat resmi Jepang.
 
-**Hal yang masih kurang: aset toko dan tangkapan layar, URL kebijakan privasi, validasi build native bertanda tangan, dan hasil peninjauan toko. Dokumen ini tidak menggantikan langkah tersebut.**
+**Hal yang masih kurang: tangkapan layar toko (iPhone 6,9" atau 6,5", iPad 13", ponsel Android; ikon dan feature graphic tersedia di `assets/` dan `store/`, lihat `store/README.md`), URL kebijakan privasi, validasi build native bertanda tangan, dan hasil peninjauan toko. Dokumen ini tidak menggantikan langkah tersebut.**
 
 ## 6. Pembaruan dan pemeliharaan
 

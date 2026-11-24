@@ -90,7 +90,7 @@ Subukan sa tunay na iOS at Android device ang Apple Maps at Leaflet, 13 wika, ac
 
 **Alarma sa sakuna at mga notification:** Humihingi lamang ang app ng pahintulot sa notification pagkatapos i-on ng user ang switch ng tunog ng alarma. Ipahayag sa mga sagot sa privacy ang paggamit ng lokasyon sa device para sa alarma, suriin sa pisikal na device ang alarm screen, pag-vibrate at tunog ng notification, at isaad sa store metadata na gumagana lamang ang alarma habang bukas ang app at hindi nito pinapalitan ang opisyal na Emergency Alerts ng Japan.
 
-**Hindi pa kumpleto sa repositoryo ang store assets at screenshot, privacy policy URL, pagsusuri sa nilagdaang native build, at resulta ng store review. Kailangang kumpletuhin ang mga ito bago maglathala.**
+**Hindi pa kumpleto sa repositoryo ang mga screenshot para sa store (iPhone 6.9" o 6.5", iPad 13", Android phone; nasa `assets/` at `store/` ang mga icon at feature graphic, tingnan ang `store/README.md`), privacy policy URL, pagsusuri sa nilagdaang native build, at resulta ng store review. Kailangang kumpletuhin ang mga ito bago maglathala.**
 
 ## 6. Mga update at pagpapanatili
 
