@@ -27,3 +27,11 @@ test("app.config.js links the EAS project and allows an EAS_PROJECT_ID override"
   delete require.cache[path];
   assert.equal(require(path).expo.owner,"vominhthongss");
 });
+test("Android release builds disable R8 minification and resource shrinking",()=>{
+  const path=require.resolve("../app.config.js");
+  delete require.cache[path];
+  const plugin=require(path).expo.plugins.find((p)=>Array.isArray(p) && p[0]==="expo-build-properties");
+  assert.ok(plugin,"expo-build-properties plugin is configured");
+  assert.equal(plugin[1].android.enableMinifyInReleaseBuilds,false);
+  assert.equal(plugin[1].android.enableShrinkResourcesInReleaseBuilds,false);
+});
