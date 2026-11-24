@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS 專案 ID：** `app.config.js` 為動態設定，`eas init` 無法寫入 `extra.eas.projectId`，並會以 "Cannot automatically write to dynamic config" 停止。請執行 `npx eas-cli init`，複製輸出的專案 ID，並在 `eas.json` 的 `base` 設定檔中設定 `"env": { "EAS_PROJECT_ID": "<project-id>" }`。`app.config.js` 會將此值寫入 `extra.eas.projectId`。專案 ID 是識別碼而非機密；請勿在 `eas.json` 中放置憑證。
+**EAS 專案 ID：** `app.config.js` 為動態設定，`eas init` 無法寫入 `extra.eas.projectId`，並會以 "Cannot automatically write to dynamic config" 停止。請執行 `npx eas-cli init`，複製輸出的專案 ID，並在 `eas.json` 的 `base` 設定檔中設定 `"env": { "EAS_PROJECT_ID": "<project-id>" }`。`app.config.js` 會將此值寫入 `extra.eas.projectId`。專案 ID 是識別碼而非機密；請勿在 `eas.json` 中放置憑證。 本儲存庫的 `app.config.js` 已包含 `@vominhthongss/safety-for-you` 的專案 ID 並設定 `owner`；僅當分支專案連結至其他 EAS 專案時，才需要在 `eas.json` 中設定。
 
 範例由 EAS 管理並自動遞增建置編號。同步更新 `app.config.js` 的 `expo.version`，不可重複使用 Android versionCode 或 iOS buildNumber。妥善保護上傳金鑰與簽章憑證，切勿提交至 Git。
 

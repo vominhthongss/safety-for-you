@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**ID proyek EAS:** `app.config.js` adalah konfigurasi dinamis sehingga `eas init` tidak dapat menulis `extra.eas.projectId` ke dalamnya dan berhenti dengan pesan "Cannot automatically write to dynamic config". Jalankan `npx eas-cli init`, salin ID proyek yang ditampilkan, lalu tetapkan `"env": { "EAS_PROJECT_ID": "<project-id>" }` pada profil `base` di `eas.json`. `app.config.js` menyalin nilai ini ke `extra.eas.projectId`. ID proyek adalah pengenal, bukan rahasia; jangan menaruh kredensial di `eas.json`.
+**ID proyek EAS:** `app.config.js` adalah konfigurasi dinamis sehingga `eas init` tidak dapat menulis `extra.eas.projectId` ke dalamnya dan berhenti dengan pesan "Cannot automatically write to dynamic config". Jalankan `npx eas-cli init`, salin ID proyek yang ditampilkan, lalu tetapkan `"env": { "EAS_PROJECT_ID": "<project-id>" }` pada profil `base` di `eas.json`. `app.config.js` menyalin nilai ini ke `extra.eas.projectId`. ID proyek adalah pengenal, bukan rahasia; jangan menaruh kredensial di `eas.json`. Di repositori ini, `app.config.js` sudah berisi ID proyek `@vominhthongss/safety-for-you` dan menetapkan `owner`; langkah `eas.json` hanya diperlukan untuk fork yang ditautkan ke proyek EAS lain.
 
 Contoh menggunakan nomor build yang dikelola dan dinaikkan otomatis oleh EAS. Sesuaikan `expo.version` dalam `app.config.js` dengan versi rilis. Jangan menggunakan ulang Android versionCode atau iOS buildNumber. Simpan kredensial penandatanganan dan kunci unggah secara aman, bukan di Git.
 

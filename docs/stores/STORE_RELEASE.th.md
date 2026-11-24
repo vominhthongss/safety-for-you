@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS project ID:** `app.config.js` เป็นการกำหนดค่าแบบไดนามิก `eas init` จึงเขียน `extra.eas.projectId` ลงไปไม่ได้และหยุดพร้อมข้อความ "Cannot automatically write to dynamic config" ให้รัน `npx eas-cli init` คัดลอก project ID ที่แสดง แล้วกำหนด `"env": { "EAS_PROJECT_ID": "<project-id>" }` ในโปรไฟล์ `base` ของ `eas.json` จากนั้น `app.config.js` จะคัดลอกค่านี้ไปยัง `extra.eas.projectId` project ID เป็นตัวระบุ ไม่ใช่ข้อมูลลับ และห้ามใส่ข้อมูลรับรองใน `eas.json`
+**EAS project ID:** `app.config.js` เป็นการกำหนดค่าแบบไดนามิก `eas init` จึงเขียน `extra.eas.projectId` ลงไปไม่ได้และหยุดพร้อมข้อความ "Cannot automatically write to dynamic config" ให้รัน `npx eas-cli init` คัดลอก project ID ที่แสดง แล้วกำหนด `"env": { "EAS_PROJECT_ID": "<project-id>" }` ในโปรไฟล์ `base` ของ `eas.json` จากนั้น `app.config.js` จะคัดลอกค่านี้ไปยัง `extra.eas.projectId` project ID เป็นตัวระบุ ไม่ใช่ข้อมูลลับ และห้ามใส่ข้อมูลรับรองใน `eas.json` ใน repository นี้ `app.config.js` มี project ID ของ `@vominhthongss/safety-for-you` และกำหนด `owner` ไว้แล้ว ขั้นตอนใน `eas.json` จำเป็นเฉพาะ fork ที่เชื่อมกับ EAS project อื่น
 
 ตัวอย่างให้ EAS จัดการและเพิ่มหมายเลข build อัตโนมัติ ปรับ `expo.version` ใน `app.config.js` ให้ตรงกับรุ่น ห้ามใช้ Android versionCode หรือ iOS buildNumber ซ้ำ เก็บคีย์อัปโหลดและข้อมูลลงนามเป็นความลับ ไม่เพิ่มลง Git
 

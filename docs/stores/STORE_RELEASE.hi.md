@@ -50,7 +50,7 @@ npx eas-cli build:configure
 }
 ```
 
-**EAS प्रोजेक्ट ID:** `app.config.js` डायनेमिक कॉन्फ़िगरेशन है, इसलिए `eas init` इसमें `extra.eas.projectId` नहीं लिख सकता और "Cannot automatically write to dynamic config" संदेश के साथ रुक जाता है। `npx eas-cli init` चलाएँ, दिखाई गई प्रोजेक्ट ID कॉपी करें और `eas.json` की `base` प्रोफ़ाइल में `"env": { "EAS_PROJECT_ID": "<project-id>" }` सेट करें। `app.config.js` यह मान `extra.eas.projectId` में कॉपी करता है। प्रोजेक्ट ID एक पहचानकर्ता है, गोपनीय जानकारी नहीं; `eas.json` में क्रेडेंशियल कभी न रखें।
+**EAS प्रोजेक्ट ID:** `app.config.js` डायनेमिक कॉन्फ़िगरेशन है, इसलिए `eas init` इसमें `extra.eas.projectId` नहीं लिख सकता और "Cannot automatically write to dynamic config" संदेश के साथ रुक जाता है। `npx eas-cli init` चलाएँ, दिखाई गई प्रोजेक्ट ID कॉपी करें और `eas.json` की `base` प्रोफ़ाइल में `"env": { "EAS_PROJECT_ID": "<project-id>" }` सेट करें। `app.config.js` यह मान `extra.eas.projectId` में कॉपी करता है। प्रोजेक्ट ID एक पहचानकर्ता है, गोपनीय जानकारी नहीं; `eas.json` में क्रेडेंशियल कभी न रखें। इस रिपॉज़िटरी में `app.config.js` में `@vominhthongss/safety-for-you` की प्रोजेक्ट ID और `owner` पहले से सेट हैं; `eas.json` वाला चरण केवल किसी अन्य EAS प्रोजेक्ट से जुड़े fork के लिए आवश्यक है।
 
 उदाहरण में EAS build नंबर का प्रबंधन और स्वतः वृद्धि करता है। `app.config.js` का `expo.version` भी अपडेट करें। Android versionCode या iOS buildNumber का पुनः उपयोग न करें। हस्ताक्षर प्रमाणपत्र और upload key सुरक्षित रखें; Git में न डालें।
 
