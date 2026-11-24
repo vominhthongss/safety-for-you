@@ -31,7 +31,7 @@ The following items cannot be produced in the build container and must be comple
    - iPad: at least one 13" screenshot (2064 × 2752 or 2048 × 2732), because `ios.supportsTablet` is `true`. Set it to `false` if iPad support is not intended.
    - Google Play: 2 to 8 phone screenshots, JPEG or 24-bit PNG without alpha, each side 320–3840 px, long side at most 2.3 × the short side.
    - Do not show active-warning claims that the app does not make; see the safety gate in `docs/stores/STORE_RELEASE.en.md`.
-2. **Publish the privacy policy.** The policy is written in `docs/privacy/` (English, Japanese, Vietnamese) and the app links to `https://vominhthongss.github.io/safety-for-you/privacy/`. Enable GitHub Pages (Settings → Pages → branch `main`, folder `/docs`) and check that the URL loads, or host it elsewhere and set `EXPO_PUBLIC_PRIVACY_POLICY_URL`. GitHub Pages on a private repository requires a paid GitHub plan. Questionnaire answers: [REVIEW-ANSWERS.md](REVIEW-ANSWERS.md).
+2. **Publish the privacy policy.** The policy is written in `docs/privacy/` (English, Japanese, Vietnamese) and the app links to `https://vominhthongss.github.io/safety-for-you/privacy/`. Enable GitHub Pages (Settings → Pages → branch `main`, folder `/docs`) and check that the URL loads, or host it elsewhere and set `EXPO_PUBLIC_PRIVACY_POLICY_URL`. GitHub Pages on a private repository requires a paid GitHub plan. Questionnaire answers: [docs/PRIVACY-DECLARATIONS.md](../docs/PRIVACY-DECLARATIONS.md); release steps: [docs/RELEASE.md](../docs/RELEASE.md).
 3. **Visual review.** Check the icon at small sizes on a device (home screen, Settings, Spotlight) and the themed icon on Android 13+.
 4. **Optional:** Android tablet screenshots, App Store preview video.
 

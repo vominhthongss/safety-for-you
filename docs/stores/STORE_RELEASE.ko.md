@@ -90,7 +90,7 @@ App Store Connect에서 App Privacy, 유효한 개인정보처리방침 및 지�
 
 **재해 경보와 알림:** 앱은 사용자가 경보음 스위치를 켠 후에만 알림 권한을 요청합니다. 개인정보 답변에 경보를 위한 기기 내 위치 사용을 공개하고, 실제 기기에서 경보 화면, 진동, 알림음을 확인하며, 경보는 앱이 열려 있을 때만 작동하고 일본의 공식 긴급 경보를 대체하지 않는다는 점을 스토어 정보에 명시하십시오.
 
-**개인정보와 권한:** `app.config.js`는 앱 수준 개인정보 매니페스트(`ios.privacyManifests`, 앱 기능을 위한 대략적 위치, 추적 없음), `ITSAppUsesNonExemptEncryption = false`, 구체적인 위치 사용 목적 문구, `android.allowBackup: false`를 설정하고 `SYSTEM_ALERT_WINDOW`와 기존 저장소 권한을 차단합니다. 개인정보처리방침은 `docs/privacy/`(영어, 일본어, 베트남어)에 있으며 제출 전에 공개해야 합니다(예: `/docs`의 GitHub Pages). 설문 답변 예시는 `store/REVIEW-ANSWERS.md`에 있습니다. 스크린샷은 `scripts/capture-store-screenshot.sh`로 촬영하고 `npm run check:screenshots`로 검증하십시오(`store/screenshots/README.md` 참조).
+**개인정보와 권한:** `app.config.js`는 앱 수준 개인정보 매니페스트(`ios.privacyManifests`, 앱 기능을 위한 대략적 위치, 추적 없음), `ITSAppUsesNonExemptEncryption = false`, 구체적인 위치 사용 목적 문구, `android.allowBackup: false`를 설정하고 `SYSTEM_ALERT_WINDOW`와 기존 저장소 권한을 차단합니다. 개인정보처리방침은 `docs/privacy/`(영어, 일본어, 베트남어)에 있으며 제출 전에 공개해야 합니다(예: `/docs`의 GitHub Pages). 설문 답변 예시는 `docs/PRIVACY-DECLARATIONS.md`, `docs/REVIEW-NOTES.md`에 있습니다. 스크린샷은 `scripts/capture-store-screenshot.sh`로 촬영하고 `npm run check:screenshots`로 검증하십시오(`store/screenshots/README.md` 참조).
 
 **현재 미완료 항목: 스토어용 스크린샷(iPhone 6.9인치 또는 6.5인치, iPad 13인치, Android 휴대전화)과 개인정보처리방침 URL(아이콘과 그래픽 이미지는 `assets/`, `store/`에 있음, `store/README.md` 참조), 서명된 실기기 빌드 검증, 스토어 심사 결과. 문서만으로 배포 준비가 완료되지 않습니다.**
 
