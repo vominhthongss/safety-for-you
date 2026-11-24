@@ -90,7 +90,7 @@ npx eas-cli submit --platform ios --latest
 
 **災害警報與通知：** 應用程式僅在使用者開啟警報聲開關後才要求通知權限。請在隱私問卷中揭露為警報在裝置端使用位置資訊，在實體裝置上驗證警報畫面、震動與通知聲音，並在商店資訊中說明警報僅在應用程式開啟時有效，不能取代日本官方的緊急警報。
 
-**隱私與權限：** `app.config.js` 設定了應用程式層級的隱私清單（`ios.privacyManifests`，用於應用程式功能的概略位置，無追蹤）、`ITSAppUsesNonExemptEncryption = false`、具體的位置用途說明、`android.allowBackup: false`，並封鎖 `SYSTEM_ALERT_WINDOW` 與舊版儲存權限。隱私權政策位於 `docs/privacy/`（英文、日文、越南文），送審前必須公開發佈，例如透過 `/docs` 的 GitHub Pages。各問卷的建議答案見 `store/REVIEW-ANSWERS.md`。
+**隱私與權限：** `app.config.js` 設定了應用程式層級的隱私清單（`ios.privacyManifests`，用於應用程式功能的概略位置，無追蹤）、`ITSAppUsesNonExemptEncryption = false`、具體的位置用途說明、`android.allowBackup: false`，並封鎖 `SYSTEM_ALERT_WINDOW` 與舊版儲存權限。隱私權政策位於 `docs/privacy/`（英文、日文、越南文），送審前必須公開發佈，例如透過 `/docs` 的 GitHub Pages。各問卷的建議答案見 `store/REVIEW-ANSWERS.md`。 請使用 `scripts/capture-store-screenshot.sh` 截圖，並以 `npm run check:screenshots` 驗證（見 `store/screenshots/README.md`）。
 
 **目前尚待完成：準備商店截圖（iPhone 6.9 吋或 6.5 吋、iPad 13 吋、Android 手機）與隱私權政策網址（圖示與宣傳圖已在 `assets/` 與 `store/` 中，請見 `store/README.md`）、驗證已簽署實機版本，以及完成商店審核。文件更新無法取代上述事項。**
 

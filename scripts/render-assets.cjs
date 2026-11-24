@@ -1,6 +1,6 @@
 // Renders app icons, splash and store artwork from SVG with the Playwright
 // Chromium that is available in the build container:
-//   node scripts/render-assets.cjs
+//   node scripts/render-assets.cjs [output files...]
 // Outputs are committed; re-run only after changing the artwork below.
 // Afterwards remove the alpha channel where the stores forbid it:
 //   python3 -c "from PIL import Image as I;[I.open(f).convert('RGB').save(f) for f in ['assets/icon.png','store/google-play/feature-graphic.png']]"
@@ -38,6 +38,16 @@ const ASSETS = [
   // Splash logo on the mint splash background.
   { file:"assets/splash-icon.png", w:1024, h:1024,
     body:glyph({ shield:BLUE_BOTTOM, wave:"#FFFFFF", scale:1.15 }) },
+  // iOS 18 dark app icon: transparent; the system draws the dark background.
+  { file:"assets/icon-dark.png", w:1024, h:1024,
+    body:glyph({ shield:"#FFFFFF", wave:BLUE_TOP, scale:1.08 }) },
+  // iOS 18 tinted app icon: grayscale glyph; the system applies the tint.
+  { file:"assets/icon-tinted.png", w:1024, h:1024,
+    body:glyph({ shield:"#FFFFFF", scale:1.08, mask:true }) },
+  // Android notification small icon: white glyph on transparent (96 x 96),
+  // scaled up so it stays legible in the status bar.
+  { file:"assets/notification-icon.png", w:96, h:96,
+    body:`<g transform="scale(${96/1024})">` + glyph({ shield:"#FFFFFF", scale:1.35, mask:true }) + `</g>` },
   // Google Play listing icon (512 x 512, 32-bit PNG).
   { file:"store/google-play/icon-512.png", w:512, h:512, opaque:true,
     body:`<g transform="scale(0.5)">` + gradient + `<rect width="1024" height="1024" fill="url(#bg)"/>` +
@@ -56,7 +66,9 @@ const ASSETS = [
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ deviceScaleFactor:1 });
-  for (const a of ASSETS) {
+  // Optional file arguments render only those outputs.
+  const only = process.argv.slice(2);
+  for (const a of ASSETS.filter((x) => !only.length || only.includes(x.file))) {
     await page.setViewportSize({ width:a.w, height:a.h });
     await page.setContent(`<html><body style="margin:0;background:transparent">${svg(a.w, a.h, a.body)}</body></html>`);
     await page.evaluate(() => document.fonts.ready);

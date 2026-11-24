@@ -23,6 +23,12 @@ module.exports = {
     icon: "./assets/icon.png",
     ios: {
       supportsTablet: true,
+      // iOS 18 appearance variants; "light" is the App Store icon (no alpha).
+      icon: {
+        light: "./assets/icon.png",
+        dark: "./assets/icon-dark.png",
+        tinted: "./assets/icon-tinted.png"
+      },
       bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.vominhthongss.safetyforyou",
       // Only HTTPS (exempt encryption) is used; avoids the export-compliance
       // prompt on every App Store Connect upload.
@@ -85,7 +91,11 @@ module.exports = {
         }
       }],
       // Local notifications only (alarm sound while the app is open); no push token.
-      "expo-notifications",
+      // Android status-bar icon must be a white glyph on transparency.
+      ["expo-notifications", {
+        icon: "./assets/notification-icon.png",
+        color: "#0057D9"
+      }],
       ["expo-splash-screen", {
         image: "./assets/splash-icon.png",
         backgroundColor: "#E8F5F4",
